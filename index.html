@@ -154,10 +154,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .pips i{flex:1;height:5px;border-radius:2px;background:var(--gauge-empty)}
 .pips i.on{background:var(--accent)}
 .raid .rg{font-size:12px;color:var(--gold-fg);font-weight:600}
-.raid.full{background:var(--surface-done);border-color:var(--line)}
-.raid.full .rn{color:var(--muted)}
-.raid.full .rg{color:var(--muted)}
 .goldrow{display:flex;align-items:center;gap:12px}
+.cleared-toggle{display:flex;align-items:center;justify-content:center;gap:4px;border:0;background:none;color:var(--muted);font-size:12.5px;padding:2px 0 0;margin-bottom:-4px}
+.cleared-toggle svg{width:16px;height:16px;transition:transform .2s}
+.cleared-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
 .goldrow .bar{flex:1;height:9px}
 .goldrow .bar>i{--c:var(--gold)}
 .goldrow .g{font-weight:700;color:var(--gold-fg);font-size:13.5px;white-space:nowrap}
@@ -308,7 +308,7 @@ function P(id){
 
 let S = freshState();
 let localKey = "loacheck-state";
-const ui = { expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
+const ui = { showCleared:new Set(), expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
 try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
@@ -630,25 +630,34 @@ function weeklyPanel(){
   </section>`;
 }
 
+// 끝낸 주간 숙제(다 깬 레이드, 낙원 0, 메달 교환, 이정표 3/3)는 숨기고,
+// '완료한 숙제 N개 보기'를 누르면 다시 보여줌 (앱 WeeklyCharacterCard와 같은 동작)
 function weeklyCard(c){
   const p = P(c.id), raids = raidsOf(c), g = goldOf(c), done = weeklyDone(c);
-  const tiles = raids.map(r=>`<button class="raid ${r.full?"full":""}" data-act="raid" data-id="${c.id}" data-r="${esc(r.title)}"
+  const showCleared = ui.showCleared.has(c.id);
+  const raidsOn = S.settings.raids!==false;
+  const shownRaids = showCleared ? raids : raids.filter(r=>!r.full);
+  const paraDone = p.paradise===0, signDone = p.sign>=SIGN_MAX;
+  const clearedCount = (raidsOn ? raids.filter(r=>r.full).length : 0) + (S.settings.paradise && paraDone ? 1 : 0) + (S.settings.medal && p.medal ? 1 : 0) + (S.settings.sign && signDone ? 1 : 0);
+
+  const tiles = shownRaids.map(r=>`<button class="raid" data-act="raid" data-id="${c.id}" data-r="${esc(r.title)}"
       aria-label="${esc(c.name)} ${esc(r.title)} ${r.cleared}/${r.gates.length}관문. ${r.full?"누르면 0관문으로 되돌림":"누르면 다음 관문 클리어"}">
       <span class="rn">${esc(r.title)}</span>
       <span class="pips">${r.gates.map((_,i)=>`<i class="${i<r.cleared?"on":""}"></i>`).join("")}</span>
-      <span class="rg num">${r.full ? "완료" : `${r.cleared+1}관 +${fmt(r.gates[r.cleared])}`}</span>
+      <span class="rg num">${r.full ? "완료 · 누르면 되돌림" : `${r.cleared+1}관 +${fmt(r.gates[r.cleared])}`}</span>
     </button>`).join("");
   const extras = [];
-  if(S.settings.paradise) extras.push(`<div class="row"><span class="lbl">낙원:천상</span><div class="gwrap">${gauge(p.paradise,PARADISE_MAX,"--guardian")}<span class="gval num">${p.paradise}</span></div><span class="spacer"></span>
+  if(S.settings.paradise && (showCleared || !paraDone)) extras.push(`<div class="row"><span class="lbl">낙원:천상</span><div class="gwrap">${gauge(p.paradise,PARADISE_MAX,"--guardian")}<span class="gval num">${p.paradise}</span></div><span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="para" data-id="${c.id}" data-v="0" aria-label="낙원 0으로">0</button><button class="sbtn" data-act="para" data-id="${c.id}" data-d="-1" aria-label="낙원 줄이기">−</button><button class="sbtn" data-act="para" data-id="${c.id}" data-d="1" aria-label="낙원 늘리기">+</button></div></div>`);
-  if(S.settings.medal) extras.push(`<div class="row"><span class="lbl">클리어 메달</span><span class="note">교환</span><span class="spacer"></span>${chk(p.medal,"medal",`data-id="${c.id}"`,`${c.name} 클리어 메달 교환 완료`)}</div>`);
-  if(S.settings.sign) extras.push(`<div class="row"><span class="lbl">이정표 미션</span><div class="gwrap">${gauge(p.sign,SIGN_MAX,"--kurzan")}<span class="gval num">${p.sign}/${SIGN_MAX}</span></div><span class="spacer"></span>
+  if(S.settings.medal && (showCleared || !p.medal)) extras.push(`<div class="row"><span class="lbl">클리어 메달</span><span class="note">교환</span><span class="spacer"></span>${chk(p.medal,"medal",`data-id="${c.id}"`,`${c.name} 클리어 메달 교환 완료`)}</div>`);
+  if(S.settings.sign && (showCleared || !signDone)) extras.push(`<div class="row"><span class="lbl">이정표 미션</span><div class="gwrap">${gauge(p.sign,SIGN_MAX,"--kurzan")}<span class="gval num">${p.sign}/${SIGN_MAX}</span></div><span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
-  return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
+  return `<article class="card" data-card="w-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${done?`<span class="ctag">완료</span>`:""}</div>
-    ${S.settings.raids===false ? "" : `<div class="raids">${tiles}</div>
-    <div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>`}
+    ${raidsOn && tiles ? `<div class="raids">${tiles}</div>` : ""}
+    ${raidsOn ? `<div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>` : ""}
     ${extras.length ? `<div class="sub">${extras.join("")}</div>` : ""}
+    ${clearedCount ? `<button class="cleared-toggle" data-act="show-cleared" data-id="${c.id}" aria-expanded="${showCleared}">${showCleared ? "완료한 숙제 숨기기" : `완료한 숙제 ${clearedCount}개 보기`}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}
   </article>`;
 }
 
@@ -767,6 +776,7 @@ document.addEventListener("click", e=>{
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
     case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
+    case "show-cleared": if(ui.showCleared.has(id)) ui.showCleared.delete(id); else ui.showCleared.add(id); render(); break;
     case "raid": { const c=byIdS(id), p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n); p.raids[t]= cur>=n ? 0 : cur+1; commit(); break; }
     case "para": { const p=P(id); p.paradise = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); commit(); break; }
     case "medal": P(id).medal=!P(id).medal; commit(); break;
