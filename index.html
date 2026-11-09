@@ -308,7 +308,7 @@ function P(id){
 
 let S = freshState();
 let localKey = "loacheck-state";
-const ui = { showCleared:new Set(), expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
+const ui = { showClearedDaily:new Set(), showCleared:new Set(), expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
 try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
@@ -606,11 +606,16 @@ function dailyCard(c){
       ${ui.edit ? `<div class="step"><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="-0.5" aria-label="${label} 휴게 줄이기">−</button><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="0.5" aria-label="${label} 휴게 늘리기">+</button></div>` : ""}
       <span class="spacer"></span>${chk(h.done,"hw",`data-id="${c.id}" data-k="${k}"`,`${c.name} ${label} 완료`)}</div>`;
   };
+  // 끝낸 일일 숙제는 숨김. '완료한 숙제 N개 보기' 또는 수정 모드에서 다시 보임 (앱 DailyCharacterCard와 같은 동작)
+  const showCleared = ui.edit || ui.showClearedDaily.has(c.id);
+  const show = k => showCleared || !d[k].done;
+  const clearedCount = shownDaily().filter(k=>d[k].done).length;
   return `<article class="card ${done?"done":""} ${warn?"warn":""}" data-card="d-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${warn?`<span class="ctag">휴게 가득</span>`:done?`<span class="ctag">완료</span>`:""}</div>
-    ${S.settings.guardian!==false ? row("guardian","가디언 토벌","--guardian") : ""}
-    ${S.settings.kurzan!==false ? row("kurzan","쿠르잔 전선","--kurzan") : ""}
-    ${S.settings.guild ? `<div class="row"><span class="lbl">길드 출석</span><span class="spacer"></span>${chk(d.guild.done,"hw",`data-id="${c.id}" data-k="guild"`,`${c.name} 길드 출석 완료`)}</div>` : ""}
+    ${S.settings.guardian!==false && show("guardian") ? row("guardian","가디언 토벌","--guardian") : ""}
+    ${S.settings.kurzan!==false && show("kurzan") ? row("kurzan","쿠르잔 전선","--kurzan") : ""}
+    ${S.settings.guild && show("guild") ? `<div class="row"><span class="lbl">길드 출석</span><span class="spacer"></span>${chk(d.guild.done,"hw",`data-id="${c.id}" data-k="guild"`,`${c.name} 길드 출석 완료`)}</div>` : ""}
+    ${clearedCount && !ui.edit ? `<button class="cleared-toggle" data-act="show-cleared-daily" data-id="${c.id}" aria-expanded="${showCleared}">${showCleared ? "완료한 숙제 숨기기" : `완료한 숙제 ${clearedCount}개 보기`}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}
   </article>`;
 }
 
@@ -776,6 +781,7 @@ document.addEventListener("click", e=>{
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
     case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
+    case "show-cleared-daily": if(ui.showClearedDaily.has(id)) ui.showClearedDaily.delete(id); else ui.showClearedDaily.add(id); render(); break;
     case "show-cleared": if(ui.showCleared.has(id)) ui.showCleared.delete(id); else ui.showCleared.add(id); render(); break;
     case "raid": { const c=byIdS(id), p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n); p.raids[t]= cur>=n ? 0 : cur+1; commit(); break; }
     case "para": { const p=P(id); p.paradise = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); commit(); break; }
