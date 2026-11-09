@@ -222,6 +222,73 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .msg.ok{color:var(--kurzan)}
 .login-links{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px}
 .loading{min-height:60vh;display:grid;place-items:center;color:var(--muted)}
+/* ── 메뉴 패널 (오른쪽 15%, 본문은 밀리지 않음) ── */
+.menu-scrim{position:fixed;inset:0;z-index:15;background:transparent}
+.menu{position:fixed;top:0;right:0;bottom:0;z-index:16;width:clamp(220px,15vw,320px);background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.12);
+  padding-top:calc(14px + env(safe-area-inset-top,0px));padding-right:env(safe-area-inset-right,0px);display:flex;flex-direction:column;animation:menuIn .22s cubic-bezier(.2,.8,.2,1)}
+.menu.closing{animation:menuOut .18s ease-in forwards}
+@keyframes menuIn{from{transform:translateX(100%)}to{transform:none}}
+@keyframes menuOut{to{transform:translateX(100%)}}
+.menu-head{display:flex;align-items:center;justify-content:space-between;padding:0 14px 10px;font-weight:700;color:var(--muted);font-size:12.5px;letter-spacing:.04em}
+.menu-row{display:flex;align-items:center;gap:12px;border:0;border-top:1px solid var(--line);background:none;padding:15px 16px;text-align:left;font-size:15px;font-weight:600;color:var(--fg)}
+.menu-row:last-child{border-bottom:1px solid var(--line)}
+.menu-row svg{width:20px;height:20px;color:var(--muted);flex:none}
+.menu-row[aria-current="page"]{background:var(--accent-soft);color:var(--accent-fg)}
+.menu-row[aria-current="page"] svg{color:var(--accent-fg)}
+.menu-row:hover{background:var(--surface-done)}
+
+/* ── 스펙 현황 ── */
+:root{--sec-grid:#0E8FC7;--sec-refine:#D9640A;--sec-adv:#D02B2E;--sec-spec:#3E9A08;--pick:#93B6FF;--pick-fg:#0B111E;--pick-line:#3F51B5;--slot:#E7EAF0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sec-grid:#1BA9E8;--sec-refine:#F07A1A;--sec-adv:#E5383B;--sec-spec:#5AD10F;--slot:#1A2232}}
+:root[data-theme="dark"]{--sec-grid:#1BA9E8;--sec-refine:#F07A1A;--sec-adv:#E5383B;--sec-spec:#5AD10F;--slot:#1A2232}
+.page{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding-block:18px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.page-head{display:flex;align-items:center;gap:10px}
+.page-head h2{margin:0;font-size:19px;flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.page-head h2 small{font-size:13px;color:var(--muted);font-weight:500}
+.spec-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px}
+.spec-card:hover{border-color:var(--accent)}
+.spec-card .info{flex:1;min-width:0}
+.spec-card b{font-size:16px}
+.spec-card small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.spec-card .nums{display:flex;gap:14px;font-size:13px;color:var(--muted);text-align:right}
+.spec-card .nums b{display:block;font-size:15px;color:var(--fg)}
+.spec-card svg{width:18px;height:18px;color:var(--faint);flex:none}
+.sec{display:flex;flex-direction:column;gap:12px}
+.sec-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;border-bottom:3px solid var(--sec);padding-bottom:6px}
+.sec-title h3{margin:0;font-size:24px;font-weight:800;color:var(--sec);letter-spacing:-.02em}
+.sec-title select{border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px}
+.grid-wrap{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);column-gap:10px}
+.grid-col{text-align:center;color:var(--sec);font-weight:700;font-size:18px;padding:4px 0 10px}
+.grid-row{display:contents}
+.grid-row>*{padding:10px 0}
+.grid-row:not(:last-child)>*{border-bottom:2px dashed var(--line-strong)}
+.grid-lbl{display:grid;place-items:center;color:var(--sec);font-weight:800;font-size:20px;min-width:30px}
+.gcell{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.gbtn{height:34px;border:0;border-radius:7px;background:var(--slot);color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums;padding:0}
+.gbtn[aria-pressed="true"]{background:var(--pick);color:var(--pick-fg);font-weight:700}
+.parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.plabel{width:46px;font-size:13px}}
+.part{display:flex;gap:5px;min-width:0}
+.plabel{flex:none;width:56px;display:grid;place-items:center;border-radius:9px;border:2px solid var(--sec);background:color-mix(in srgb,var(--sec) 14%,var(--surface));color:var(--sec);font-weight:700;font-size:14px}
+.pval{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:center;gap:2px;border-radius:9px;border:2px solid var(--pick-line);background:var(--pick);color:var(--pick-fg);padding:4px 6px}
+.pval input{border:0;background:transparent;color:inherit;font:inherit;text-align:center;font-variant-numeric:tabular-nums;min-width:0;padding:0}
+.pval input:focus{outline:none;background:rgba(255,255,255,.35);border-radius:4px}
+.pval .big{font-size:19px;width:2.4em}
+.pval .small{font-size:11.5px;width:4.2em;text-align:left}
+.pval .full{font-size:19px;width:100%}
+.stat-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;color:var(--sec);font-size:20px;font-weight:600}
+.stat-row span{display:flex;align-items:baseline;gap:8px}
+.stat-row b{font-variant-numeric:tabular-nums}
+.stat-row input{width:7.5em;border:0;border-bottom:2px solid var(--sec);background:transparent;color:var(--sec);font:inherit;font-weight:700;font-variant-numeric:tabular-nums;padding:0 2px}
+.stat-row input:focus{outline:none}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.hist-week{display:flex;flex-direction:column;gap:12px}
+.hist-week+.hist-week{border-top:2px dashed var(--line-strong);padding-top:16px}
+.hist-week h3{margin:0;font-size:13px;color:var(--muted);font-weight:600}
+.hist-char{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+.hist-char b{display:block;margin-bottom:6px}
+.hist-char ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -279,7 +346,8 @@ function freshState(){
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
     expedition:{chaos:false, field:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
-    lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "" };
+    lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
+    specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
 }
 function normalize(d){
   const s=freshState(); if(!d || typeof d!=="object") return s;
@@ -292,7 +360,12 @@ function normalize(d){
     lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
     lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
     updatedAt: Number(d.updatedAt)||0,
-    apiKey: typeof d.apiKey==="string" ? d.apiKey : "" };
+    apiKey: typeof d.apiKey==="string" ? d.apiKey : "",
+    specs: (d.specs && typeof d.specs==="object") ? d.specs : {},
+    specHistory: {
+      weekStart: Number.isFinite(d.specHistory?.weekStart) ? d.specHistory.weekStart : weekStart(loaDay()),
+      base: (d.specHistory?.base && typeof d.specHistory.base==="object") ? d.specHistory.base : {},
+      archive: Array.isArray(d.specHistory?.archive) ? d.specHistory.archive : [] } };
 }
 function P(id){
   const p = S.progress[id] ||= {};
@@ -308,7 +381,7 @@ function P(id){
 
 let S = freshState();
 let localKey = "loacheck-state";
-const ui = { showClearedDaily:new Set(), showCleared:new Set(), expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
+const ui = { page:"main", specId:null, menu:false, drafts:{}, showClearedDaily:new Set(), showCleared:new Set(), expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
 try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
@@ -336,7 +409,85 @@ function applyResets(){
     for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; }
     S.lastWeekly = today; changed = true;
   }
+  if (specRollover()) changed = true;
   return changed;
+}
+
+/* ───────────── 스펙 현황 (앱 data/Spec.kt와 같은 규칙) ───────────── */
+const GRID = [["oSun","질서","해"],["cSun","혼돈","해"],["oMoon","질서","달"],["cMoon","혼돈","달"],["oStar","질서","별"],["cStar","혼돈","별"]];
+const GRID_VALUES = [10,14,17,18,19,20];
+const PARTS = [["helmet","투구"],["shoulder","견갑"],["chest","상의"],["pants","하의"],["gloves","장갑"],["weapon","무기"]];
+const GEAR = {tremor:{name:"운명의 전율", base:1675}, fury:{name:"운명의 업화", base:1590}};
+const ADV_MAX = 4000, REFINE_MAX = 25;
+const fin = v => typeof v==="number" && Number.isFinite(v);
+function blankSpec(){
+  return { gear:null, grid:Object.fromEntries(GRID.map(g=>[g[0],null])),
+    refine:Object.fromEntries(PARTS.map(p=>[p[0],{lv:null,exp:0}])),
+    adv:Object.fromEntries(PARTS.map(p=>[p[0],null])), power:null };
+}
+function normSpec(x){
+  const b = blankSpec(); if(!x || typeof x!=="object") return b;
+  b.gear = (x.gear==="tremor"||x.gear==="fury") ? x.gear : null;
+  for(const [k] of GRID){ const v=x.grid?.[k]; b.grid[k] = GRID_VALUES.includes(v) ? v : null; }
+  for(const [k] of PARTS){
+    const r = x.refine?.[k] || {};
+    b.refine[k] = {lv: fin(r.lv) ? r.lv : null, exp: fin(r.exp) ? r.exp : 0};
+    b.adv[k] = fin(x.adv?.[k]) ? x.adv[k] : null;
+  }
+  b.power = fin(x.power) ? x.power : null;
+  return b;
+}
+const SPEC = id => (S.specs[id] = normSpec(S.specs[id]));
+const advStage = v => Math.min(40, Math.floor((v||0)/100));
+// 아이템 레벨 = 6부위 평균, 부위 = 기본값(전율 1675/업화 1590) + 재련×5 + 상급재련 단계×1. 재련이 하나라도 비면 계산 안 함.
+function specItemLevel(sp){
+  if(PARTS.some(([k])=>sp.refine[k].lv==null)) return null;
+  const base = GEAR[sp.gear||"tremor"].base;
+  return PARTS.reduce((a,[k])=>a + base + sp.refine[k].lv*5 + advStage(sp.adv[k]), 0) / 6;
+}
+const f2 = v => (Math.round(v*100)/100).toFixed(2);
+const pad4 = v => String(v).padStart(4,"0");
+const refText = r => r.lv + (r.exp>0 ? `(${f2(r.exp)})` : "");
+// 주 시작 시점(base) → 지금(cur) 변화 기록. 처음 입력(빈칸→값)은 기록하지 않음.
+function specDiffLines(b, c){
+  const out = [];
+  for(const [k,col,row] of GRID) if(b.grid[k]!=null && c.grid[k]!=null && c.grid[k]>b.grid[k]) out.push(`${col}의 ${row} ${b.grid[k]} -> ${c.grid[k]}`);
+  for(const [k,name] of PARTS){
+    const x=b.refine[k], y=c.refine[k];
+    if(x.lv!=null && y.lv!=null && (x.lv!==y.lv || f2(x.exp)!==f2(y.exp))) out.push(`${name} 재련 ${refText(x)} -> ${refText(y)}`);
+  }
+  for(const [k,name] of PARTS) if(b.adv[k]!=null && c.adv[k]!=null && b.adv[k]!==c.adv[k]) out.push(`${name} 상급재련 ${pad4(b.adv[k])} -> ${pad4(c.adv[k])}`);
+  const li=specItemLevel(b), lc=specItemLevel(c);
+  if(li!=null && lc!=null && f2(li)!==f2(lc)) out.push(`아이템 레벨 ${f2(li)} -> ${f2(lc)}`);
+  if(b.power!=null && c.power!=null && f2(b.power)!==f2(c.power)) out.push(`전투력 ${f2(b.power)} -> ${f2(c.power)}`);
+  return out;
+}
+// 처음 입력한 값은 이번 주 시작값으로 삼음
+function syncBase(id){
+  const cur = SPEC(id), h = S.specHistory, b = normSpec(h.base[id]);
+  if(b.gear==null && cur.gear!=null) b.gear = cur.gear;
+  for(const [k] of GRID) if(b.grid[k]==null && cur.grid[k]!=null) b.grid[k] = cur.grid[k];
+  for(const [k] of PARTS){
+    if(b.refine[k].lv==null && cur.refine[k].lv!=null) b.refine[k] = {...cur.refine[k]};
+    if(b.adv[k]==null && cur.adv[k]!=null) b.adv[k] = cur.adv[k];
+  }
+  if(b.power==null && cur.power!=null) b.power = cur.power;
+  h.base[id] = b;
+}
+// 수요일 06시가 지나면: 지난주 기록을 보관함(archive)으로 옮기고, 지금 스펙을 새 주의 시작값으로
+function specRollover(){
+  const ws = weekStart(loaDay()), h = S.specHistory;
+  if(h.weekStart >= ws) return false;
+  const chars = [];
+  for(const c of [...S.roster].sort(bySlot)){
+    const lines = specDiffLines(normSpec(h.base[c.id]), SPEC(c.id));
+    if(lines.length) chars.push({name:c.name, lines});
+  }
+  if(chars.length) h.archive.unshift({weekStart:h.weekStart, chars});
+  h.archive = h.archive.slice(0, 26);
+  h.base = Object.fromEntries(S.roster.map(c=>[c.id, JSON.parse(JSON.stringify(SPEC(c.id)))]));
+  h.weekStart = ws;
+  return true;
 }
 
 /* ───────────── 계산 ───────────── */
@@ -535,6 +686,12 @@ const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="
 const ICON = {
   edit:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`,
   slot:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>`,
+  menu:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`,
+  list:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6l.8.8L6.8 5M4.5 12l.8.8 1.5-1.8M4.5 18l.8.8 1.5-1.8"/></svg>`,
+  spec:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.2 5.5.8-4 3.9.9 5.6L12 15.9 7.1 18.5l.9-5.6-4-3.9 5.5-.8z"/></svg>`,
+  hist:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4M12 7v5l3 2"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`,
+  chev:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`,
   gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>`
 };
 const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
@@ -543,14 +700,14 @@ const gauge = (v, n, color) => `<div class="gauge" style="--v:${Math.max(0,Math.
 function header(){
   return `<header class="top"><div class="top-in">
     <div class="brand"><b>로아<i>췍</i></b><span class="sync" data-sync data-s="${syncState}">${SYNC_TEXT[syncState]}</span></div>
-    <div class="tabs" role="tablist">
+    ${ui.page==="main" ? `<div class="tabs" role="tablist">
       <button role="tab" aria-selected="${ui.view==="daily"}" data-act="view" data-v="daily">일일</button>
       <button role="tab" aria-selected="${ui.view==="weekly"}" data-act="view" data-v="weekly">주간</button>
-    </div>
-    <div class="tools">
-      <button class="tool" aria-pressed="${ui.edit}" data-act="edit" aria-label="수정 모드">${ICON.edit}<span class="t">수정</span></button>
-      <button class="tool" aria-pressed="${ui.sortSlot}" data-act="slot" aria-label="캐릭터 선택창 순서">${ICON.slot}<span class="t">선택창 순</span></button>
-      <button class="tool" data-act="settings" aria-label="설정">${ICON.gear}<span class="t">설정</span></button>
+    </div>` : ""}
+    <div class="tools" ${ui.page==="main" ? "" : 'style="margin-left:auto"'}>
+      ${ui.page==="main" ? `<button class="tool" aria-pressed="${ui.edit}" data-act="edit" aria-label="수정 모드">${ICON.edit}<span class="t">수정</span></button>
+      <button class="tool" aria-pressed="${ui.sortSlot}" data-act="slot" aria-label="캐릭터 선택창 순서">${ICON.slot}<span class="t">선택창 순</span></button>` : ""}
+      <button class="tool" data-act="menu" aria-label="메뉴" aria-expanded="${ui.menu}">${ICON.menu}<span class="t">메뉴</span></button>
     </div>
   </div></header>`;
 }
@@ -667,6 +824,110 @@ function weeklyCard(c){
   </article>`;
 }
 
+/* ───────────── 메뉴 패널 ───────────── */
+function menuPanel(){
+  if(!ui.menu) return "";
+  const row = (act, icon, label, current) => `<button class="menu-row" data-act="${act}" ${current?'aria-current="page"':""}>${icon}<span>${label}</span></button>`;
+  return `<div class="menu-scrim" data-act="menu-close"></div>
+  <nav class="menu ${ui.menuClosing?"closing":""}" aria-label="메뉴">
+    <div class="menu-head"><span>메뉴</span></div>
+    ${row("go-main", ICON.list, "일일·주간 숙제", ui.page==="main")}
+    ${row("go-specs", ICON.spec, "스펙 현황", ui.page==="specs"||ui.page==="spec"||ui.page==="history")}
+    ${row("settings", ICON.gear, "설정", false)}
+  </nav>`;
+}
+
+/* ───────────── 스펙 현황 화면 ───────────── */
+function specListPage(){
+  const cards = [...S.roster].sort(bySlot).map(c=>{
+    const sp = SPEC(c.id), il = specItemLevel(sp);
+    return `<button class="spec-card" data-act="open-spec" data-id="${c.id}">
+      <span class="info"><b>${esc(c.name)}</b><small>${esc(c.job)} · ${GEAR[sp.gear||"tremor"].name}</small></span>
+      <span class="nums"><span>아이템 레벨<b class="num">${il==null?"-":f2(il)}</b></span><span>전투력<b class="num">${sp.power==null?"-":f2(sp.power)}</b></span></span>
+      ${ICON.chev}</button>`;
+  }).join("");
+  return `<main class="page">
+    <div class="page-head"><h2>스펙 현황</h2><button class="tool" data-act="go-history">${ICON.hist}<span class="t">히스토리</span></button></div>
+    <div class="cards">${cards || emptyRoster()}</div>
+  </main>`;
+}
+
+const draftVal = (id, v) => ui.drafts[id] != null ? ui.drafts[id] : v;
+function specDetailPage(){
+  const c = byIdS(ui.specId);
+  if(!c){ ui.page="specs"; return specListPage(); }
+  const sp = SPEC(c.id), id = c.id, il = specItemLevel(sp);
+  const cell = k => `<div class="gcell">${GRID_VALUES.map(v=>`<button class="gbtn" data-act="grid" data-id="${id}" data-k="${k}" data-v="${v}" aria-pressed="${sp.grid[k]===v}">${v}</button>`).join("")}</div>`;
+  const gridRows = [["oSun","cSun","해"],["oMoon","cMoon","달"],["oStar","cStar","별"]].map(([a,b,l])=>
+    `<div class="grid-row">${cell(a)}<div class="grid-lbl">${l}</div>${cell(b)}</div>`).join("");
+  const refine = PARTS.map(([k,name])=>{
+    const r = sp.refine[k], lvId=`sp-r-${id}-${k}`, exId=`sp-e-${id}-${k}`;
+    return `<div class="part"><span class="plabel">${name}</span><span class="pval">
+      <input class="big" id="${lvId}" data-spec="lv" data-id="${id}" data-k="${k}" inputmode="numeric" maxlength="2" value="${esc(draftVal(lvId, r.lv??""))}" aria-label="${name} 재련 단계" placeholder="-">
+      <input class="small" id="${exId}" data-spec="exp" data-id="${id}" data-k="${k}" inputmode="decimal" maxlength="6" value="${esc(draftVal(exId, r.exp>0?f2(r.exp):""))}" aria-label="${name} 장인의 기운" placeholder="0.00">
+    </span></div>`;
+  }).join("");
+  const adv = PARTS.map(([k,name])=>{
+    const aId=`sp-a-${id}-${k}`;
+    return `<div class="part"><span class="plabel">${name}</span><span class="pval">
+      <input class="full" id="${aId}" data-spec="adv" data-id="${id}" data-k="${k}" inputmode="numeric" maxlength="4" value="${esc(draftVal(aId, sp.adv[k]==null?"":pad4(sp.adv[k])))}" aria-label="${name} 상급재련" placeholder="0000">
+    </span></div>`;
+  }).join("");
+  return `<main class="page">
+    <div class="page-head"><button class="tool" data-act="go-specs" aria-label="스펙 현황으로">${ICON.back}</button><h2>${esc(c.name)} <small>${esc(c.job)}</small></h2></div>
+    <section class="sec" style="--sec:var(--sec-grid)">
+      <div class="sec-title"><h3>아크그리드</h3></div>
+      <div class="grid-wrap"><div class="grid-col">질서</div><div></div><div class="grid-col">혼돈</div>${gridRows}</div>
+      <p class="hint">누르면 선택, 선택된 걸 다시 누르면 해제돼요.</p>
+    </section>
+    <section class="sec" style="--sec:var(--sec-refine)">
+      <div class="sec-title"><h3>재련</h3>
+        <select id="sp-gear" data-id="${id}" aria-label="장비 종류">${Object.entries(GEAR).map(([g,v])=>`<option value="${g}" ${(sp.gear||"tremor")===g?"selected":""}>${v.name}</option>`).join("")}</select></div>
+      <div class="parts">${refine}</div>
+      <p class="hint">큰 숫자는 강화 단계, 작은 숫자는 장인의 기운(100이 되면 1강)이에요. 입력을 멈추면 2초 뒤 저장돼요.</p>
+    </section>
+    <section class="sec" style="--sec:var(--sec-adv)">
+      <div class="sec-title"><h3>상급 재련</h3></div>
+      <div class="parts">${adv}</div>
+      <p class="hint">앞 두 자리는 단계(0~40), 뒤 두 자리는 경험치예요. 예) 3680 = 36단계 80경험치</p>
+    </section>
+    <section class="sec" style="--sec:var(--sec-spec)">
+      <div class="sec-title"><h3>스펙</h3></div>
+      <div class="stat-row">
+        <span>아이템 레벨 : <b>${il==null?"-":f2(il)}</b></span>
+        <span>전투력 : <input id="sp-p-${id}" data-spec="power" data-id="${id}" inputmode="decimal" value="${esc(draftVal(`sp-p-${id}`, sp.power==null?"":f2(sp.power)))}" aria-label="전투력" placeholder="0.00"></span>
+      </div>
+      <p class="hint">아이템 레벨은 6부위 재련·상급재련으로 자동 계산돼요 (전율 1675 / 업화 1590 + 재련×5 + 상급재련 단계).</p>
+    </section>
+  </main>`;
+}
+
+function historyPage(){
+  const h = S.specHistory;
+  const weekLabel = ws => dayLabel(ws).replace(/ \(.\)/,"") + " 수요일 주";
+  const block = chars => chars.map(ch=>`<div class="hist-char"><b>${esc(ch.name)}</b><ul>${ch.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul></div>`).join("");
+  const current = [...S.roster].sort(bySlot).map(c=>({name:c.name, lines:specDiffLines(normSpec(h.base[c.id]), SPEC(c.id))})).filter(x=>x.lines.length);
+  const weeks = [`<div class="hist-week"><h3>이번 주 · ${weekLabel(h.weekStart)}</h3>${current.length ? block(current) : `<p class="hint">이번 주 스펙업 기록이 아직 없어요.</p>`}</div>`]
+    .concat(h.archive.map(w=>`<div class="hist-week"><h3>${weekLabel(w.weekStart)}</h3>${block(w.chars||[])}</div>`));
+  return `<main class="page">
+    <div class="page-head"><button class="tool" data-act="go-specs" aria-label="스펙 현황으로">${ICON.back}</button><h2>스펙업 히스토리</h2></div>
+    ${weeks.join("")}
+  </main>`;
+}
+
+// 스펙 숫자 입력 적용 (입력을 멈추고 2초 뒤, 또는 Enter)
+const specTimers = {};
+function applySpecInput(el){
+  const id = el.dataset.id, k = el.dataset.k, kind = el.dataset.spec, raw = el.value.trim();
+  delete ui.drafts[el.id]; clearTimeout(specTimers[el.id]);
+  const sp = SPEC(id);
+  if(kind==="lv"){ const n=parseInt(raw,10); sp.refine[k].lv = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(REFINE_MAX,n)) : sp.refine[k].lv); }
+  else if(kind==="exp"){ const n=parseFloat(raw); sp.refine[k].exp = raw==="" ? 0 : (Number.isFinite(n) ? Math.max(0,Math.min(99.99,Math.round(n*100)/100)) : sp.refine[k].exp); }
+  else if(kind==="adv"){ const n=parseInt(raw,10); sp.adv[k] = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(ADV_MAX,n)) : sp.adv[k]); }
+  else if(kind==="power"){ const n=parseFloat(raw.replace(/,/g,"")); sp.power = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.round(n*100)/100) : sp.power); }
+  syncBase(id); commit();
+}
+
 const emptyRoster = () => `<div class="empty">등록된 캐릭터가 없어요. <button class="linkbtn" data-act="settings">설정</button>에서 캐릭터를 추가하세요.</div>`;
 
 function settingsSheet(){
@@ -744,7 +1005,9 @@ function render(){
   app.querySelectorAll("[data-card]").forEach(el=>first.set(el.dataset.card, el.getBoundingClientRect().top));
   const sheetScroll = app.querySelector(".sheet")?.scrollTop || 0;
 
-  app.innerHTML = header() + `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>` + settingsSheet();
+  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage()
+    : `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>`;
+  app.innerHTML = header() + body + menuPanel() + settingsSheet();
 
   if(sheetScroll) app.querySelector(".sheet").scrollTop = sheetScroll;
   if(aid){ const el=document.getElementById(aid); if(el){ el.focus({preventScroll:true}); if(sel && el.setSelectionRange) try{ el.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
@@ -765,6 +1028,13 @@ document.addEventListener("click", e=>{
   if(a==="close-bg" && e.target!==b) return;   // 시트 안쪽 클릭은 무시
   switch(a){
     case "login-submit": doLogin(); break;
+    case "menu": if(ui.menu) closeMenu(); else { ui.menu=true; ui.menuClosing=false; render(); } break;
+    case "menu-close": closeMenu(); break;
+    case "go-main": ui.page="main"; closeMenu(true); window.scrollTo(0,0); break;
+    case "go-specs": ui.page="specs"; closeMenu(true); window.scrollTo(0,0); break;
+    case "go-history": ui.page="history"; render(); window.scrollTo(0,0); break;
+    case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; render(); window.scrollTo(0,0); break;
+    case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
     case "api-refresh": apiRefresh(); break;
@@ -776,7 +1046,7 @@ document.addEventListener("click", e=>{
     case "view": ui.view=b.dataset.v; saveUi(); render(); break;
     case "edit": ui.edit=!ui.edit; ui.lifeInput=""; render(); break;
     case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
-    case "settings": ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; render(); break;
+    case "settings": if(ui.menu){ ui.menu=false; } ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; render(); break;
     case "close": case "close-bg": ui.settings=false; ui.armDel=null; render(); break;
     case "hw": toggleHw(P(id).daily[b.dataset.k]); commit(); break;
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
@@ -795,10 +1065,23 @@ document.addEventListener("click", e=>{
     case "del": if(ui.armDel!==id){ ui.armDel=id; render(); } else { S.roster=S.roster.filter(c=>c.id!==id); delete S.progress[id]; ui.armDel=null; commit(); } break;
   }
 });
+// 메뉴 닫기 (밀려 들어가는 애니메이션 후 제거). instant=true면 바로 닫음
+function closeMenu(instant){
+  if(!ui.menu) return render();
+  if(instant || matchMedia("(prefers-reduced-motion: reduce)").matches){ ui.menu=false; ui.menuClosing=false; return render(); }
+  ui.menuClosing=true; document.querySelector(".menu")?.classList.add("closing");
+  setTimeout(()=>{ ui.menu=false; ui.menuClosing=false; render(); }, 180);
+}
 let flashTimer=null;
 function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ ui.flash=null; render(); },800); }
 
 document.addEventListener("input", e=>{
+  if(e.target.dataset?.spec){
+    const el = e.target; ui.drafts[el.id] = el.value;
+    clearTimeout(specTimers[el.id]);
+    specTimers[el.id] = setTimeout(()=>{ const cur=document.getElementById(el.id); applySpecInput(cur||el); }, 2000);
+    return;
+  }
   if(e.target.id==="api-key"){ ui.apiKeyInput=e.target.value.trim(); const b=document.querySelector('[data-act="api-save"]'); if(b) b.disabled=!ui.apiKeyInput; return; }
   if(e.target.id==="api-name"){ ui.apiName=e.target.value; return; }
   if(e.target.id==="login-email" || e.target.id==="login-pw"){
@@ -813,6 +1096,8 @@ document.addEventListener("input", e=>{
   }
 });
 document.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && e.target.dataset?.spec){ applySpecInput(e.target); return; }
+  if(e.key==="Escape" && ui.menu){ closeMenu(); return; }
   if(e.key==="Enter" && (e.target.id==="login-email" || e.target.id==="login-pw")){ doLogin(); return; }
   if(e.key==="Enter" && e.target.id==="api-name" && S.apiKey && !ui.apiBusy){ apiSearch(); return; }
   if(e.key==="Enter" && e.target.id==="life-input" && ui.lifeInput){ document.getElementById("life-save")?.click(); }
@@ -820,6 +1105,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){ if(ui.settings){ ui.settings=false; render(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
 document.addEventListener("change", e=>{
+  if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
   const ck = e.target.dataset?.apiCheck;
   if(ck!=null){ if(e.target.checked) ui.apiChecked.add(ck); else ui.apiChecked.delete(ck); return; }
   const f=e.target.dataset?.field; if(!f) return;
