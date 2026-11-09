@@ -657,10 +657,11 @@ function weeklyCard(c){
   if(S.settings.medal && (showCleared || !p.medal)) extras.push(`<div class="row"><span class="lbl">클리어 메달</span><span class="note">교환</span><span class="spacer"></span>${chk(p.medal,"medal",`data-id="${c.id}"`,`${c.name} 클리어 메달 교환 완료`)}</div>`);
   if(S.settings.sign && (showCleared || !signDone)) extras.push(`<div class="row"><span class="lbl">이정표 미션</span><div class="gwrap">${gauge(p.sign,SIGN_MAX,"--kurzan")}<span class="gval num">${p.sign}/${SIGN_MAX}</span></div><span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
-  return `<article class="card" data-card="w-${c.id}">
+  const allRaidsDone = raids.every(r=>r.full);
+  return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${done?`<span class="ctag">완료</span>`:""}</div>
     ${raidsOn && tiles ? `<div class="raids">${tiles}</div>` : ""}
-    ${raidsOn ? `<div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>` : ""}
+    ${raidsOn && (showCleared || !allRaidsDone) ? `<div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>` : ""}
     ${extras.length ? `<div class="sub">${extras.join("")}</div>` : ""}
     ${clearedCount ? `<button class="cleared-toggle" data-act="show-cleared" data-id="${c.id}" aria-expanded="${showCleared}">${showCleared ? "완료한 숙제 숨기기" : `완료한 숙제 ${clearedCount}개 보기`}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}
   </article>`;
