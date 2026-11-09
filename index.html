@@ -427,7 +427,7 @@ onAuthStateChanged(auth, user=>{
     docRef = doc(fdb, "users", user.uid, "data", "state");
     setSync("connecting");
     loadTimer = setTimeout(()=>setSync("slow"), 10000);
-    unsub = onSnapshot(docRef, onSnap, ()=>{ clearTimeout(loadTimer); setSync("error"); });
+    unsub = onSnapshot(docRef, {includeMetadataChanges:true}, onSnap, ()=>{ clearTimeout(loadTimer); setSync("error"); });   // 앱과 같게: 서버 연결 신호도 받음
   }
   render();
 });
