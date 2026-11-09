@@ -440,11 +440,12 @@ function normSpec(x){
 }
 const SPEC = id => (S.specs[id] = normSpec(S.specs[id]));
 const advStage = v => Math.min(40, Math.floor((v||0)/100));
-// 아이템 레벨 = 6부위 평균, 부위 = 기본값(전율 1675/업화 1590) + 재련×5 + 상급재련 단계×1. 재련이 하나라도 비면 계산 안 함.
+// 아이템 레벨 = 6부위 평균 (소수 셋째 자리부터 버림), 부위 = 기본값(전율 1675/업화 1590) + 재련×5 (+ 업화만 상급재련 단계×1). 재련이 하나라도 비면 계산 안 함.
 function specItemLevel(sp){
   if(PARTS.some(([k])=>sp.refine[k].lv==null)) return null;
-  const base = GEAR[sp.gear||"tremor"].base;
-  return PARTS.reduce((a,[k])=>a + base + sp.refine[k].lv*5 + advStage(sp.adv[k]), 0) / 6;
+  const gear = sp.gear||"tremor", base = GEAR[gear].base;
+  const avg = PARTS.reduce((a,[k])=>a + base + sp.refine[k].lv*5 + (gear==="fury" ? advStage(sp.adv[k]) : 0), 0) / 6;
+  return Math.floor(avg*100 + 1e-6) / 100;   // 게임처럼 버림 (1734.1666 → 1734.16)
 }
 const f2 = v => (Math.round(v*100)/100).toFixed(2);
 const pad4 = v => String(v).padStart(4,"0");
@@ -898,7 +899,7 @@ function specDetailPage(){
         <span>아이템 레벨 : <b>${il==null?"-":f2(il)}</b></span>
         <span>전투력 : <input id="sp-p-${id}" data-spec="power" data-id="${id}" inputmode="decimal" value="${esc(draftVal(`sp-p-${id}`, sp.power==null?"":f2(sp.power)))}" aria-label="전투력" placeholder="0.00"></span>
       </div>
-      <p class="hint">아이템 레벨은 6부위 재련·상급재련으로 자동 계산돼요 (전율 1675 / 업화 1590 + 재련×5 + 상급재련 단계).</p>
+      <p class="hint">아이템 레벨은 6부위 평균으로 자동 계산돼요. 전율: 1675 + 재련×5 / 업화: 1590 + 재련×5 + 상급재련 단계 (상급재련은 업화 장비에만 적용).</p>
     </section>
   </main>`;
 }
