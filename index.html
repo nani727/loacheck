@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B111E" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3F5F9" media="(prefers-color-scheme: light)">
+<title>로아췍</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: 고정 상단바 → 넓은 화면(≥1040px)은 일일|주간 2단, 좁은 화면은 탭으로 한쪽씩 */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --surface-done:#ECEFF4; --surface-warn:#FFF7E0;
+  --line:#E0E4EC; --line-strong:#C9CFDA; --line-warn:#F2A900;
+  --fg:#161A23; --muted:#687083; --faint:#9AA1B0;
+  --accent:#3F51B5; --accent-fg:#3647A6; --accent-soft:rgba(63,81,181,.11);
+  --guardian:#2196F3; --kurzan:#2E9E50; --gauge-empty:#E2E6EE; --seg-gap:#FFFFFF;
+  --gold:#F29100; --gold-fg:#B86A00; --danger:#D93025;
+  --shadow:0 1px 2px rgba(22,26,35,.06),0 4px 14px rgba(22,26,35,.05);
+  --font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B111E; --surface:#172030; --surface-done:#111824; --surface-warn:#13282C;
+  --line:#26324A; --line-strong:#34425E; --line-warn:#00D9E6;
+  --fg:#DCD7D1; --muted:#97A3B6; --faint:#66728A;
+  --accent:#5466CC; --accent-fg:#A7B1E8; --accent-soft:rgba(110,128,230,.16);
+  --guardian:#33ABDE; --kurzan:#1DAB51; --gauge-empty:#2C3850; --seg-gap:#172030;
+  --gold:#CC7A00; --gold-fg:#FFAA2B; --danger:#FF6B5E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.18);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0B111E; --surface:#172030; --surface-done:#111824; --surface-warn:#13282C;
+  --line:#26324A; --line-strong:#34425E; --line-warn:#00D9E6;
+  --fg:#DCD7D1; --muted:#97A3B6; --faint:#66728A;
+  --accent:#5466CC; --accent-fg:#A7B1E8; --accent-soft:rgba(110,128,230,.16);
+  --guardian:#33ABDE; --kurzan:#1DAB51; --gauge-empty:#2C3850; --seg-gap:#172030;
+  --gold:#CC7A00; --gold-fg:#FFAA2B; --danger:#FF6B5E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.18);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── 상단바 ── */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:12px;padding-block:10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.brand b i{font-style:normal;color:var(--accent-fg)}
+.sync{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sync::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.sync[data-s="synced"]::before{background:var(--kurzan)}
+.sync[data-s="saving"]::before,.sync[data-s="connecting"]::before{background:var(--gold)}
+.sync[data-s="error"]::before{background:var(--danger)}
+.tabs{display:flex;background:var(--surface-done);border:1px solid var(--line);border-radius:999px;padding:3px;margin-left:auto}
+.tabs button{border:0;background:none;padding:6px 14px;border-radius:999px;font-weight:600;color:var(--muted);font-size:13.5px}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.tools{display:flex;gap:6px}
+.tool{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:10px;height:38px;padding:0 10px;color:var(--muted);font-weight:600;font-size:13px}
+.tool svg{width:18px;height:18px;flex:none}
+.tool[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-fg)}
+.tool .t{display:none}
+
+/* ── 보드 ── */
+.board{max-width:1240px;margin:0 auto;display:grid;gap:28px;padding-block:18px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.board[data-view="daily"] .panel-weekly,.board[data-view="weekly"] .panel-daily{display:none}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px}
+.panel-head h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.panel-head span{color:var(--muted);font-size:13px}
+@media (min-width:1040px){
+  .board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .board[data-view] .panel{display:flex}
+  .tabs{display:none}
+  .tools{margin-left:auto}
+  .tool .t{display:inline}
+}
+@media (min-width:640px){.tool .t{display:inline}}
+
+/* ── 공통 부품 ── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.card.done{background:var(--surface-done);box-shadow:none}
+.card.done .cname{color:var(--muted)}
+.card.warn{background:var(--surface-warn);border-color:var(--line-warn)}
+.chead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+.cname{font-size:16px;font-weight:700}
+.cmeta{color:var(--muted);font-size:12.5px}
+.ctag{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.card.warn .ctag{color:var(--gold-fg);border-color:var(--line-warn)}
+.row{display:flex;align-items:center;gap:10px;min-height:34px}
+.lbl{width:84px;flex:none;font-size:14px}
+.card.done .lbl{color:var(--muted)}
+.gwrap{flex:1;display:flex;align-items:center;gap:8px;min-width:0;max-width:220px}
+.gauge{--n:5;--v:0;position:relative;flex:1;height:13px;border-radius:3px;background:var(--gauge-empty);overflow:hidden}
+.gauge::before{content:"";position:absolute;inset:0 auto 0 0;width:calc(var(--v) * 100%);background:var(--c,var(--guardian))}
+.gauge::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(100% / var(--n) - 2px),var(--seg-gap) calc(100% / var(--n) - 2px) calc(100% / var(--n)))}
+.gval{font-size:12px;color:var(--muted);width:34px;flex:none}
+.spacer{flex:1}
+.step{display:flex;gap:4px}
+.sbtn{width:32px;height:32px;border:1px solid var(--line-strong);background:var(--surface);border-radius:7px;font-weight:700;font-size:17px;line-height:1;display:grid;place-items:center;color:var(--fg)}
+.sbtn:hover{border-color:var(--accent)}
+.chk{width:32px;height:32px;flex:none;border:1.5px solid var(--faint);background:transparent;border-radius:7px;display:grid;place-items:center;padding:0}
+.chk svg{width:18px;height:18px;opacity:0}
+.chk[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.chk[aria-pressed="true"] svg{opacity:1}
+.chk:hover{border-color:var(--accent)}
+
+/* ── 일일: 생기 / 카게·필보 ── */
+.strip{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.life-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.life-top b{font-weight:600}
+.life-top .num{font-weight:700}
+.life-top .eta{margin-left:auto;color:var(--kurzan);font-size:13px;font-weight:600}
+.bar{height:10px;border-radius:999px;background:var(--gauge-empty);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:inherit;background:var(--c,var(--kurzan));transition:width .35s ease}
+.life-edit{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.life-edit input{flex:1;min-width:120px;height:38px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg);color:var(--fg);padding:0 12px;font:inherit}
+.pbtn{height:38px;padding:0 14px;border-radius:9px;border:1.5px solid var(--kurzan);background:transparent;font-weight:700}
+.pbtn:disabled{border-color:var(--line);color:var(--faint);cursor:default}
+.pbtn.ok{background:var(--kurzan);color:#fff;border-color:var(--kurzan)}
+.exp{display:flex;gap:10px;flex-wrap:wrap}
+.exp-item{flex:1 1 160px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.exp-item .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
+.exp-item.chaos .ico{background:linear-gradient(160deg,#6A3FB5,#2C1B57)}
+.exp-item.boss .ico{background:linear-gradient(160deg,#C2552B,#5A1F0D)}
+.exp-item b{flex:1;font-weight:600}
+.exp-item.on b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.note{color:var(--muted);font-size:13px}
+
+/* ── 주간 ── */
+.raids{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.raid{position:relative;border:1px solid var(--line-strong);background:var(--surface);border-radius:10px;padding:9px 10px 8px;text-align:left;display:flex;flex-direction:column;gap:6px;min-width:0}
+.raid:hover{border-color:var(--accent)}
+.raid .rn{font-weight:700;font-size:14px}
+.pips{display:flex;gap:3px}
+.pips i{flex:1;height:5px;border-radius:2px;background:var(--gauge-empty)}
+.pips i.on{background:var(--accent)}
+.raid .rg{font-size:12px;color:var(--gold-fg);font-weight:600}
+.raid.full{background:var(--surface-done);border-color:var(--line)}
+.raid.full .rn{color:var(--muted)}
+.raid.full .rg{color:var(--muted)}
+.goldrow{display:flex;align-items:center;gap:12px}
+.goldrow .bar{flex:1;height:9px}
+.goldrow .bar>i{--c:var(--gold)}
+.goldrow .g{font-weight:700;color:var(--gold-fg);font-size:13.5px;white-space:nowrap}
+.sub{border-top:1px dashed var(--line);padding-top:6px;display:flex;flex-direction:column;gap:2px}
+.total{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.total .goldrow .bar{height:11px}
+.total-top{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:13px}
+
+.cards{display:flex;flex-direction:column;gap:10px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--r);padding:22px;text-align:center;color:var(--muted)}
+.linkbtn{border:0;background:none;color:var(--accent-fg);font-weight:600;padding:0;text-decoration:underline}
+
+/* ── 설정 시트 ── */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(5,8,15,.45);display:flex;justify-content:flex-end}
+.sheet{width:min(520px,100%);height:100%;background:var(--bg);overflow-y:auto;border-left:1px solid var(--line);
+  padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between}
+.sheet-head h2{margin:0;font-size:19px}
+.group h3{margin:0 0 6px;font-size:13px;color:var(--accent-fg);letter-spacing:.02em}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 14px}
+.opt{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+.opt:last-child{border-bottom:0}
+.opt div{flex:1;min-width:0}
+.opt b{display:block;font-weight:600}
+.opt small{color:var(--muted);font-size:12.5px}
+.sw{width:44px;height:26px;border-radius:999px;border:0;background:var(--line-strong);position:relative;flex:none;padding:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw[aria-checked="true"]{background:var(--accent)}
+.sw[aria-checked="true"]::after{transform:translateX(18px)}
+.roster{display:flex;flex-direction:column;gap:8px;padding:10px 0}
+.rrow{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 72px 48px 34px;gap:6px;align-items:center}
+.rrow.head{font-size:11.5px;color:var(--muted)}
+.rrow input{width:100%;min-width:0;height:34px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg);padding:0 8px;font:inherit;font-size:13.5px}
+.del{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--muted);padding:0;font-size:12px}
+.del.arm{border-color:var(--danger);color:var(--danger);width:auto;padding:0 6px}
+.add{height:38px;border:1px dashed var(--line-strong);border-radius:9px;background:none;font-weight:600;color:var(--accent-fg)}
+.fine{font-size:12.5px;color:var(--muted);margin:0}
+/* ── 로그인 ── */
+.login{min-height:100vh;display:grid;place-items:center;padding-block:32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.login-card{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px 24px;display:flex;flex-direction:column;gap:12px}
+.login-card h1{margin:0;font-size:28px;letter-spacing:-.02em}
+.login-card h1 i{font-style:normal;color:var(--accent-fg)}
+.login-card p{margin:0;color:var(--muted);font-size:13.5px}
+.login-card label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);font-weight:600}
+.login-card input{height:44px;border:1px solid var(--line-strong);border-radius:10px;background:var(--bg);color:var(--fg);padding:0 12px;font:inherit;font-size:15px}
+.mainbtn{height:46px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:15px}
+.mainbtn:disabled{opacity:.45;cursor:default}
+.msg{font-size:13px;color:var(--danger)}
+.msg.ok{color:var(--kurzan)}
+.login-links{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px}
+.loading{min-height:60vh;display:grid;place-items:center;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+/* ───────────── Firebase 연결 정보 (Firebase 콘솔 → 웹 앱의 firebaseConfig) ───────────── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBAj13bBs7aCehZWaMvAJjitt-yC7nAcmE",
+  authDomain: "loacheck-6fdfd.firebaseapp.com",
+  projectId: "loacheck-6fdfd",
+  storageBucket: "loacheck-6fdfd.firebasestorage.app",
+  messagingSenderId: "666551983975",
+  appId: "1:666551983975:web:6fc788503e765de0aed9c2",
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const fdb = getFirestore(fbApp);
+
+/* ───────────── 고정 데이터 ───────────── */
+// 레이드 관문별 골드 (패치로 바뀌면 여기 숫자만 수정)
+const RAIDS = {
+  "2막":[5500,11000], "3막":[4000,7000,10000], "4막":[10000,17000],
+  "종막":[11000,21000], "세르카":[13000,19000]
+};
+const raidTitlesFor = lv => lv >= 1710 ? ["4막","종막","세르카"] : ["2막","3막","4막"];
+const DEFAULT_ROSTER = [
+  {id:"c1",name:"라바샥",job:"소울이터",level:1710,chaNum:1},
+  {id:"c2",name:"베샤몔",job:"데모닉",level:1710,chaNum:2},
+  {id:"c3",name:"아크틕",job:"차원술사",level:1710,chaNum:3},
+  {id:"c4",name:"예배댱",job:"발키리",level:1700,chaNum:4},
+  {id:"c5",name:"세라믝",job:"기상술사",level:1710,chaNum:5},
+  {id:"c6",name:"아이언맨이될래요",job:"스카우터",level:1710,chaNum:6},
+];
+const MAX_GAUGE=5, PARADISE_MAX=5, SIGN_MAX=3;
+const MAX_LIFE=11500, LIFE_TICK=30, TICK_MS=600000, LIFE_USE=4240;
+const DAYS=["일","월","화","수","목","금","토"];
+const CHAOS_DAYS=[1,4,6,0], BOSS_DAYS=[2,5,0];
+
+/* ───────────── 로아 시간 (한국 06:00 기준) ───────────── */
+// 게임 날짜 = 1970-01-01부터 센 날 수. 한국(+9h)에서 6시간 빼면 UTC+3h.
+const loaDay = (t=Date.now()) => Math.floor((t + 3*3600e3) / 86400e3);
+const dow = d => ((d + 4) % 7 + 7) % 7;               // 0=일 … 3=수
+const weekStart = d => d - ((dow(d) - 3 + 7) % 7);    // 가장 최근 수요일
+function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}월 ${x.getUTCDate()}일 (${DAYS[dow(d)]})`; }
+
+/* ───────────── 상태 ───────────── */
+function freshState(){
+  return { v:1,
+    settings:{guild:true, paradise:false, medal:false, sign:false, sortOnlyAll:false},
+    roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
+    expedition:{chaos:false, field:false},
+    life:{energy:MAX_LIFE, ts:Date.now()},
+    lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now() };
+}
+function normalize(d){
+  const s=freshState(); if(!d || typeof d!=="object") return s;
+  return { v:1,
+    settings:{...s.settings, ...(d.settings||{})},
+    roster: Array.isArray(d.roster) ? d.roster.map(c=>({id:String(c.id), name:String(c.name??""), job:String(c.job??""), level:Number(c.level)||0, chaNum:Number(c.chaNum)||0})) : s.roster,
+    progress: (d.progress && typeof d.progress==="object") ? d.progress : {},
+    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field},
+    life:{energy:Number(d.life?.energy ?? MAX_LIFE), ts:Number(d.life?.ts || Date.now())},
+    lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
+    lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
+    updatedAt: Number(d.updatedAt)||0 };
+}
+function P(id){
+  const p = S.progress[id] ||= {};
+  p.daily ||= {};
+  for (const k of ["guardian","kurzan"]) p.daily[k] = {done:false,gauge:0,used:0,...(p.daily[k]||{})};
+  p.daily.guild = {done:false,...(p.daily.guild||{})};
+  p.raids ||= {};
+  if(!Number.isFinite(p.paradise)) p.paradise = PARADISE_MAX;
+  p.medal = !!p.medal;
+  if(!Number.isFinite(p.sign)) p.sign = 0;
+  return p;
+}
+
+let S = freshState();
+let localKey = "loacheck-state";
+const ui = { view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
+  authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
+try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
+const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot})); }catch(e){} };
+
+/* ───────────── 초기화 (매일 06시 / 수요일 06시) ───────────── */
+function applyResets(){
+  const today = loaDay(); let changed = false;
+  const passed = today - S.lastDaily;
+  if (passed >= 1){
+    for (const c of S.roster){
+      const p = P(c.id);
+      for (const k of ["guardian","kurzan"]){
+        const h = p.daily[k];
+        const missed = h.done ? passed - 1 : passed;   // 마지막 날 했으면 그날은 휴게 안 쌓임
+        h.gauge = Math.min(MAX_GAUGE, h.gauge + 0.5*missed);
+        h.done = false; h.used = 0;
+      }
+      p.daily.guild.done = false;
+    }
+    S.expedition = {chaos:false, field:false};
+    S.lastDaily = today; changed = true;
+  } else if (passed < 0){ S.lastDaily = today; changed = true; }
+  if (S.lastWeekly < weekStart(today)){
+    for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; }
+    S.lastWeekly = today; changed = true;
+  }
+  return changed;
+}
+
+/* ───────────── 계산 ───────────── */
+function toggleHw(h){
+  if(!h.done){ const cost = h.gauge >= 1 ? 1 : 0; h.gauge -= cost; h.used = cost; h.done = true; }
+  else { h.gauge = Math.min(MAX_GAUGE, h.gauge + (h.used||0)); h.used = 0; h.done = false; }
+}
+function lifeStatus(now=Date.now()){
+  const el = Math.max(0, now - S.life.ts), ticks = Math.floor(el / TICK_MS);
+  const cur = Math.max(0, Math.min(MAX_LIFE, S.life.energy + ticks*LIFE_TICK));
+  const miss = MAX_LIFE - cur;
+  let mins = 0;
+  if (miss > 0){ const need = Math.ceil(miss / LIFE_TICK); mins = Math.ceil((TICK_MS - el % TICK_MS + (need-1)*TICK_MS) / 60000); }
+  return {cur, mins, lastTick: S.life.ts + ticks*TICK_MS};
+}
+function raidsOf(c){
+  const p = P(c.id);
+  return raidTitlesFor(c.level).map(t=>{
+    const gates = RAIDS[t] || [30000];
+    const cleared = Math.min(p.raids[t]||0, gates.length);
+    return {title:t, gates, cleared, full: cleared>=gates.length,
+      earned: gates.slice(0,cleared).reduce((a,b)=>a+b,0), max: gates.reduce((a,b)=>a+b,0)};
+  });
+}
+const dailyDone = c => { const d=P(c.id).daily; return d.guardian.done && d.kurzan.done && (!S.settings.guild || d.guild.done); };
+const weeklyDone = c => { const p=P(c.id); return raidsOf(c).every(r=>r.full) && (!S.settings.paradise||p.paradise===0) && (!S.settings.medal||p.medal) && (!S.settings.sign||p.sign>=SIGN_MAX); };
+const gaugeSum = c => { const d=P(c.id).daily; return ["guardian","kurzan"].reduce((a,k)=>a + d[k].gauge + (S.settings.sortOnlyAll ? d[k].used : 0), 0); };
+const goldOf = c => raidsOf(c).reduce((a,r)=>({earned:a.earned+r.earned, max:a.max+r.max}), {earned:0,max:0});
+const bySlot = (a,b) => a.chaNum-b.chaNum || a.name.localeCompare(b.name,"ko");
+function dailyCmp(a,b){ if(ui.sortSlot) return bySlot(a,b); return (dailyDone(a)-dailyDone(b)) || (gaugeSum(b)-gaugeSum(a)) || a.name.localeCompare(b.name,"ko"); }
+function weeklyCmp(a,b){ if(ui.sortSlot) return bySlot(a,b); const ga=goldOf(a), gb=goldOf(b); return (weeklyDone(a)-weeklyDone(b)) || ((gb.max-gb.earned)-(ga.max-ga.earned)) || a.name.localeCompare(b.name,"ko"); }
+
+// 정렬은 0.4초 늦게 따라감 (체크하자마자 카드가 튀지 않게)
+const dOrd={order:null,timer:null}, wOrd={order:null,timer:null}, wMemo={key:null,order:null};
+function settle(o, target, hold){
+  const same = o.order && o.order.length===target.length && target.every(id=>o.order.includes(id));
+  if(!same){ clearTimeout(o.timer); o.timer=null; o.order=target; return o.order; }
+  if(o.order.join()===target.join()){ clearTimeout(o.timer); o.timer=null; return o.order; }
+  if(!hold){ clearTimeout(o.timer); o.timer=setTimeout(()=>{ o.timer=null; o.order=null; render(); }, 400); }
+  return o.order;
+}
+function weeklyTarget(){
+  // 관문 하나 깰 때마다 움직이지 않도록, 레이드 완료/주간 완료가 바뀔 때만 다시 계산
+  const key = (ui.sortSlot?"s":"g") + JSON.stringify(S.settings) + S.roster.map(c=>c.id+":"+raidsOf(c).map(r=>+r.full).join("")+(+weeklyDone(c))).join("|");
+  if(key!==wMemo.key) wMemo.key=key, wMemo.order=[...S.roster].sort(weeklyCmp).map(c=>c.id);
+  return wMemo.order;
+}
+
+/* ───────────── 저장 & 기기 간 동기화 (Firebase) ───────────── */
+// 저장 위치: users/{계정id}/data/state  — 휴대폰 앱과 같은 문서, 같은 형식
+let docRef=null, unsub=null, initialSynced=false, dirty=false, saving=false, saveAgain=false, lastSavedKey="", saveTimer=null, loadTimer=null, syncState="connecting";
+const SYNC_TEXT = {connecting:"동기화 연결 중…", saving:"저장 중…", synced:"휴대폰과 동기화됨", error:"동기화 실패 · 이 브라우저에는 저장됨", slow:"서버 응답이 늦어요"};
+// 키 순서와 저장 시각을 무시하고 내용만 비교
+const sortKeys = v => Array.isArray(v) ? v.map(sortKeys) : (v && typeof v==="object") ? Object.keys(v).sort().reduce((o,k)=>(o[k]=sortKeys(v[k]),o),{}) : v;
+const keyOf = obj => JSON.stringify(sortKeys({...obj, updatedAt:0}));
+function setSync(s){ syncState=s; const el=document.querySelector("[data-sync]"); if(el){ el.dataset.s=s; el.textContent=SYNC_TEXT[s]; } }
+function saveLocal(){ try{ localStorage.setItem(localKey, JSON.stringify(S)); }catch(e){} }
+function commit(){ S.updatedAt=Date.now(); saveLocal(); render(); dirty=true; clearTimeout(saveTimer); saveTimer=setTimeout(flush, 500); }
+async function flush(){
+  if(!docRef || !initialSynced) return;
+  if(saving){ saveAgain=true; return; }
+  saving=true; setSync("saving");
+  const snapshot = JSON.parse(JSON.stringify(S)), key = keyOf(snapshot);
+  try{ await setDoc(docRef, snapshot); lastSavedKey=key; if(keyOf(S)===key) dirty=false; setSync("synced"); }
+  catch(e){ setSync("error"); setTimeout(()=>{ if(dirty) flush(); }, 3000); }
+  finally{ saving=false; if(saveAgain){ saveAgain=false; flush(); } }
+}
+function onSnap(snap){
+  if(snap.metadata.hasPendingWrites) return;
+  const definitive = !snap.metadata.fromCache;
+  if(definitive) clearTimeout(loadTimer);
+  const first = definitive && !initialSynced;
+  if(definitive) initialSynced = true;
+  if(!snap.exists()){ if(first) flush(); else if(definitive) setSync("synced"); return; }   // 처음이면 이 브라우저 기록을 올림
+  const data = snap.data(), key = keyOf(data);
+  if(key===lastSavedKey){ if(definitive) setSync("synced"); return; }
+  if(!first && (dirty || saving)) return;   // 방금 여기서 바꾼 게 더 최신 → 곧 덮어씀
+  S = normalize(data); lastSavedKey=key; dirty=false; clearTimeout(saveTimer);
+  dOrd.order=wOrd.order=null; wMemo.key=null;
+  const changed = applyResets(); saveLocal(); render();
+  setSync(definitive ? "synced" : "connecting");
+  if(changed) commit();
+}
+onAuthStateChanged(auth, user=>{
+  if(unsub){ unsub(); unsub=null; }
+  clearTimeout(loadTimer); clearTimeout(saveTimer);
+  ui.authReady = true; ui.user = user; ui.busy = false;
+  docRef = null; initialSynced = false; dirty = false; saving = false; lastSavedKey = "";
+  if(user){
+    localKey = "loacheck-state-" + user.uid;
+    try{ S = normalize(JSON.parse(localStorage.getItem(localKey))); }catch(e){ S = freshState(); }
+    if(applyResets()) saveLocal();
+    dOrd.order=wOrd.order=null; wMemo.key=null;
+    docRef = doc(fdb, "users", user.uid, "data", "state");
+    setSync("connecting");
+    loadTimer = setTimeout(()=>setSync("slow"), 10000);
+    unsub = onSnapshot(docRef, onSnap, ()=>{ clearTimeout(loadTimer); setSync("error"); });
+  }
+  render();
+});
+
+const AUTH_MSG = {
+  "auth/invalid-credential":"이메일 또는 비밀번호가 맞지 않아요.", "auth/wrong-password":"이메일 또는 비밀번호가 맞지 않아요.",
+  "auth/user-not-found":"가입되지 않은 이메일이에요.", "auth/invalid-email":"이메일 형식이 올바르지 않아요.",
+  "auth/email-already-in-use":"이미 가입된 이메일이에요. 로그인해 주세요.", "auth/weak-password":"비밀번호는 6자 이상이어야 해요.",
+  "auth/too-many-requests":"시도가 너무 많아요. 잠시 후 다시 해 주세요.", "auth/network-request-failed":"인터넷 연결을 확인해 주세요.",
+};
+const authMsg = e => AUTH_MSG[e?.code] || "로그인에 실패했어요. 잠시 후 다시 시도해 주세요.";
+async function doLogin(){
+  if(ui.busy || !ui.loginEmail.includes("@") || ui.loginPw.length<6) return;
+  ui.busy=true; ui.loginMsg=""; render();
+  try{
+    if(ui.signUp) await createUserWithEmailAndPassword(auth, ui.loginEmail.trim(), ui.loginPw);
+    else await signInWithEmailAndPassword(auth, ui.loginEmail.trim(), ui.loginPw);
+    ui.loginPw="";
+  }catch(e){ ui.busy=false; ui.loginMsg=authMsg(e); ui.loginOk=false; render(); }
+}
+async function doReset(){
+  if(!ui.loginEmail.includes("@")){ ui.loginMsg="이메일을 먼저 입력해 주세요."; ui.loginOk=false; return render(); }
+  try{ await sendPasswordResetEmail(auth, ui.loginEmail.trim()); ui.loginMsg="비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요."; ui.loginOk=true; }
+  catch(e){ ui.loginMsg=authMsg(e); ui.loginOk=false; }
+  render();
+}
+
+/* ───────────── 화면 그리기 ───────────── */
+const esc = s => String(s).replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const fmt = n => n.toLocaleString("ko-KR");
+const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const ICON = {
+  edit:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`,
+  slot:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>`,
+  gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>`
+};
+const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
+const gauge = (v, n, color) => `<div class="gauge" style="--v:${Math.max(0,Math.min(1,v/n))};--n:${n};--c:var(${color})"></div>`;
+
+function header(){
+  return `<header class="top"><div class="top-in">
+    <div class="brand"><b>로아<i>췍</i></b><span class="sync" data-sync data-s="${syncState}">${SYNC_TEXT[syncState]}</span></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="${ui.view==="daily"}" data-act="view" data-v="daily">일일</button>
+      <button role="tab" aria-selected="${ui.view==="weekly"}" data-act="view" data-v="weekly">주간</button>
+    </div>
+    <div class="tools">
+      <button class="tool" aria-pressed="${ui.edit}" data-act="edit" aria-label="수정 모드">${ICON.edit}<span class="t">수정</span></button>
+      <button class="tool" aria-pressed="${ui.sortSlot}" data-act="slot" aria-label="캐릭터 선택창 순서">${ICON.slot}<span class="t">선택창 순</span></button>
+      <button class="tool" data-act="settings" aria-label="설정">${ICON.gear}<span class="t">설정</span></button>
+    </div>
+  </div></header>`;
+}
+
+function dailyPanel(){
+  const today = loaDay(), d = dow(today), life = lifeStatus();
+  const eta = life.mins<=0 ? "가득 참" : life.mins>=60 ? `${Math.floor(life.mins/60)}시간 ${life.mins%60}분 뒤 가득` : `${life.mins}분 뒤 가득`;
+  const showChaos = CHAOS_DAYS.includes(d), showBoss = BOSS_DAYS.includes(d);
+  const lifeEdit = ui.edit ? `<div class="life-edit">
+      <input id="life-input" inputmode="numeric" placeholder="현재 생기 입력" value="${esc(ui.lifeInput)}" aria-label="현재 생기">
+      <button class="pbtn ${ui.flash==="use"?"ok":""}" data-act="life-use">${ui.flash==="use"?"반영됨":"-"+fmt(LIFE_USE)}</button>
+      <button class="pbtn ${ui.flash==="save"?"ok":""}" id="life-save" data-act="life-save" ${ui.lifeInput||ui.flash==="save"?"":"disabled"}>${ui.flash==="save"?"저장됨":"저장"}</button>
+    </div>` : "";
+  const exp = (!showChaos && !showBoss) ? `<p class="note" style="margin:0">오늘은 카오스 게이트와 필드 보스가 없어요.</p>` :
+    `<div class="exp">
+      ${showChaos ? `<div class="exp-item chaos ${S.expedition.chaos?"on":""}"><span class="ico">카게</span><b>카오스 게이트</b>${chk(S.expedition.chaos,"exp",'data-k="chaos"',"카오스 게이트 완료")}</div>` : ""}
+      ${showBoss ? `<div class="exp-item boss ${S.expedition.field?"on":""}"><span class="ico">필보</span><b>필드 보스</b>${chk(S.expedition.field,"exp",'data-k="field"',"필드 보스 완료")}</div>` : ""}
+    </div>`;
+
+  const order = settle(dOrd, [...S.roster].sort(dailyCmp).map(c=>c.id), ui.edit);
+  const byId = Object.fromEntries(S.roster.map(c=>[c.id,c]));
+  const cards = order.map(id=>byId[id]).filter(Boolean).map(dailyCard).join("");
+
+  return `<section class="panel panel-daily">
+    <div class="panel-head"><h2>일일 숙제</h2><span class="num">${dayLabel(today)}</span></div>
+    <div class="strip">
+      <div class="life-top"><b>생활의 기운</b><span class="num">${fmt(life.cur)} <span class="note">/ ${fmt(MAX_LIFE)}</span></span><span class="eta">${eta}</span></div>
+      <div class="bar"><i style="width:${life.cur/MAX_LIFE*100}%"></i></div>
+      ${lifeEdit}
+    </div>
+    <div class="strip">${exp}</div>
+    <div class="cards">${cards || emptyRoster()}</div>
+  </section>`;
+}
+
+function dailyCard(c){
+  const d = P(c.id).daily, done = dailyDone(c);
+  const warn = ["guardian","kurzan"].some(k=>d[k].gauge>=MAX_GAUGE && !d[k].done);
+  const row = (k, label, color) => {
+    const h = d[k];
+    return `<div class="row"><span class="lbl">${label}</span>
+      <div class="gwrap">${gauge(h.gauge, MAX_GAUGE, color)}<span class="gval num">${h.gauge%1?h.gauge.toFixed(1):h.gauge}칸</span></div>
+      ${ui.edit ? `<div class="step"><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="-0.5" aria-label="${label} 휴게 줄이기">−</button><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="0.5" aria-label="${label} 휴게 늘리기">+</button></div>` : ""}
+      <span class="spacer"></span>${chk(h.done,"hw",`data-id="${c.id}" data-k="${k}"`,`${c.name} ${label} 완료`)}</div>`;
+  };
+  return `<article class="card ${done?"done":""} ${warn?"warn":""}" data-card="d-${c.id}">
+    <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${c.level}+</span>${warn?`<span class="ctag">휴게 가득</span>`:done?`<span class="ctag">완료</span>`:""}</div>
+    ${row("guardian","가디언 토벌","--guardian")}
+    ${row("kurzan","쿠르잔 전선","--kurzan")}
+    ${S.settings.guild ? `<div class="row"><span class="lbl">길드 출석</span><span class="spacer"></span>${chk(d.guild.done,"hw",`data-id="${c.id}" data-k="guild"`,`${c.name} 길드 출석 완료`)}</div>` : ""}
+  </article>`;
+}
+
+function weeklyPanel(){
+  const order = settle(wOrd, weeklyTarget(), false);
+  const byId = Object.fromEntries(S.roster.map(c=>[c.id,c]));
+  const total = S.roster.reduce((a,c)=>{ const g=goldOf(c); return {earned:a.earned+g.earned, max:a.max+g.max}; }, {earned:0,max:0});
+  const cards = order.map(id=>byId[id]).filter(Boolean).map(weeklyCard).join("");
+  const start = weekStart(loaDay());
+  return `<section class="panel panel-weekly">
+    <div class="panel-head"><h2>주간 숙제</h2><span class="num">${dayLabel(start).replace(/ \(.\)/,"")} 수요일부터</span></div>
+    <div class="total">
+      <div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
+      <div class="goldrow"><div class="bar"><i style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">${fmt(total.earned)} G</span></div>
+    </div>
+    <div class="cards">${cards || emptyRoster()}</div>
+  </section>`;
+}
+
+function weeklyCard(c){
+  const p = P(c.id), raids = raidsOf(c), g = goldOf(c), done = weeklyDone(c);
+  const tiles = raids.map(r=>`<button class="raid ${r.full?"full":""}" data-act="raid" data-id="${c.id}" data-r="${esc(r.title)}"
+      aria-label="${esc(c.name)} ${esc(r.title)} ${r.cleared}/${r.gates.length}관문. ${r.full?"누르면 0관문으로 되돌림":"누르면 다음 관문 클리어"}">
+      <span class="rn">${esc(r.title)}</span>
+      <span class="pips">${r.gates.map((_,i)=>`<i class="${i<r.cleared?"on":""}"></i>`).join("")}</span>
+      <span class="rg num">${r.full ? "완료" : `${r.cleared+1}관 +${fmt(r.gates[r.cleared])}`}</span>
+    </button>`).join("");
+  const extras = [];
+  if(S.settings.paradise) extras.push(`<div class="row"><span class="lbl">낙원:천상</span><div class="gwrap">${gauge(p.paradise,PARADISE_MAX,"--guardian")}<span class="gval num">${p.paradise}</span></div><span class="spacer"></span>
+      <div class="step"><button class="sbtn" data-act="para" data-id="${c.id}" data-v="0" aria-label="낙원 0으로">0</button><button class="sbtn" data-act="para" data-id="${c.id}" data-d="-1" aria-label="낙원 줄이기">−</button><button class="sbtn" data-act="para" data-id="${c.id}" data-d="1" aria-label="낙원 늘리기">+</button></div></div>`);
+  if(S.settings.medal) extras.push(`<div class="row"><span class="lbl">클리어 메달</span><span class="note">교환</span><span class="spacer"></span>${chk(p.medal,"medal",`data-id="${c.id}"`,`${c.name} 클리어 메달 교환 완료`)}</div>`);
+  if(S.settings.sign) extras.push(`<div class="row"><span class="lbl">이정표 미션</span><div class="gwrap">${gauge(p.sign,SIGN_MAX,"--kurzan")}<span class="gval num">${p.sign}/${SIGN_MAX}</span></div><span class="spacer"></span>
+      <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
+  return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
+    <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${c.level}+</span>${done?`<span class="ctag">완료</span>`:""}</div>
+    <div class="raids">${tiles}</div>
+    <div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>
+    ${extras.length ? `<div class="sub">${extras.join("")}</div>` : ""}
+  </article>`;
+}
+
+const emptyRoster = () => `<div class="empty">등록된 캐릭터가 없어요. <button class="linkbtn" data-act="settings">설정</button>에서 캐릭터를 추가하세요.</div>`;
+
+function settingsSheet(){
+  if(!ui.settings) return "";
+  const sw = (key, title, desc) => `<div class="opt"><div><b>${title}</b><small>${desc}</small></div><button class="sw" role="switch" aria-checked="${!!S.settings[key]}" aria-label="${title}" data-act="setting" data-k="${key}"></button></div>`;
+  const rows = [...S.roster].sort(bySlot).map(c=>`<div class="rrow">
+      <input id="r-name-${c.id}" data-field="name" data-id="${c.id}" value="${esc(c.name)}" aria-label="캐릭터 이름">
+      <input id="r-job-${c.id}" data-field="job" data-id="${c.id}" value="${esc(c.job)}" aria-label="직업">
+      <input id="r-level-${c.id}" data-field="level" data-id="${c.id}" value="${c.level}" inputmode="numeric" aria-label="아이템 레벨">
+      <input id="r-chaNum-${c.id}" data-field="chaNum" data-id="${c.id}" value="${c.chaNum}" inputmode="numeric" aria-label="선택창 순서">
+      <button class="del ${ui.armDel===c.id?"arm":""}" data-act="del" data-id="${c.id}" aria-label="${esc(c.name)} 삭제">${ui.armDel===c.id?"확인":"삭제"}</button>
+    </div>`).join("");
+  return `<div class="scrim" data-act="close-bg"><aside class="sheet" role="dialog" aria-modal="true" aria-label="설정">
+    <div class="sheet-head"><h2>설정</h2><button class="tool" data-act="close">닫기</button></div>
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">계정</h3><div class="group">
+      <div class="opt"><div><b>${esc(ui.user?.email||"")}</b><small>${SYNC_TEXT[syncState]}</small></div><button class="tool" data-act="logout">로그아웃</button></div>
+    </div></div>
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">일일 숙제</h3><div class="group">
+      ${sw("guild","길드 출석","일일 숙제에 길드 출석을 포함합니다.")}
+    </div></div>
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">주간 숙제</h3><div class="group">
+      ${sw("paradise","낙원:천상","주간 숙제에 낙원:천상 게이지를 넣습니다.")}
+      ${sw("medal","클리어 메달 교환","교환했는지 체크하는 칸을 넣습니다.")}
+      ${sw("sign","이정표 미션","이정표 미션 3단계를 넣습니다.")}
+    </div></div>
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">정렬</h3><div class="group">
+      ${sw("sortOnlyAll","모든 숙제를 했을 때만 정렬","켜면 일일 숙제를 다 끝내기 전까지 카드가 제자리를 지킵니다.")}
+    </div></div>
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">내 원정대</h3><div class="group"><div class="roster">
+      <div class="rrow head"><span>이름</span><span>직업</span><span>레벨</span><span>순서</span><span></span></div>
+      ${rows}
+      <button class="add" data-act="add">+ 캐릭터 추가</button>
+      <p class="fine">레벨 1710 이상은 4막·종막·세르카, 미만은 2막·3막·4막이 주간 레이드로 잡힙니다. 순서는 캐릭터 선택창 순서예요.</p>
+    </div></div></div>
+    <p class="fine">기록은 로그인한 계정에 저장되어 휴대폰 앱과 이 사이트에서 같은 내용이 보입니다.</p>
+  </aside></div>`;
+}
+
+function loginView(){
+  const can = ui.loginEmail.includes("@") && ui.loginPw.length>=6 && !ui.busy;
+  return `<div class="login"><div class="login-card">
+    <h1>로아<i>췍</i></h1>
+    <p>${ui.signUp ? "새 계정을 만들어요. 휴대폰 앱에서도 같은 이메일로 로그인하면 기록이 공유돼요." : "휴대폰 앱과 같은 이메일로 로그인하면 숙제 기록이 자동으로 맞춰져요."}</p>
+    <label>이메일<input id="login-email" type="email" autocomplete="username" value="${esc(ui.loginEmail)}"></label>
+    <label>비밀번호 (6자 이상)<input id="login-pw" type="password" autocomplete="${ui.signUp?"new-password":"current-password"}" value="${esc(ui.loginPw)}"></label>
+    ${ui.loginMsg ? `<div class="msg ${ui.loginOk?"ok":""}">${esc(ui.loginMsg)}</div>` : ""}
+    <button class="mainbtn" id="login-submit" data-act="login-submit" ${can?"":"disabled"}>${ui.busy ? "잠시만요…" : ui.signUp ? "가입하고 시작하기" : "로그인"}</button>
+    <div class="login-links">
+      <button class="linkbtn" data-act="login-toggle">${ui.signUp ? "이미 계정이 있어요 → 로그인" : "처음이에요 → 회원가입"}</button>
+      ${ui.signUp ? "" : `<button class="linkbtn" style="color:var(--muted)" data-act="login-reset">비밀번호를 잊었어요</button>`}
+    </div>
+  </div></div>`;
+}
+
+function render(){
+  const app = document.getElementById("app");
+  if(!ui.authReady || !ui.user){
+    const a0=document.activeElement, id0=a0&&a0.id;
+    app.innerHTML = !ui.authReady ? `<div class="loading">불러오는 중…</div>` : loginView();
+    if(id0){ const el=document.getElementById(id0); if(el){ el.focus({preventScroll:true}); try{ const n=el.value.length; el.setSelectionRange(n,n); }catch(e){} } }
+    return;
+  }
+  const active = document.activeElement, aid = active && active.id, sel = aid && active.selectionStart != null ? [active.selectionStart, active.selectionEnd] : null;
+  const first = new Map();
+  app.querySelectorAll("[data-card]").forEach(el=>first.set(el.dataset.card, el.getBoundingClientRect().top));
+  const sheetScroll = app.querySelector(".sheet")?.scrollTop || 0;
+
+  app.innerHTML = header() + `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>` + settingsSheet();
+
+  if(sheetScroll) app.querySelector(".sheet").scrollTop = sheetScroll;
+  if(aid){ const el=document.getElementById(aid); if(el){ el.focus({preventScroll:true}); if(sel && el.setSelectionRange) try{ el.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
+  if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    app.querySelectorAll("[data-card]").forEach(el=>{
+      const f = first.get(el.dataset.card); if(f==null) return;
+      const dy = f - el.getBoundingClientRect().top;
+      if(Math.abs(dy) > 1) el.animate([{transform:`translateY(${dy}px)`},{transform:"none"}], {duration:400, easing:"cubic-bezier(.2,.8,.2,1)"});
+    });
+  }
+}
+
+/* ───────────── 조작 ───────────── */
+const byIdS = id => S.roster.find(c=>c.id===id);
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const a = b.dataset.act, id = b.dataset.id;
+  if(a==="close-bg" && e.target!==b) return;   // 시트 안쪽 클릭은 무시
+  switch(a){
+    case "login-submit": doLogin(); break;
+    case "login-toggle": ui.signUp=!ui.signUp; ui.loginMsg=""; render(); break;
+    case "login-reset": doReset(); break;
+    case "logout": ui.settings=false; signOut(auth); break;
+    case "view": ui.view=b.dataset.v; saveUi(); render(); break;
+    case "edit": ui.edit=!ui.edit; ui.lifeInput=""; render(); break;
+    case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
+    case "settings": ui.settings=true; ui.armDel=null; render(); break;
+    case "close": case "close-bg": ui.settings=false; ui.armDel=null; render(); break;
+    case "hw": toggleHw(P(id).daily[b.dataset.k]); commit(); break;
+    case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
+    case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
+    case "raid": { const c=byIdS(id), p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n); p.raids[t]= cur>=n ? 0 : cur+1; commit(); break; }
+    case "para": { const p=P(id); p.paradise = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); commit(); break; }
+    case "medal": P(id).medal=!P(id).medal; commit(); break;
+    case "sign": { const p=P(id); p.sign=Math.max(0,Math.min(SIGN_MAX,p.sign+Number(b.dataset.d))); commit(); break; }
+    case "setting": S.settings[b.dataset.k]=!S.settings[b.dataset.k]; commit(); break;
+    case "life-use": { const now=Date.now(), st=lifeStatus(now); S.life={energy:Math.max(0,st.cur-LIFE_USE), ts: st.cur>=MAX_LIFE?now:st.lastTick}; flash("use"); commit(); break; }
+    case "life-save": { const v=parseInt(ui.lifeInput,10); if(!Number.isFinite(v)) break; S.life={energy:Math.max(0,Math.min(MAX_LIFE,v)), ts:Date.now()}; ui.lifeInput=""; flash("save"); commit(); break; }
+    case "add": { const id2="c"+Date.now().toString(36); const next=Math.max(0,...S.roster.map(c=>c.chaNum))+1; S.roster.push({id:id2,name:"새 캐릭터",job:"",level:1710,chaNum:next}); commit(); setTimeout(()=>{ const el=document.getElementById("r-name-"+id2); el&&el.select(); },0); break; }
+    case "del": if(ui.armDel!==id){ ui.armDel=id; render(); } else { S.roster=S.roster.filter(c=>c.id!==id); delete S.progress[id]; ui.armDel=null; commit(); } break;
+  }
+});
+let flashTimer=null;
+function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ ui.flash=null; render(); },800); }
+
+document.addEventListener("input", e=>{
+  if(e.target.id==="login-email" || e.target.id==="login-pw"){
+    if(e.target.id==="login-email") ui.loginEmail=e.target.value; else ui.loginPw=e.target.value;
+    const b=document.getElementById("login-submit"); if(b && !ui.busy) b.disabled = !(ui.loginEmail.includes("@") && ui.loginPw.length>=6);
+    return;
+  }
+  if(e.target.id==="life-input"){
+    const v = e.target.value.replace(/\D/g,"").slice(0,5);
+    if(v!==e.target.value) e.target.value=v;
+    ui.lifeInput=v; const s=document.getElementById("life-save"); if(s && ui.flash!=="save") s.disabled=!v;
+  }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && (e.target.id==="login-email" || e.target.id==="login-pw")){ doLogin(); return; }
+  if(e.key==="Enter" && e.target.id==="life-input" && ui.lifeInput){ document.getElementById("life-save")?.click(); }
+  if(e.key==="Enter" && e.target.dataset?.field){ e.target.blur(); }
+  if(e.key==="Escape"){ if(ui.settings){ ui.settings=false; render(); } else if(ui.edit){ ui.edit=false; render(); } }
+});
+document.addEventListener("change", e=>{
+  const f=e.target.dataset?.field; if(!f) return;
+  const c=byIdS(e.target.dataset.id); if(!c) return;
+  if(f==="level"||f==="chaNum"){ const n=parseInt(e.target.value,10); if(!Number.isFinite(n)) { e.target.value=c[f]; return; } c[f]=n; }
+  else { const v=e.target.value.trim(); if(f==="name" && !v){ e.target.value=c.name; return; } c[f]=v; }
+  commit();
+});
+
+// 1분마다: 06시 초기화 확인 + 생기 회복 반영. 앱으로 돌아올 때도 즉시 확인.
+function tick(){ if(!ui.user) return; if(applyResets()) commit(); else render(); }
+setInterval(tick, 60000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
+
+render();
+</script>
+</body>
+</html>
