@@ -131,6 +131,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .pbtn:disabled{border-color:var(--line);color:var(--faint);cursor:default}
 .pbtn.ok{background:var(--kurzan);color:#fff;border-color:var(--kurzan)}
 .exp{display:flex;gap:10px;flex-wrap:wrap}
+.exp-head{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:0;text-align:left;color:var(--muted);font-weight:600;font-size:13.5px}
+.exp-head span{flex:1}
+.exp-head svg{width:18px;height:18px;transition:transform .2s}
+.exp-head[aria-expanded="true"] svg{transform:rotate(180deg)}
+.exp-head:disabled{cursor:default}
+.reddot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:none}
 .exp-item{flex:1 1 160px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .exp-item .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
 .exp-item.chaos .ico{background:linear-gradient(160deg,#6A3FB5,#2C1B57)}
@@ -302,7 +308,7 @@ function P(id){
 
 let S = freshState();
 let localKey = "loacheck-state";
-const ui = { view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
+const ui = { expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
 try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
@@ -558,7 +564,17 @@ function dailyPanel(){
       <button class="pbtn ${ui.flash==="use"?"ok":""}" data-act="life-use">${ui.flash==="use"?"반영됨":"-"+fmt(LIFE_USE)}</button>
       <button class="pbtn ${ui.flash==="save"?"ok":""}" id="life-save" data-act="life-save" ${ui.lifeInput||ui.flash==="save"?"":"disabled"}>${ui.flash==="save"?"저장됨":"저장"}</button>
     </div>` : "";
-  const exp = (!showChaos && !showBoss) ? `<p class="note" style="margin:0">오늘은 카오스 게이트와 필드 보스가 없어요.</p>` :
+  // 카게·필보: 전부 끝내면 자동으로 접힘 (앱 ExpeditionContentsCard와 같은 동작)
+  const noContent = !showChaos && !showBoss;
+  const expDone = (!showChaos || S.expedition.chaos) && (!showBoss || S.expedition.field);
+  const expKey = today + ":" + expDone;
+  if(ui.expKey !== expKey){ ui.expKey = expKey; ui.expOpen = !expDone; }   // 날짜나 완료 여부가 바뀌면 자동으로 펼치기/접기
+  const expTitle = noContent ? "오늘은 카오스 게이트와 필드 보스가 없어요" : expDone ? "오늘의 카오스 게이트 & 필드 보스를 완료했어요" : "오늘의 카오스 게이트 & 필드 보스";
+  const expHead = `<button class="exp-head" data-act="exp-toggle" aria-expanded="${!noContent && ui.expOpen}" ${noContent?"disabled":""}>
+      <span>${expTitle}</span>${!noContent && !ui.expOpen && !expDone ? `<i class="reddot" aria-label="안 한 숙제 있음"></i>` : ""}
+      ${noContent ? "" : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`}
+    </button>`;
+  const exp = (noContent || !ui.expOpen) ? expHead : expHead +
     `<div class="exp">
       ${showChaos ? `<div class="exp-item chaos ${S.expedition.chaos?"on":""}"><span class="ico">카게</span><b>카오스 게이트</b>${chk(S.expedition.chaos,"exp",'data-k="chaos"',"카오스 게이트 완료")}</div>` : ""}
       ${showBoss ? `<div class="exp-item boss ${S.expedition.field?"on":""}"><span class="ico">필보</span><b>필드 보스</b>${chk(S.expedition.field,"exp",'data-k="field"',"필드 보스 완료")}</div>` : ""}
@@ -750,6 +766,7 @@ document.addEventListener("click", e=>{
     case "hw": toggleHw(P(id).daily[b.dataset.k]); commit(); break;
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
+    case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
     case "raid": { const c=byIdS(id), p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n); p.raids[t]= cur>=n ? 0 : cur+1; commit(); break; }
     case "para": { const p=P(id); p.paradise = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); commit(); break; }
     case "medal": P(id).medal=!P(id).medal; commit(); break;
