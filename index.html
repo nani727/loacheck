@@ -269,7 +269,7 @@ function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}�
 /* ───────────── 상태 ───────────── */
 function freshState(){
   return { v:1,
-    settings:{guild:true, paradise:false, medal:false, sign:false, sortOnlyAll:false},
+    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
     expedition:{chaos:false, field:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
@@ -355,9 +355,14 @@ function raidsOf(c){
       earned: gates.slice(0,cleared).reduce((a,b)=>a+b,0), max: gates.reduce((a,b)=>a+b,0)};
   });
 }
-const dailyDone = c => { const d=P(c.id).daily; return d.guardian.done && d.kurzan.done && (!S.settings.guild || d.guild.done); };
-const weeklyDone = c => { const p=P(c.id); return raidsOf(c).every(r=>r.full) && (!S.settings.paradise||p.paradise===0) && (!S.settings.medal||p.medal) && (!S.settings.sign||p.sign>=SIGN_MAX); };
-const gaugeSum = c => { const d=P(c.id).daily; return ["guardian","kurzan"].reduce((a,k)=>a + d[k].gauge + (S.settings.sortOnlyAll ? d[k].used : 0), 0); };
+// 설정의 '표시할 숙제'에서 켠 것만 (앱 AppSettings.showsDaily / visibleGaugeHomeworks와 같음)
+const shownGauge = () => ["guardian","kurzan"].filter(k=>S.settings[k]!==false);
+const shownDaily = () => [...shownGauge(), ...(S.settings.guild ? ["guild"] : [])];
+const dailyDone = c => { const d=P(c.id).daily; return shownDaily().every(k=>d[k].done); };
+const weeklyDone = c => { const p=P(c.id); return (S.settings.raids===false || raidsOf(c).every(r=>r.full)) && (!S.settings.paradise||p.paradise===0) && (!S.settings.medal||p.medal) && (!S.settings.sign||p.sign>=SIGN_MAX); };
+const gaugeSum = c => { const d=P(c.id).daily; return shownGauge().reduce((a,k)=>a + d[k].gauge + (S.settings.sortOnlyAll ? d[k].used : 0), 0); };
+// 아이템 레벨 표시: 1712.50 (앱 formatItemLevel과 같음)
+const fmtLv = v => (Number(v)||0).toFixed(2);
 const goldOf = c => raidsOf(c).reduce((a,r)=>({earned:a.earned+r.earned, max:a.max+r.max}), {earned:0,max:0});
 const bySlot = (a,b) => a.chaNum-b.chaNum || a.name.localeCompare(b.name,"ko");
 function dailyCmp(a,b){ if(ui.sortSlot) return bySlot(a,b); return (dailyDone(a)-dailyDone(b)) || (gaugeSum(b)-gaugeSum(a)) || a.name.localeCompare(b.name,"ko"); }
@@ -475,7 +480,7 @@ async function fetchSiblings(name){
   const data = await res.json().catch(()=>null);
   if(!Array.isArray(data) || !data.length) throw new Error("캐릭터를 찾을 수 없어요. 이름을 확인해 주세요.");
   return data.map(o=>({server:String(o.ServerName||""), name:String(o.CharacterName||""), job:String(o.CharacterClassName||""),
-    level: Math.floor(parseFloat(String(o.ItemAvgLevel||"0").replace(/,/g,""))||0)})).sort((a,b)=>b.level-a.level);
+    level: parseFloat(String(o.ItemAvgLevel||"0").replace(/,/g,""))||0})).sort((a,b)=>b.level-a.level);
 }
 const newId = () => "c" + Math.random().toString(36).slice(2,12);
 // 체크한 캐릭터는 추가/갱신, 불러온 목록에 있지만 체크 해제한 캐릭터는 제거, 목록에 없는 캐릭터는 그대로
@@ -577,7 +582,7 @@ function dailyPanel(){
 
 function dailyCard(c){
   const d = P(c.id).daily, done = dailyDone(c);
-  const warn = ["guardian","kurzan"].some(k=>d[k].gauge>=MAX_GAUGE && !d[k].done);
+  const warn = shownGauge().some(k=>d[k].gauge>=MAX_GAUGE && !d[k].done);
   const row = (k, label, color) => {
     const h = d[k];
     return `<div class="row"><span class="lbl">${label}</span>
@@ -586,9 +591,9 @@ function dailyCard(c){
       <span class="spacer"></span>${chk(h.done,"hw",`data-id="${c.id}" data-k="${k}"`,`${c.name} ${label} 완료`)}</div>`;
   };
   return `<article class="card ${done?"done":""} ${warn?"warn":""}" data-card="d-${c.id}">
-    <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${c.level}+</span>${warn?`<span class="ctag">휴게 가득</span>`:done?`<span class="ctag">완료</span>`:""}</div>
-    ${row("guardian","가디언 토벌","--guardian")}
-    ${row("kurzan","쿠르잔 전선","--kurzan")}
+    <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${warn?`<span class="ctag">휴게 가득</span>`:done?`<span class="ctag">완료</span>`:""}</div>
+    ${S.settings.guardian!==false ? row("guardian","가디언 토벌","--guardian") : ""}
+    ${S.settings.kurzan!==false ? row("kurzan","쿠르잔 전선","--kurzan") : ""}
     ${S.settings.guild ? `<div class="row"><span class="lbl">길드 출석</span><span class="spacer"></span>${chk(d.guild.done,"hw",`data-id="${c.id}" data-k="guild"`,`${c.name} 길드 출석 완료`)}</div>` : ""}
   </article>`;
 }
@@ -601,10 +606,10 @@ function weeklyPanel(){
   const start = weekStart(loaDay());
   return `<section class="panel panel-weekly">
     <div class="panel-head"><h2>주간 숙제</h2><span class="num">${dayLabel(start).replace(/ \(.\)/,"")} 수요일부터</span></div>
-    <div class="total">
+    ${S.settings.raids===false ? "" : `<div class="total">
       <div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
       <div class="goldrow"><div class="bar"><i style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">${fmt(total.earned)} G</span></div>
-    </div>
+    </div>`}
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
 }
@@ -624,9 +629,9 @@ function weeklyCard(c){
   if(S.settings.sign) extras.push(`<div class="row"><span class="lbl">이정표 미션</span><div class="gwrap">${gauge(p.sign,SIGN_MAX,"--kurzan")}<span class="gval num">${p.sign}/${SIGN_MAX}</span></div><span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
   return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
-    <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${c.level}+</span>${done?`<span class="ctag">완료</span>`:""}</div>
-    <div class="raids">${tiles}</div>
-    <div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>
+    <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${done?`<span class="ctag">완료</span>`:""}</div>
+    ${S.settings.raids===false ? "" : `<div class="raids">${tiles}</div>
+    <div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>`}
     ${extras.length ? `<div class="sub">${extras.join("")}</div>` : ""}
   </article>`;
 }
@@ -639,7 +644,7 @@ function settingsSheet(){
   const rows = [...S.roster].sort(bySlot).map(c=>`<div class="rrow">
       <input id="r-name-${c.id}" data-field="name" data-id="${c.id}" value="${esc(c.name)}" aria-label="캐릭터 이름">
       <input id="r-job-${c.id}" data-field="job" data-id="${c.id}" value="${esc(c.job)}" aria-label="직업">
-      <input id="r-level-${c.id}" data-field="level" data-id="${c.id}" value="${c.level}" inputmode="numeric" aria-label="아이템 레벨">
+      <input id="r-level-${c.id}" data-field="level" data-id="${c.id}" value="${c.level}" inputmode="decimal" aria-label="아이템 레벨">
       <input id="r-chaNum-${c.id}" data-field="chaNum" data-id="${c.id}" value="${c.chaNum}" inputmode="numeric" aria-label="선택창 순서">
       <button class="del ${ui.armDel===c.id?"arm":""}" data-act="del" data-id="${c.id}" aria-label="${esc(c.name)} 삭제">${ui.armDel===c.id?"확인":"삭제"}</button>
     </div>`).join("");
@@ -653,16 +658,18 @@ function settingsSheet(){
       <div class="api-row"><input id="api-key" type="password" autocomplete="off" placeholder="API 키 붙여넣기" value="${esc(ui.apiKeyInput)}"><button class="tool" data-act="api-save" ${ui.apiKeyInput?"":"disabled"}>저장</button></div>
       <div class="api-row"><input id="api-name" placeholder="내 캐릭터 이름 하나" value="${esc(ui.apiName)}"><button class="tool" data-act="api-search" ${S.apiKey&&!ui.apiBusy?"":"disabled"}>원정대 불러오기</button><button class="tool" data-act="api-refresh" ${S.apiKey&&!ui.apiBusy&&S.roster.length?"":"disabled"}>레벨 새로고침</button></div>
       ${ui.apiMsg ? `<div class="api-msg ${ui.apiErr?"err":""}">${esc(ui.apiMsg)}</div>` : ""}
-      ${ui.apiFound ? `<div class="found">${ui.apiFound.map(f=>`<label><input type="checkbox" data-api-check="${esc(f.name)}" ${ui.apiChecked.has(f.name)?"checked":""}><span><b>${esc(f.name)}</b><small>${esc(f.job)} · Lv.${f.level} · ${esc(f.server)}</small></span></label>`).join("")}</div>
+      ${ui.apiFound ? `<div class="found">${ui.apiFound.map(f=>`<label><input type="checkbox" data-api-check="${esc(f.name)}" ${ui.apiChecked.has(f.name)?"checked":""}><span><b>${esc(f.name)}</b><small>${esc(f.job)} · Lv.${fmtLv(f.level)} · ${esc(f.server)}</small></span></label>`).join("")}</div>
         <div class="api-row"><button class="mainbtn" style="flex:1" data-act="api-apply">적용</button><button class="tool" data-act="api-cancel">취소</button></div>` : ""}
     </div></div></div>
-    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">일일 숙제</h3><div class="group">
-      ${sw("guild","길드 출석","일일 숙제에 길드 출석을 포함합니다.")}
-    </div></div>
-    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">주간 숙제</h3><div class="group">
-      ${sw("paradise","낙원:천상","주간 숙제에 낙원:천상 게이지를 넣습니다.")}
-      ${sw("medal","클리어 메달 교환","교환했는지 체크하는 칸을 넣습니다.")}
-      ${sw("sign","이정표 미션","이정표 미션 3단계를 넣습니다.")}
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">표시할 숙제</h3><div class="group">
+      <p class="fine" style="padding-top:10px">켠 숙제만 화면에 보이고, '다 했는지' 판단과 정렬에도 켠 숙제만 쓰여요. 휴식 게이지는 꺼둔 동안에도 계속 쌓여요.</p>
+      ${sw("guardian","가디언 토벌","일일")}
+      ${sw("kurzan","쿠르잔 전선","일일")}
+      ${sw("guild","길드 출석","일일")}
+      ${sw("raids","주간 레이드","주간 · 레이드 관문과 골드")}
+      ${sw("paradise","낙원:천상","주간")}
+      ${sw("medal","클리어 메달 교환","주간")}
+      ${sw("sign","이정표 미션","주간")}
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">정렬</h3><div class="group">
       ${sw("sortOnlyAll","모든 숙제를 했을 때만 정렬","켜면 일일 숙제를 다 끝내기 전까지 카드가 제자리를 지킵니다.")}
@@ -783,7 +790,7 @@ document.addEventListener("change", e=>{
   if(ck!=null){ if(e.target.checked) ui.apiChecked.add(ck); else ui.apiChecked.delete(ck); return; }
   const f=e.target.dataset?.field; if(!f) return;
   const c=byIdS(e.target.dataset.id); if(!c) return;
-  if(f==="level"||f==="chaNum"){ const n=parseInt(e.target.value,10); if(!Number.isFinite(n)) { e.target.value=c[f]; return; } c[f]=n; }
+  if(f==="level"||f==="chaNum"){ const n = f==="level" ? parseFloat(e.target.value) : parseInt(e.target.value,10); if(!Number.isFinite(n)) { e.target.value=c[f]; return; } c[f]=n; }
   else { const v=e.target.value.trim(); if(f==="name" && !v){ e.target.value=c.name; return; } c[f]=v; }
   commit();
 });
