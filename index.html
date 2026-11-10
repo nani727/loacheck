@@ -111,7 +111,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .slide{cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;align-self:stretch}
 .slide .gauge{pointer-events:none}
 .slide.dragging .gauge::before{transition:none}
-.gauge::before{transition:width .25s ease}
+.gauge::before{transition:width .3s ease}
 .spacer{flex:1}
 .step{display:flex;gap:4px}
 .sbtn{width:32px;height:32px;border:1px solid var(--line-strong);background:var(--surface);border-radius:7px;font-weight:700;font-size:17px;line-height:1;display:grid;place-items:center;color:var(--fg)}
@@ -297,11 +297,27 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .hist-char{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
 .hist-char b{display:block;margin-bottom:6px}
 .hist-char ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px;font-variant-numeric:tabular-nums}
+:root{--honor:#AF29C5}
+/* ── 카게·필보 알림 토스트 (오른쪽 아래) ── */
+.toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;gap:10px;width:min(340px,calc(100vw - 32px));pointer-events:none}
+.toast{pointer-events:auto;background:var(--surface);border:1px solid var(--line-strong);border-left:4px solid var(--gold);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px 12px 12px 14px;display:flex;flex-direction:column;gap:8px;animation:toastIn .28s cubic-bezier(.2,.8,.2,1)}
+.toast.out{animation:toastOut .22s ease-in forwards}
+@keyframes toastIn{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes toastOut{to{transform:translateX(30px);opacity:0}}
+.toast-head{display:flex;align-items:center;gap:8px}
+.toast-head b{flex:1;font-size:14.5px}
+.toast-x{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+.toast-x:hover{background:var(--surface-done)}
+.toast p{margin:0;color:var(--muted);font-size:13px}
+.toast-items{display:flex;flex-wrap:wrap;gap:6px}
+.toast-items button{height:32px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);padding:0 10px;font-weight:600;font-size:13px}
+.toast-items button:hover{border-color:var(--accent);color:var(--accent-fg)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
@@ -395,7 +411,7 @@ const ui = { page:"main", specId:null, menu:false, drafts:{}, showClearedDaily:n
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
 try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
-const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot})); }catch(e){} };
+const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot, alarm:ui.alarm!==false})); }catch(e){} };
 
 /* ───────────── 초기화 (매일 06시 / 수요일 06시) ───────────── */
 function applyResets(){
@@ -708,11 +724,11 @@ const ICON = {
   gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>`
 };
 const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
-const gauge = (v, n, color) => `<div class="gauge" style="--v:${Math.max(0,Math.min(1,v/n))};--n:${n};--c:var(${color})"></div>`;
+const gauge = (v, n, color, key) => `<div class="gauge" ${key?`data-gkey="${key}"`:""} style="--v:${Math.max(0,Math.min(1,v/n))};--n:${n};--c:var(${color})"></div>`;
 // 게이지 + 값 표시. 누르거나 끌어서 조절 (앱 SlidableGauge와 같은 동작)
 const SLIDE_TEXT = { rest:v=>`${v%1?v.toFixed(1):v}칸`, para:v=>`${v}`, sign:v=>`${v}/${SIGN_MAX}`, honor:v=>`${v}/${HONOR_MAX}` };
 const slideGauge = (kind, id, k, v, n, step, color, label) =>
-  `<div class="gwrap slide" data-slide="${kind}" data-id="${id}" data-k="${k||""}" data-max="${n}" data-step="${step}" role="slider" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${v}">${gauge(v,n,color)}<span class="gval num">${SLIDE_TEXT[kind](v)}</span></div>`;
+  `<div class="gwrap slide" data-slide="${kind}" data-id="${id}" data-k="${k||""}" data-max="${n}" data-step="${step}" role="slider" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${v}">${gauge(v,n,color,`${kind}-${id}-${k||""}`)}<span class="gval num">${SLIDE_TEXT[kind](v)}</span></div>`;
 
 function header(){
   return `<header class="top"><div class="top-in">
@@ -833,7 +849,7 @@ function weeklyCard(c){
   if(S.settings.medal && (showCleared || !p.medal)) extras.push(`<div class="row"><span class="lbl">클리어 메달</span><span class="note">교환</span><span class="spacer"></span>${chk(p.medal,"medal",`data-id="${c.id}"`,`${c.name} 클리어 메달 교환 완료`)}</div>`);
   if(S.settings.sign && (showCleared || !signDone)) extras.push(`<div class="row"><span class="lbl">이정표 미션</span>${slideGauge("sign",c.id,"",p.sign,SIGN_MAX,1,"--kurzan",`${c.name} 이정표 미션`)}<span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
-  if(honorOn && (showCleared || !honorDone)) extras.push(`<div class="row"><span class="lbl">명예 부여</span>${slideGauge("honor",c.id,"",p.honor,HONOR_MAX,1,"--guardian",`${c.name} 명예 부여`)}<span class="spacer"></span>
+  if(honorOn && (showCleared || !honorDone)) extras.push(`<div class="row"><span class="lbl">명예 부여</span>${slideGauge("honor",c.id,"",p.honor,HONOR_MAX,1,"--honor",`${c.name} 명예 부여`)}<span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="honor" data-id="${c.id}" data-d="-1" aria-label="명예 부여 줄이기">−</button><button class="sbtn" data-act="honor" data-id="${c.id}" data-d="1" aria-label="명예 부여 늘리기">+</button></div></div>`);
   if(glassOn && (showCleared || !p.hourglass)) extras.push(`<div class="row"><span class="lbl" style="white-space:nowrap">할의 모래시계</span><span class="spacer"></span>${chk(p.hourglass,"hourglass",`data-id="${c.id}"`,`${c.name} 할의 모래시계 완료`)}</div>`);
   const allRaidsDone = raids.every(r=>r.full);
@@ -987,6 +1003,9 @@ function settingsSheet(){
       ${sw("honor","명예 부여","주간 · 캐릭터당 3번")}
       ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
     </div></div>
+    <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">알림 (이 브라우저)</h3><div class="group">
+      <div class="opt"><div><b>카오스 게이트 · 필드 보스 알림</b><small>안 한 날, 매시 58분에 오른쪽 아래로 알려줘요. 사이트를 열어둬야 보여요.</small></div><button class="tool" data-act="alarm-test">미리 보기</button><button class="sw" role="switch" aria-checked="${ui.alarm!==false}" aria-label="카오스 게이트 필드 보스 알림" data-act="alarm-toggle"></button></div>
+    </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">정렬</h3><div class="group">
       ${sw("sortOnlyAll","모든 숙제를 했을 때만 정렬","켜면 일일 숙제를 다 끝내기 전까지 카드가 제자리를 지킵니다.")}
     </div></div>
@@ -1029,6 +1048,9 @@ function render(){
   const first = new Map();
   app.querySelectorAll("[data-card]").forEach(el=>first.set(el.dataset.card, el.getBoundingClientRect().top));
   const sheetScroll = app.querySelector(".sheet")?.scrollTop || 0;
+  // 게이지 이전 값 기억 → 다시 그린 뒤 이전 값에서 새 값으로 움직이게
+  const prevG = new Map();
+  app.querySelectorAll("[data-gkey]").forEach(el=>prevG.set(el.dataset.gkey, parseFloat(el.style.getPropertyValue("--v"))||0));
 
   const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage()
     : `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>`;
@@ -1042,6 +1064,11 @@ function render(){
     if(el && focusSess && focusSess.id===aid && !focusSess.edited){ focusSess.orig = el.value; focusSess.ph = el.placeholder; blankField(el); } }
   rendering = false;
   if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    app.querySelectorAll("[data-gkey]").forEach(el=>{
+      const from = prevG.get(el.dataset.gkey); if(from==null) return;
+      const to = parseFloat(el.style.getPropertyValue("--v"))||0;
+      if(Math.abs(from-to) > 0.001) try{ el.animate([{width:`${from*100}%`},{width:`${to*100}%`}], {duration:300, easing:"ease", pseudoElement:"::before"}); }catch(e){}
+    });
     app.querySelectorAll("[data-card]").forEach(el=>{
       const f = first.get(el.dataset.card); if(f==null) return;
       const dy = f - el.getBoundingClientRect().top;
@@ -1082,9 +1109,17 @@ document.addEventListener("click", e=>{
     case "hw": { const h=P(id).daily[b.dataset.k];
       // 체크해서 숨겨지는 줄은 스르륵 접힌 뒤 사라짐
       const hides = !h.done && !ui.edit && !ui.showClearedDaily.has(id);
-      finishRow(b.closest(".row"), hides, ()=>toggleHw(h)); break; }
+      const after = !h.done ? h.gauge - (h.gauge>=1 ? 1 : 0) : h.gauge;
+      finishRow(b.closest(".row"), hides, ()=>toggleHw(h), {ratio:after/MAX_GAUGE, text:SLIDE_TEXT.rest(after)}); break; }
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
+    case "toast-close": closeToast(b.dataset.t); break;
+    case "toast-done": { S.expedition[b.dataset.k]=true; commit();
+      const t=document.getElementById(b.dataset.t), left=(t?.dataset.items||"").split(",").filter(k=>k && k!==b.dataset.k);
+      if(!left.length) closeToast(b.dataset.t); else { t.dataset.items=left.join(","); b.remove(); t.querySelector("p").textContent = "아직 안 한 숙제: " + left.map(k=>EXP_NAME[k]).join(" · "); }
+      break; }
+    case "alarm-toggle": ui.alarm = !ui.alarm; saveUi(); render(); break;
+    case "alarm-test": checkAlarm(true); break;
     case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
     case "show-cleared-daily": if(ui.showClearedDaily.has(id)) ui.showClearedDaily.delete(id); else ui.showClearedDaily.add(id); render(); break;
     case "show-cleared": if(ui.showCleared.has(id)) ui.showCleared.delete(id); else ui.showCleared.add(id); render(); break;
@@ -1145,11 +1180,20 @@ function collapseRow(el){
     {duration:280, easing:"cubic-bezier(.4,0,.2,1)", fill:"forwards"});
   return a.finished.catch(()=>{});
 }
-function finishRow(rowEl, hides, apply){
+// gaugeTo = {ratio, text}: 숨기기 전에 게이지를 새 값까지 먼저 움직임 → 끝나면 접힘
+function finishRow(rowEl, hides, apply, gaugeTo){
   if(hides && rowEl && !matchMedia("(prefers-reduced-motion: reduce)").matches){
-    // 체크 표시를 먼저 보여주고 접음
-    rowEl.querySelector(".chk")?.setAttribute("aria-pressed","true");
-    collapseRow(rowEl).then(()=>{ apply(); commit(); });
+    rowEl.querySelector(".chk")?.setAttribute("aria-pressed","true");   // 체크 표시를 먼저 보여줌
+    rowEl.style.pointerEvents = "none";
+    let wait = 0;
+    const g = rowEl.querySelector(".gauge");
+    if(g && gaugeTo){
+      const cur = parseFloat(g.style.getPropertyValue("--v"))||0;
+      rowEl.querySelector(".slide")?.classList.remove("dragging");
+      if(Math.abs(cur - gaugeTo.ratio) > 0.001){ g.style.setProperty("--v", gaugeTo.ratio); wait = 330; }
+      const t = rowEl.querySelector(".gval"); if(t && gaugeTo.text!=null) t.textContent = gaugeTo.text;
+    }
+    setTimeout(()=>collapseRow(rowEl).then(()=>{ apply(); commit(); }), wait);
   } else { apply(); commit(); }
 }
 // 주간 게이지 값 바꾸기 (버튼·슬라이더 공용). 끝나서 숨겨지면 접는 애니메이션
@@ -1157,7 +1201,8 @@ function setWeekly(srcEl, id, kind, v){
   const p = P(id), done = kind==="para" ? v===0 : kind==="sign" ? v>=SIGN_MAX : v===0;
   const was = kind==="para" ? p.paradise===0 : kind==="sign" ? p.sign>=SIGN_MAX : p.honor===0;
   const set = ()=>{ if(kind==="para") p.paradise=v; else if(kind==="sign") p.sign=v; else p.honor=v; };
-  finishRow(srcEl?.closest(".row"), done && !was && !ui.showCleared.has(id), set);
+  const max = kind==="para" ? PARADISE_MAX : kind==="sign" ? SIGN_MAX : HONOR_MAX;
+  finishRow(srcEl?.closest(".row"), done && !was && !ui.showCleared.has(id), set, {ratio:v/max, text:SLIDE_TEXT[kind](v)});
 }
 
 /* ───────────── 게이지 슬라이더 (누르거나 끌어서 조절) ───────────── */
@@ -1201,6 +1246,51 @@ document.addEventListener("focusout", e=>{
   if(ui.drafts[el.id]!=null){ setTimeout(()=>applySpecInput(el), 0); return; }   // 입력했으면 바로 저장 (다음 칸으로 포커스가 옮겨간 뒤)
   if(sess && !sess.edited){ el.value = sess.orig; el.placeholder = sess.ph; delete el.dataset.ph; }
 });
+
+/* ───────────── 카오스 게이트·필드 보스 알림 (웹 전용) ───────────── */
+// 오늘 열리는 날인데 아직 안 했으면, 매시 58분(정시 2분 전)에 오른쪽 아래 토스트로 알려줌
+const EXP_NAME = {chaos:"카오스 게이트", field:"필드 보스"};
+let alarmTimer = null, lastAlarm = "", toastSeq = 0;
+function expTodo(at=Date.now()){
+  const day = loaDay(at), d = dow(day), fresh = day !== S.lastDaily;   // 06시가 막 지나는 경우 새 날로 봄
+  const out = [];
+  if(CHAOS_DAYS.includes(d) && (fresh || !S.expedition.chaos)) out.push("chaos");
+  if(BOSS_DAYS.includes(d) && (fresh || !S.expedition.field)) out.push("field");
+  return out;
+}
+function checkAlarm(force){
+  if(!ui.user || (!ui.alarm && !force)) return;
+  const now = new Date(), min = now.getUTCMinutes();
+  if(!force && min !== 58 && min !== 59) return;          // 58분 (탭이 잠깐 느려도 59분까지는 띄움)
+  const key = now.toISOString().slice(0,13);
+  if(!force && lastAlarm === key) return;
+  const todo = expTodo(Date.now() + 120000);
+  if(!todo.length && !force) return;
+  lastAlarm = key;
+  const hour = (now.getUTCHours() + 9 + 1) % 24;          // 한국 시간 기준 다음 정시
+  showToast(force && !todo.length ? ["chaos","field"] : todo, hour);
+}
+function scheduleAlarm(){
+  clearTimeout(alarmTimer);
+  const now = new Date();
+  alarmTimer = setTimeout(()=>{ checkAlarm(); scheduleAlarm(); }, (60 - now.getSeconds())*1000 - now.getMilliseconds() + 200);   // 매 분 0초마다 확인
+}
+function showToast(items, hour){
+  const box = document.getElementById("toasts"), id = "t" + (++toastSeq);
+  const el = document.createElement("div");
+  el.className = "toast"; el.id = id; el.dataset.items = items.join(",");
+  el.innerHTML = `<div class="toast-head"><b>⏰ 2분 뒤 ${hour}시 정각이에요</b><button class="toast-x" data-act="toast-close" data-t="${id}" aria-label="알림 닫기">×</button></div>
+    <p>아직 안 한 숙제: ${items.map(k=>EXP_NAME[k]).join(" · ")}</p>
+    <div class="toast-items">${items.map(k=>`<button data-act="toast-done" data-t="${id}" data-k="${k}">${EXP_NAME[k]} 완료</button>`).join("")}</div>`;
+  box.appendChild(el);
+  setTimeout(()=>closeToast(id), 180000);                  // 3분 뒤 자동으로 닫힘
+}
+function closeToast(id){
+  const el = document.getElementById(id); if(!el || el.classList.contains("out")) return;
+  el.classList.add("out"); setTimeout(()=>el.remove(), 230);
+}
+try{ ui.alarm = JSON.parse(localStorage.getItem("loacheck-ui")||"{}").alarm !== false; }catch(e){ ui.alarm = true; }
+scheduleAlarm();
 
 let flashTimer=null;
 function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ ui.flash=null; render(); },800); }
@@ -1249,7 +1339,7 @@ document.addEventListener("change", e=>{
 // 1분마다: 06시 초기화 확인 + 생기 회복 반영. 앱으로 돌아올 때도 즉시 확인.
 function tick(){ if(!ui.user) return; if(applyResets()) commit(); else render(); }
 setInterval(tick, 60000);
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ tick(); checkAlarm(); scheduleAlarm(); } });
 
 render();
 </script>
