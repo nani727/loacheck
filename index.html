@@ -1375,7 +1375,7 @@ function showToast(items, hour){
     <p>아직 안 한 숙제: ${items.map(k=>EXP_NAME[k]).join(" · ")}</p>
     <div class="toast-items">${items.map(k=>`<button data-act="toast-done" data-t="${id}" data-k="${k}">${EXP_NAME[k]} 완료</button>`).join("")}</div>`;
   box.appendChild(el);
-  setTimeout(()=>closeToast(id), 180000);                  // 3분 뒤 자동으로 닫힘
+  setTimeout(()=>closeToast(id), 5000);                    // 5초 뒤 자동으로 닫힘
 }
 function closeToast(id){
   const el = document.getElementById(id); if(!el || el.classList.contains("out")) return;
