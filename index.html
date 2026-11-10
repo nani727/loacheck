@@ -156,8 +156,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .raid:hover{border-color:var(--accent)}
 .raid .rn{font-weight:700;font-size:14px}
 .pips{display:flex;gap:3px}
-.pips i{flex:1;height:5px;border-radius:2px;background:var(--gauge-empty)}
-.pips i.on{background:var(--accent)}
+.pips i{flex:1;height:5px;border-radius:2px;background:linear-gradient(var(--accent),var(--accent)) left/0% 100% no-repeat,var(--gauge-empty);transition:background-size .3s ease}
+.pips i.on{background-size:100% 100%}
 .raid .rg{font-size:12px;color:var(--gold-fg);font-weight:600}
 .goldrow{display:flex;align-items:center;gap:12px}
 .cleared-toggle{display:flex;align-items:center;justify-content:center;gap:4px;border:0;background:none;color:var(--muted);font-size:12.5px;padding:2px 0 0;margin-bottom:-4px}
@@ -819,7 +819,7 @@ function weeklyPanel(){
     <div class="panel-head"><h2>주간 숙제</h2><span class="num">${dayLabel(start).replace(/ \(.\)/,"")} 수요일부터</span></div>
     ${S.settings.raids===false ? "" : `<div class="total">
       <div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
-      <div class="goldrow"><div class="bar"><i style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">${fmt(total.earned)} G</span></div>
+      <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div>
     </div>`}
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
@@ -840,7 +840,7 @@ function weeklyCard(c){
   const tiles = shownRaids.map(r=>`<button class="raid" data-act="raid" data-id="${c.id}" data-r="${esc(r.title)}"
       aria-label="${esc(c.name)} ${esc(r.title)} ${r.cleared}/${r.gates.length}관문. ${r.full?"누르면 0관문으로 되돌림":"누르면 다음 관문 클리어"}">
       <span class="rn">${esc(r.title)}</span>
-      <span class="pips">${r.gates.map((_,i)=>`<i class="${i<r.cleared?"on":""}"></i>`).join("")}</span>
+      <span class="pips">${r.gates.map((_,i)=>`<i data-pkey="${c.id}-${esc(r.title)}-${i}" class="${i<r.cleared?"on":""}"></i>`).join("")}</span>
       <span class="rg num">${r.full ? "완료 · 누르면 되돌림" : `${r.cleared+1}관 +${fmt(r.gates[r.cleared])}`}</span>
     </button>`).join("");
   const extras = [];
@@ -856,7 +856,7 @@ function weeklyCard(c){
   return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${done?`<span class="ctag">완료</span>`:""}</div>
     ${raidsOn && tiles ? `<div class="raids">${tiles}</div>` : ""}
-    ${raidsOn && (showCleared || !allRaidsDone) ? `<div class="goldrow"><div class="bar"><i style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num">남은 ${fmt(g.max-g.earned)} G</span></div>` : ""}
+    ${raidsOn && (showCleared || !allRaidsDone) ? `<div class="goldrow"><div class="bar"><i data-bkey="gold-${c.id}" style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-${c.id}" data-n="${g.max-g.earned}" data-pre="남은 ">남은 ${fmt(g.max-g.earned)} G</span></div>` : ""}
     ${extras.length ? `<div class="sub">${extras.join("")}</div>` : ""}
     ${clearedCount ? `<button class="cleared-toggle" data-act="show-cleared" data-id="${c.id}" aria-expanded="${showCleared}">${showCleared ? "완료한 숙제 숨기기" : `완료한 숙제 ${clearedCount}개 보기`}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}
   </article>`;
@@ -1036,6 +1036,17 @@ function loginView(){
 }
 
 let rendering = false;
+function countUp(el, from, to){
+  const pre = el.dataset.pre || "", t0 = performance.now(), dur = 450;
+  el.dataset.shown = from;
+  const step = now => {
+    if(!el.isConnected) return;
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = Math.round(from + (to - from) * e);
+    el.dataset.shown = v; el.textContent = `${pre}${fmt(v)} G`;
+    if(k < 1) requestAnimationFrame(step); else delete el.dataset.shown;
+  };
+  requestAnimationFrame(step);
+}
 function render(){
   const app = document.getElementById("app");
   if(!ui.authReady || !ui.user){
@@ -1051,6 +1062,11 @@ function render(){
   // 게이지 이전 값 기억 → 다시 그린 뒤 이전 값에서 새 값으로 움직이게
   const prevG = new Map();
   app.querySelectorAll("[data-gkey]").forEach(el=>prevG.set(el.dataset.gkey, parseFloat(el.style.getPropertyValue("--v"))||0));
+  // 골드 막대·골드 숫자·레이드 관문 칸도 이전 상태 기억
+  const prevB = new Map(), prevN = new Map(), prevP = new Map();
+  app.querySelectorAll("[data-bkey]").forEach(el=>prevB.set(el.dataset.bkey, el.style.width));
+  app.querySelectorAll("[data-nkey]").forEach(el=>prevN.set(el.dataset.nkey, Number(el.dataset.shown ?? el.dataset.n)));
+  app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
   const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage()
     : `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>`;
@@ -1068,6 +1084,23 @@ function render(){
       const from = prevG.get(el.dataset.gkey); if(from==null) return;
       const to = parseFloat(el.style.getPropertyValue("--v"))||0;
       if(Math.abs(from-to) > 0.001) try{ el.animate([{width:`${from*100}%`},{width:`${to*100}%`}], {duration:300, easing:"ease", pseudoElement:"::before"}); }catch(e){}
+    });
+    // 골드 막대: 이전 길이 → 새 길이
+    app.querySelectorAll("[data-bkey]").forEach(el=>{
+      const from = prevB.get(el.dataset.bkey); if(from==null || from===el.style.width) return;
+      el.animate([{width:from},{width:el.style.width}], {duration:450, easing:"cubic-bezier(.2,.8,.2,1)"});
+    });
+    // 골드 숫자: 이전 값에서 새 값까지 세어 올라감/내려감
+    app.querySelectorAll("[data-nkey]").forEach(el=>{
+      const from = prevN.get(el.dataset.nkey), to = Number(el.dataset.n);
+      if(from==null || !Number.isFinite(from) || from===to) return;
+      countUp(el, from, to);
+    });
+    // 레이드 관문 칸: 새로 깬 칸은 왼쪽부터 보라색이 채워지고, 되돌린 칸은 비워짐
+    app.querySelectorAll("[data-pkey]").forEach(el=>{
+      const was = prevP.get(el.dataset.pkey), on = el.classList.contains("on");
+      if(was==null || was===on) return;
+      el.animate([{backgroundSize: was ? "100% 100%, auto" : "0% 100%, auto"}, {backgroundSize: on ? "100% 100%, auto" : "0% 100%, auto"}], {duration:320, easing:"ease"});
     });
     app.querySelectorAll("[data-card]").forEach(el=>{
       const f = first.get(el.dataset.card); if(f==null) return;
@@ -1123,7 +1156,15 @@ document.addEventListener("click", e=>{
     case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
     case "show-cleared-daily": if(ui.showClearedDaily.has(id)) ui.showClearedDaily.delete(id); else ui.showClearedDaily.add(id); render(); break;
     case "show-cleared": if(ui.showCleared.has(id)) ui.showCleared.delete(id); else ui.showCleared.add(id); render(); break;
-    case "raid": { const c=byIdS(id), p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n); p.raids[t]= cur>=n ? 0 : cur+1; commit(); break; }
+    case "raid": { const p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n), next = cur>=n ? 0 : cur+1;
+      // 마지막 관문을 깨서 레이드가 숨겨질 때: 보라색 칸이 다 채워진 뒤 사라짐
+      if(next===n && !ui.showCleared.has(id) && !matchMedia("(prefers-reduced-motion: reduce)").matches){
+        b.style.pointerEvents="none";
+        const pip = b.querySelectorAll(".pips i")[cur];
+        if(pip){ pip.classList.add("on"); pip.animate([{backgroundSize:"0% 100%, auto"},{backgroundSize:"100% 100%, auto"}],{duration:320,easing:"ease"}); }
+        setTimeout(()=>{ b.animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.92)"}],{duration:200,easing:"ease-in",fill:"forwards"}).finished.catch(()=>{}).then(()=>{ p.raids[t]=next; commit(); }); }, 330);
+      } else { p.raids[t]=next; commit(); }
+      break; }
     case "para": { const p=P(id), v = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); setWeekly(b, id, "para", v); break; }
     case "medal": { const p=P(id); finishRow(b.closest(".row"), !p.medal && !ui.showCleared.has(id), ()=>{ p.medal=!p.medal; }); break; }
     case "hourglass": { const p=P(id); finishRow(b.closest(".row"), !p.hourglass && !ui.showCleared.has(id), ()=>{ p.hourglass=!p.hourglass; }); break; }
