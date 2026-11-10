@@ -102,11 +102,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .row{display:flex;align-items:center;gap:10px;min-height:34px}
 .lbl{width:84px;flex:none;font-size:14px}
 .card.done .lbl{color:var(--muted)}
-.gwrap{flex:1;display:flex;align-items:center;gap:8px;min-width:0;max-width:220px}
+.gwrap{flex:3 1 0;display:flex;align-items:center;gap:8px;min-width:96px;max-width:220px}
 .gauge{--n:5;--v:0;position:relative;flex:1;height:13px;border-radius:3px;background:var(--gauge-empty);overflow:hidden}
 .gauge::before{content:"";position:absolute;inset:0 auto 0 0;width:calc(var(--v) * 100%);background:var(--c,var(--guardian))}
 .gauge::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(100% / var(--n) - 2px),var(--seg-gap) calc(100% / var(--n) - 2px) calc(100% / var(--n)))}
 .gval{font-size:12px;color:var(--muted);width:34px;flex:none}
+/* 게이지 슬라이더: 모양은 그대로, 누르거나 끌어서 값 조절 (세로 스크롤은 그대로 됨) */
+.slide{cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;align-self:stretch}
+.slide .gauge{pointer-events:none}
+.slide.dragging .gauge::before{transition:none}
+.gauge::before{transition:width .25s ease}
 .spacer{flex:1}
 .step{display:flex;gap:4px}
 .sbtn{width:32px;height:32px;border:1px solid var(--line-strong);background:var(--surface);border-radius:7px;font-weight:700;font-size:17px;line-height:1;display:grid;place-items:center;color:var(--fg)}
@@ -246,6 +251,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .page-head{display:flex;align-items:center;gap:10px}
 .page-head h2{margin:0;font-size:19px;flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .page-head h2 small{font-size:13px;color:var(--muted);font-weight:500}
+/* 스펙 수정 화면: 캐릭터 이름 줄은 스크롤해도 위에 고정 */
+.page-head.sticky{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--top-h,59px));z-index:4;background:var(--bg);margin:-8px -16px 0;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
 .spec-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px}
 .spec-card:hover{border-color:var(--accent)}
 .spec-card .info{flex:1;min-width:0}
@@ -271,13 +278,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 @media (max-width:560px){.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.plabel{width:46px;font-size:13px}}
 .part{display:flex;gap:5px;min-width:0}
 .plabel{flex:none;width:56px;display:grid;place-items:center;border-radius:9px;border:2px solid var(--sec);background:color-mix(in srgb,var(--sec) 14%,var(--surface));color:var(--sec);font-weight:700;font-size:14px}
-.pval{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:center;gap:2px;border-radius:9px;border:2px solid var(--pick-line);background:var(--field-bg);color:var(--field-fg);padding:4px 6px}
-.pval input{border:0;background:transparent;color:inherit;font:inherit;text-align:center;font-variant-numeric:tabular-nums;min-width:0;padding:0}
+.pval{flex:1;min-width:0;min-height:44px;display:flex;align-items:stretch;border-radius:9px;border:2px solid var(--pick-line);background:var(--field-bg);color:var(--field-fg);padding:0;overflow:hidden;cursor:text}
+.pval input{border:0;background:transparent;color:inherit;font:inherit;text-align:center;font-variant-numeric:tabular-nums;min-width:0;padding:0 3px;margin:0;height:auto;cursor:text}
 .pval input:focus{outline:none;background:color-mix(in srgb,var(--field-fg) 14%,transparent);border-radius:4px}
 .pval input::placeholder{color:var(--field-fg);opacity:.35}
-.pval .big{font-size:19px;width:2.4em}
-.pval .small{font-size:11.5px;width:4.2em;text-align:left}
-.pval .full{font-size:19px;width:100%}
+.pval .big{font-size:19px;flex:1 1 0;width:0;text-align:right}
+.pval .small{font-size:11.5px;flex:1 1 0;width:0;text-align:left;padding-top:11px}
+.pval .full{font-size:19px;flex:1 1 0;width:0}
 .stat-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;color:var(--sec);font-size:20px;font-weight:600}
 .stat-row span{display:flex;align-items:baseline;gap:8px}
 .stat-row b{font-variant-numeric:tabular-nums}
@@ -328,7 +335,7 @@ const DEFAULT_ROSTER = [
   {id:"c5",name:"세라믝",job:"기상술사",level:1710,chaNum:5},
   {id:"c6",name:"아이언맨이될래요",job:"스카우터",level:1710,chaNum:6},
 ];
-const MAX_GAUGE=5, PARADISE_MAX=5, SIGN_MAX=3;
+const MAX_GAUGE=5, PARADISE_MAX=5, SIGN_MAX=3, HONOR_MAX=3, HOURGLASS_LV=1730;
 const MAX_LIFE=11500, LIFE_TICK=30, TICK_MS=600000, LIFE_USE=4240;
 const DAYS=["일","월","화","수","목","금","토"];
 const CHAOS_DAYS=[1,4,6,0], BOSS_DAYS=[2,5,0];
@@ -343,7 +350,7 @@ function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}�
 /* ───────────── 상태 ───────────── */
 function freshState(){
   return { v:1,
-    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, sortOnlyAll:false},
+    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
     expedition:{chaos:false, field:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
@@ -377,6 +384,8 @@ function P(id){
   if(!Number.isFinite(p.paradise)) p.paradise = PARADISE_MAX;
   p.medal = !!p.medal;
   if(!Number.isFinite(p.sign)) p.sign = 0;
+  if(!Number.isFinite(p.honor)) p.honor = HONOR_MAX;   // 명예 부여: 3/3에서 시작, 0이면 완료
+  p.hourglass = !!p.hourglass;                          // 할의 모래시계 (1730 이상)
   return p;
 }
 
@@ -407,7 +416,7 @@ function applyResets(){
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
-    for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; }
+    for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; p.honor=HONOR_MAX; p.hourglass=false; }
     S.lastWeekly = today; changed = true;
   }
   if (specRollover()) changed = true;
@@ -518,7 +527,9 @@ function raidsOf(c){
 const shownGauge = () => ["guardian","kurzan"].filter(k=>S.settings[k]!==false);
 const shownDaily = () => [...shownGauge(), ...(S.settings.guild ? ["guild"] : [])];
 const dailyDone = c => { const d=P(c.id).daily; return shownDaily().every(k=>d[k].done); };
-const weeklyDone = c => { const p=P(c.id); return (S.settings.raids===false || raidsOf(c).every(r=>r.full)) && (!S.settings.paradise||p.paradise===0) && (!S.settings.medal||p.medal) && (!S.settings.sign||p.sign>=SIGN_MAX); };
+const hasHourglass = c => (Number(c.level)||0) >= HOURGLASS_LV;
+const weeklyDone = c => { const p=P(c.id); return (S.settings.raids===false || raidsOf(c).every(r=>r.full)) && (!S.settings.paradise||p.paradise===0) && (!S.settings.medal||p.medal) && (!S.settings.sign||p.sign>=SIGN_MAX)
+  && (S.settings.honor===false||p.honor===0) && (S.settings.hourglass===false||!hasHourglass(c)||p.hourglass); };
 const gaugeSum = c => { const d=P(c.id).daily; return shownGauge().reduce((a,k)=>a + d[k].gauge + (S.settings.sortOnlyAll ? d[k].used : 0), 0); };
 // 아이템 레벨 표시: 1712.50 (앱 formatItemLevel과 같음)
 const fmtLv = v => (Number(v)||0).toFixed(2);
@@ -698,6 +709,10 @@ const ICON = {
 };
 const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
 const gauge = (v, n, color) => `<div class="gauge" style="--v:${Math.max(0,Math.min(1,v/n))};--n:${n};--c:var(${color})"></div>`;
+// 게이지 + 값 표시. 누르거나 끌어서 조절 (앱 SlidableGauge와 같은 동작)
+const SLIDE_TEXT = { rest:v=>`${v%1?v.toFixed(1):v}칸`, para:v=>`${v}`, sign:v=>`${v}/${SIGN_MAX}`, honor:v=>`${v}/${HONOR_MAX}` };
+const slideGauge = (kind, id, k, v, n, step, color, label) =>
+  `<div class="gwrap slide" data-slide="${kind}" data-id="${id}" data-k="${k||""}" data-max="${n}" data-step="${step}" role="slider" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${v}">${gauge(v,n,color)}<span class="gval num">${SLIDE_TEXT[kind](v)}</span></div>`;
 
 function header(){
   return `<header class="top"><div class="top-in">
@@ -761,7 +776,7 @@ function dailyCard(c){
   const row = (k, label, color) => {
     const h = d[k];
     return `<div class="row"><span class="lbl">${label}</span>
-      <div class="gwrap">${gauge(h.gauge, MAX_GAUGE, color)}<span class="gval num">${h.gauge%1?h.gauge.toFixed(1):h.gauge}칸</span></div>
+      ${slideGauge("rest", c.id, k, h.gauge, MAX_GAUGE, 0.5, color, `${c.name} ${label} 휴식 게이지`)}
       ${ui.edit ? `<div class="step"><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="-0.5" aria-label="${label} 휴게 줄이기">−</button><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="0.5" aria-label="${label} 휴게 늘리기">+</button></div>` : ""}
       <span class="spacer"></span>${chk(h.done,"hw",`data-id="${c.id}" data-k="${k}"`,`${c.name} ${label} 완료`)}</div>`;
   };
@@ -794,15 +809,17 @@ function weeklyPanel(){
   </section>`;
 }
 
-// 끝낸 주간 숙제(다 깬 레이드, 낙원 0, 메달 교환, 이정표 3/3)는 숨기고,
+// 끝낸 주간 숙제(다 깬 레이드, 낙원 0, 메달 교환, 이정표 3/3, 명예 0/3, 모래시계)는 숨기고,
 // '완료한 숙제 N개 보기'를 누르면 다시 보여줌 (앱 WeeklyCharacterCard와 같은 동작)
 function weeklyCard(c){
   const p = P(c.id), raids = raidsOf(c), g = goldOf(c), done = weeklyDone(c);
   const showCleared = ui.showCleared.has(c.id);
   const raidsOn = S.settings.raids!==false;
   const shownRaids = showCleared ? raids : raids.filter(r=>!r.full);
-  const paraDone = p.paradise===0, signDone = p.sign>=SIGN_MAX;
-  const clearedCount = (raidsOn ? raids.filter(r=>r.full).length : 0) + (S.settings.paradise && paraDone ? 1 : 0) + (S.settings.medal && p.medal ? 1 : 0) + (S.settings.sign && signDone ? 1 : 0);
+  const paraDone = p.paradise===0, signDone = p.sign>=SIGN_MAX, honorDone = p.honor===0;
+  const honorOn = S.settings.honor!==false, glassOn = S.settings.hourglass!==false && hasHourglass(c);
+  const clearedCount = (raidsOn ? raids.filter(r=>r.full).length : 0) + (S.settings.paradise && paraDone ? 1 : 0) + (S.settings.medal && p.medal ? 1 : 0) + (S.settings.sign && signDone ? 1 : 0)
+    + (honorOn && honorDone ? 1 : 0) + (glassOn && p.hourglass ? 1 : 0);
 
   const tiles = shownRaids.map(r=>`<button class="raid" data-act="raid" data-id="${c.id}" data-r="${esc(r.title)}"
       aria-label="${esc(c.name)} ${esc(r.title)} ${r.cleared}/${r.gates.length}관문. ${r.full?"누르면 0관문으로 되돌림":"누르면 다음 관문 클리어"}">
@@ -811,11 +828,14 @@ function weeklyCard(c){
       <span class="rg num">${r.full ? "완료 · 누르면 되돌림" : `${r.cleared+1}관 +${fmt(r.gates[r.cleared])}`}</span>
     </button>`).join("");
   const extras = [];
-  if(S.settings.paradise && (showCleared || !paraDone)) extras.push(`<div class="row"><span class="lbl">낙원:천상</span><div class="gwrap">${gauge(p.paradise,PARADISE_MAX,"--guardian")}<span class="gval num">${p.paradise}</span></div><span class="spacer"></span>
+  if(S.settings.paradise && (showCleared || !paraDone)) extras.push(`<div class="row"><span class="lbl">낙원:천상</span>${slideGauge("para",c.id,"",p.paradise,PARADISE_MAX,1,"--guardian",`${c.name} 낙원`)}<span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="para" data-id="${c.id}" data-v="0" aria-label="낙원 0으로">0</button><button class="sbtn" data-act="para" data-id="${c.id}" data-d="-1" aria-label="낙원 줄이기">−</button><button class="sbtn" data-act="para" data-id="${c.id}" data-d="1" aria-label="낙원 늘리기">+</button></div></div>`);
   if(S.settings.medal && (showCleared || !p.medal)) extras.push(`<div class="row"><span class="lbl">클리어 메달</span><span class="note">교환</span><span class="spacer"></span>${chk(p.medal,"medal",`data-id="${c.id}"`,`${c.name} 클리어 메달 교환 완료`)}</div>`);
-  if(S.settings.sign && (showCleared || !signDone)) extras.push(`<div class="row"><span class="lbl">이정표 미션</span><div class="gwrap">${gauge(p.sign,SIGN_MAX,"--kurzan")}<span class="gval num">${p.sign}/${SIGN_MAX}</span></div><span class="spacer"></span>
+  if(S.settings.sign && (showCleared || !signDone)) extras.push(`<div class="row"><span class="lbl">이정표 미션</span>${slideGauge("sign",c.id,"",p.sign,SIGN_MAX,1,"--kurzan",`${c.name} 이정표 미션`)}<span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
+  if(honorOn && (showCleared || !honorDone)) extras.push(`<div class="row"><span class="lbl">명예 부여</span>${slideGauge("honor",c.id,"",p.honor,HONOR_MAX,1,"--guardian",`${c.name} 명예 부여`)}<span class="spacer"></span>
+      <div class="step"><button class="sbtn" data-act="honor" data-id="${c.id}" data-d="-1" aria-label="명예 부여 줄이기">−</button><button class="sbtn" data-act="honor" data-id="${c.id}" data-d="1" aria-label="명예 부여 늘리기">+</button></div></div>`);
+  if(glassOn && (showCleared || !p.hourglass)) extras.push(`<div class="row"><span class="lbl" style="white-space:nowrap">할의 모래시계</span><span class="spacer"></span>${chk(p.hourglass,"hourglass",`data-id="${c.id}"`,`${c.name} 할의 모래시계 완료`)}</div>`);
   const allRaidsDone = raids.every(r=>r.full);
   return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${done?`<span class="ctag">완료</span>`:""}</div>
@@ -876,7 +896,7 @@ function specDetailPage(){
     </span></div>`;
   }).join("");
   return `<main class="page">
-    <div class="page-head"><button class="tool" data-act="go-specs" aria-label="스펙 현황으로">${ICON.back}</button><h2>${esc(c.name)} <small>${esc(c.job)}</small></h2></div>
+    <div class="page-head sticky"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>${esc(c.name)} <small>${esc(c.job)}</small></h2></div>
     <section class="sec" style="--sec:var(--sec-grid)">
       <div class="sec-title"><h3>아크그리드</h3></div>
       <div class="grid-wrap"><div class="grid-col">질서</div><div></div><div class="grid-col">혼돈</div>${gridRows}</div>
@@ -912,7 +932,7 @@ function historyPage(){
   const weeks = [`<div class="hist-week"><h3>이번 주 · ${weekLabel(h.weekStart)}</h3>${current.length ? block(current) : `<p class="hint">이번 주 스펙업 기록이 아직 없어요.</p>`}</div>`]
     .concat(h.archive.map(w=>`<div class="hist-week"><h3>${weekLabel(w.weekStart)}</h3>${block(w.chars||[])}</div>`));
   return `<main class="page">
-    <div class="page-head"><button class="tool" data-act="go-specs" aria-label="스펙 현황으로">${ICON.back}</button><h2>스펙업 히스토리</h2></div>
+    <div class="page-head"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>스펙업 히스토리</h2></div>
     ${weeks.join("")}
   </main>`;
 }
@@ -964,6 +984,8 @@ function settingsSheet(){
       ${sw("paradise","낙원:천상","주간")}
       ${sw("medal","클리어 메달 교환","주간")}
       ${sw("sign","이정표 미션","주간")}
+      ${sw("honor","명예 부여","주간 · 캐릭터당 3번")}
+      ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">정렬</h3><div class="group">
       ${sw("sortOnlyAll","모든 숙제를 했을 때만 정렬","켜면 일일 숙제를 다 끝내기 전까지 카드가 제자리를 지킵니다.")}
@@ -994,6 +1016,7 @@ function loginView(){
   </div></div>`;
 }
 
+let rendering = false;
 function render(){
   const app = document.getElementById("app");
   if(!ui.authReady || !ui.user){
@@ -1009,10 +1032,15 @@ function render(){
 
   const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage()
     : `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>`;
+  rendering = true;
   app.innerHTML = header() + body + menuPanel() + settingsSheet();
+  const top = app.querySelector(".top"); if(top) document.documentElement.style.setProperty("--top-h", top.offsetHeight + "px");
 
   if(sheetScroll) app.querySelector(".sheet").scrollTop = sheetScroll;
-  if(aid){ const el=document.getElementById(aid); if(el){ el.focus({preventScroll:true}); if(sel && el.setSelectionRange) try{ el.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
+  if(aid){ const el=document.getElementById(aid); if(el){ el.focus({preventScroll:true}); if(sel && el.setSelectionRange) try{ el.setSelectionRange(sel[0],sel[1]); }catch(e){} }
+    // 눌러만 두고 아직 안 쓴 입력칸은 다시 그린 뒤에도 빈 칸 상태 유지
+    if(el && focusSess && focusSess.id===aid && !focusSess.edited){ focusSess.orig = el.value; focusSess.ph = el.placeholder; blankField(el); } }
+  rendering = false;
   if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
     app.querySelectorAll("[data-card]").forEach(el=>{
       const f = first.get(el.dataset.card); if(f==null) return;
@@ -1030,12 +1058,13 @@ document.addEventListener("click", e=>{
   if(a==="close-bg" && e.target!==b) return;   // 시트 안쪽 클릭은 무시
   switch(a){
     case "login-submit": doLogin(); break;
-    case "menu": if(ui.menu) closeMenu(); else { ui.menu=true; ui.menuClosing=false; render(); } break;
-    case "menu-close": closeMenu(); break;
-    case "go-main": ui.page="main"; closeMenu(true); window.scrollTo(0,0); break;
-    case "go-specs": ui.page="specs"; closeMenu(true); window.scrollTo(0,0); break;
-    case "go-history": ui.page="history"; render(); window.scrollTo(0,0); break;
-    case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; render(); window.scrollTo(0,0); break;
+    case "menu": if(ui.menu) menuBack(); else { ui.menu=true; ui.menuClosing=false; pushNav(); render(); } break;
+    case "menu-close": menuBack(); break;
+    case "go-main": goPage("main"); break;
+    case "go-specs": goPage("specs"); break;
+    case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
+    case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
+    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = ui.page==="main" ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
     case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
@@ -1044,22 +1073,27 @@ document.addEventListener("click", e=>{
     case "api-apply": { const before=S.roster.length; applyRosterImport(ui.apiFound, ui.apiChecked); ui.apiFound=null; ui.apiMsg=`원정대를 ${S.roster.length}명으로 맞췄어요. (이전 ${before}명)`; ui.apiErr=false; dOrd.order=wOrd.order=null; wMemo.key=null; commit(); break; }
     case "login-toggle": ui.signUp=!ui.signUp; ui.loginMsg=""; render(); break;
     case "login-reset": doReset(); break;
-    case "logout": ui.settings=false; signOut(auth); break;
+    case "logout": ui.settings=false; ui.page="main"; replaceNav(); signOut(auth); break;
     case "view": ui.view=b.dataset.v; saveUi(); render(); break;
     case "edit": ui.edit=!ui.edit; ui.lifeInput=""; render(); break;
     case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
-    case "settings": if(ui.menu){ ui.menu=false; } ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; render(); break;
-    case "close": case "close-bg": ui.settings=false; ui.armDel=null; render(); break;
-    case "hw": toggleHw(P(id).daily[b.dataset.k]); commit(); break;
+    case "settings": { const fromMenu = ui.menu && history.state?.menu; ui.menu=false; ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; if(fromMenu) replaceNav(); else pushNav(); render(); break; }
+    case "close": case "close-bg": closeSettings(); break;
+    case "hw": { const h=P(id).daily[b.dataset.k];
+      // 체크해서 숨겨지는 줄은 스르륵 접힌 뒤 사라짐
+      const hides = !h.done && !ui.edit && !ui.showClearedDaily.has(id);
+      finishRow(b.closest(".row"), hides, ()=>toggleHw(h)); break; }
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
     case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
     case "show-cleared-daily": if(ui.showClearedDaily.has(id)) ui.showClearedDaily.delete(id); else ui.showClearedDaily.add(id); render(); break;
     case "show-cleared": if(ui.showCleared.has(id)) ui.showCleared.delete(id); else ui.showCleared.add(id); render(); break;
     case "raid": { const c=byIdS(id), p=P(id), t=b.dataset.r, n=(RAIDS[t]||[0]).length, cur=Math.min(p.raids[t]||0,n); p.raids[t]= cur>=n ? 0 : cur+1; commit(); break; }
-    case "para": { const p=P(id); p.paradise = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); commit(); break; }
-    case "medal": P(id).medal=!P(id).medal; commit(); break;
-    case "sign": { const p=P(id); p.sign=Math.max(0,Math.min(SIGN_MAX,p.sign+Number(b.dataset.d))); commit(); break; }
+    case "para": { const p=P(id), v = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); setWeekly(b, id, "para", v); break; }
+    case "medal": { const p=P(id); finishRow(b.closest(".row"), !p.medal && !ui.showCleared.has(id), ()=>{ p.medal=!p.medal; }); break; }
+    case "hourglass": { const p=P(id); finishRow(b.closest(".row"), !p.hourglass && !ui.showCleared.has(id), ()=>{ p.hourglass=!p.hourglass; }); break; }
+    case "sign": { const p=P(id); setWeekly(b, id, "sign", Math.max(0,Math.min(SIGN_MAX,p.sign+Number(b.dataset.d)))); break; }
+    case "honor": { const p=P(id); setWeekly(b, id, "honor", Math.max(0,Math.min(HONOR_MAX,p.honor+Number(b.dataset.d)))); break; }
     case "setting": S.settings[b.dataset.k]=!S.settings[b.dataset.k]; commit(); break;
     case "life-use": { const now=Date.now(), st=lifeStatus(now); S.life={energy:Math.max(0,st.cur-LIFE_USE), ts: st.cur>=MAX_LIFE?now:st.lastTick}; flash("use"); commit(); break; }
     case "life-save": { const v=parseInt(ui.lifeInput,10); if(!Number.isFinite(v)) break; S.life={energy:Math.max(0,Math.min(MAX_LIFE,v)), ts:Date.now()}; ui.lifeInput=""; flash("save"); commit(); break; }
@@ -1074,12 +1108,107 @@ function closeMenu(instant){
   ui.menuClosing=true; document.querySelector(".menu")?.classList.add("closing");
   setTimeout(()=>{ ui.menu=false; ui.menuClosing=false; render(); }, 180);
 }
+
+/* ───────────── 뒤로가기 (브라우저 기록) ───────────── */
+// 화면을 옮길 때마다 기록을 남겨서, 브라우저/휴대폰 뒤로가기를 누르면 사이트를 나가지 않고 이전 화면으로 돌아감
+// (앱은 BackHandler로 같은 동작: 메뉴 닫기 → 설정/스펙 → 이전 화면)
+const navState = depth => ({loa:1, depth, page:ui.page, specId:ui.specId, settings:!!ui.settings, menu:!!ui.menu});
+function pushNav(){ history.pushState(navState((history.state?.depth||0)+1), ""); }
+function replaceNav(){ history.replaceState(navState(history.state?.depth||0), ""); }
+// 메뉴에서 다른 화면을 고르면: 메뉴 기록을 그 화면으로 바꿈 (뒤로가기 → 메뉴 열기 전 화면)
+function goPage(page){
+  const fromMenu = ui.menu && history.state?.menu;
+  if(page===ui.page && !ui.settings){ menuBack(); return; }
+  ui.page = page; ui.settings = false; ui.menu = false; ui.menuClosing = false;
+  if(fromMenu) replaceNav(); else pushNav();
+  render(); window.scrollTo(0,0);
+}
+function menuBack(){ if(history.state?.menu) history.back(); else closeMenu(); }
+function closeSettings(){ ui.armDel=null; if(history.state?.settings) history.back(); else { ui.settings=false; render(); } }
+window.addEventListener("popstate", e=>{
+  const st = (e.state && e.state.loa) ? e.state : {page:"main"};
+  const moved = st.page!==ui.page || (st.specId||null)!==(ui.specId||null);
+  ui.page = st.page || "main"; ui.specId = st.specId || null; ui.settings = !!st.settings; ui.armDel = null;
+  if(ui.page==="spec" && !byIdS(ui.specId)) ui.page = "specs";
+  if(!st.menu && ui.menu) closeMenu(moved); else { ui.menu = !!st.menu && ui.menu; render(); }
+  if(moved) window.scrollTo(0,0);
+});
+history.replaceState({loa:1, depth:0, page:"main", specId:null, settings:false, menu:false}, "");
+
+/* ───────────── 숨겨지는 줄 애니메이션 ───────────── */
+// 체크해서 사라지는 줄은 높이를 줄이며 스르륵 접고 나서 저장 (앱 AnimatedVisibility shrinkVertically와 같은 느낌)
+function collapseRow(el){
+  const gap = parseFloat(getComputedStyle(el.parentElement).rowGap) || 0;
+  const h = el.getBoundingClientRect().height;
+  el.style.overflow = "hidden"; el.style.minHeight = "0"; el.style.pointerEvents = "none";
+  const a = el.animate([{height:h+"px", opacity:1, marginTop:"0px"}, {height:"0px", opacity:0, marginTop:(-gap)+"px"}],
+    {duration:280, easing:"cubic-bezier(.4,0,.2,1)", fill:"forwards"});
+  return a.finished.catch(()=>{});
+}
+function finishRow(rowEl, hides, apply){
+  if(hides && rowEl && !matchMedia("(prefers-reduced-motion: reduce)").matches){
+    // 체크 표시를 먼저 보여주고 접음
+    rowEl.querySelector(".chk")?.setAttribute("aria-pressed","true");
+    collapseRow(rowEl).then(()=>{ apply(); commit(); });
+  } else { apply(); commit(); }
+}
+// 주간 게이지 값 바꾸기 (버튼·슬라이더 공용). 끝나서 숨겨지면 접는 애니메이션
+function setWeekly(srcEl, id, kind, v){
+  const p = P(id), done = kind==="para" ? v===0 : kind==="sign" ? v>=SIGN_MAX : v===0;
+  const was = kind==="para" ? p.paradise===0 : kind==="sign" ? p.sign>=SIGN_MAX : p.honor===0;
+  const set = ()=>{ if(kind==="para") p.paradise=v; else if(kind==="sign") p.sign=v; else p.honor=v; };
+  finishRow(srcEl?.closest(".row"), done && !was && !ui.showCleared.has(id), set);
+}
+
+/* ───────────── 게이지 슬라이더 (누르거나 끌어서 조절) ───────────── */
+// 끄는 동안 게이지가 손가락을 따라오고, 놓으면 가장 가까운 정수(휴게는 0.5칸)로 맞춰 저장
+let slide = null;
+function slideRatio(e){ const r = slide.g.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); }
+function slideShow(e){
+  const ratio = slideRatio(e), raw = ratio*slide.max, snapped = Math.round(raw/slide.step)*slide.step;
+  slide.g.style.setProperty("--v", ratio);
+  const t = slide.w.querySelector(".gval"); if(t) t.textContent = SLIDE_TEXT[slide.kind](snapped);
+  return snapped;
+}
+function slideApply(v){
+  const {kind, id, k, w} = slide; slide = null;
+  if(kind==="rest"){ P(id).daily[k].gauge = Math.max(0, Math.min(MAX_GAUGE, v)); commit(); }
+  else setWeekly(w, id, kind, v);
+}
+document.addEventListener("pointerdown", e=>{
+  const w = e.target.closest("[data-slide]"); if(!w || e.button>0) return;
+  slide = {w, g:w.querySelector(".gauge"), kind:w.dataset.slide, id:w.dataset.id, k:w.dataset.k, max:+w.dataset.max, step:+w.dataset.step, pid:e.pointerId, moved:false};
+  try{ w.setPointerCapture(e.pointerId); }catch(err){}
+  w.classList.add("dragging");
+  if(e.pointerType==="mouse"){ e.preventDefault(); slideShow(e); }
+});
+document.addEventListener("pointermove", e=>{ if(slide && e.pointerId===slide.pid){ slide.moved=true; slideShow(e); } });
+document.addEventListener("pointerup", e=>{ if(slide && e.pointerId===slide.pid){ slide.w.classList.remove("dragging"); slideApply(slideShow(e)); } });
+document.addEventListener("pointercancel", e=>{ if(slide && e.pointerId===slide.pid){ slide = null; render(); } });   // 세로로 스크롤하면 취소 → 원래 값
+
+/* ───────────── 스펙 입력칸: 누르면 비워서 바로 입력 ───────────── */
+// 원래 값은 흐리게 보이고, 아무것도 안 쓰고 나가면 원래 값으로 돌아감 (앱 DebouncedField clearOnFocus와 같음)
+let focusSess = null;
+function blankField(el){ el.dataset.ph ??= el.placeholder; if(el.value) el.placeholder = el.value; el.value = ""; }
+document.addEventListener("focusin", e=>{
+  const el = e.target; if(rendering || !el.dataset?.spec || el.dataset.spec==="power") return;
+  focusSess = {id:el.id, edited: ui.drafts[el.id]!=null, orig:el.value, ph:el.placeholder};
+  if(!focusSess.edited) blankField(el);
+});
+document.addEventListener("focusout", e=>{
+  const el = e.target; if(rendering || !el.dataset?.spec) return;
+  const sess = focusSess && focusSess.id===el.id ? focusSess : null; focusSess = null;
+  if(ui.drafts[el.id]!=null){ setTimeout(()=>applySpecInput(el), 0); return; }   // 입력했으면 바로 저장 (다음 칸으로 포커스가 옮겨간 뒤)
+  if(sess && !sess.edited){ el.value = sess.orig; el.placeholder = sess.ph; delete el.dataset.ph; }
+});
+
 let flashTimer=null;
 function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ ui.flash=null; render(); },800); }
 
 document.addEventListener("input", e=>{
   if(e.target.dataset?.spec){
     const el = e.target; ui.drafts[el.id] = el.value;
+    if(focusSess && focusSess.id===el.id) focusSess.edited = true;
     clearTimeout(specTimers[el.id]);
     specTimers[el.id] = setTimeout(()=>{ const cur=document.getElementById(el.id); applySpecInput(cur||el); }, 2000);
     return;
@@ -1099,12 +1228,12 @@ document.addEventListener("input", e=>{
 });
 document.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target.dataset?.spec){ applySpecInput(e.target); return; }
-  if(e.key==="Escape" && ui.menu){ closeMenu(); return; }
+  if(e.key==="Escape" && ui.menu){ menuBack(); return; }
   if(e.key==="Enter" && (e.target.id==="login-email" || e.target.id==="login-pw")){ doLogin(); return; }
   if(e.key==="Enter" && e.target.id==="api-name" && S.apiKey && !ui.apiBusy){ apiSearch(); return; }
   if(e.key==="Enter" && e.target.id==="life-input" && ui.lifeInput){ document.getElementById("life-save")?.click(); }
   if(e.key==="Enter" && e.target.dataset?.field){ e.target.blur(); }
-  if(e.key==="Escape"){ if(ui.settings){ ui.settings=false; render(); } else if(ui.edit){ ui.edit=false; render(); } }
+  if(e.key==="Escape"){ if(ui.settings){ closeSettings(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
