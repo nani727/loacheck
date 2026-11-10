@@ -552,6 +552,8 @@ const weeklyDone = c => { const p=P(c.id); return (S.settings.raids===false || r
 const gaugeSum = c => { const d=P(c.id).daily; return shownGauge().reduce((a,k)=>a + d[k].gauge + (S.settings.sortOnlyAll ? d[k].used : 0), 0); };
 // 아이템 레벨 표시: 1712.50 (앱 formatItemLevel과 같음)
 const fmtLv = v => (Number(v)||0).toFixed(2);
+// '카던' 이름은 레벨에 따라 다름 (저장 키는 그대로 kurzan, 앱 chaosContentName과 같음)
+const chaosName = lv => (Number(lv)||0) < 1640 ? "카오스 던전" : (Number(lv)||0) < 1730 ? "쿠르잔 전선" : "혼돈의 균열";
 const goldOf = c => raidsOf(c).reduce((a,r)=>({earned:a.earned+r.earned, max:a.max+r.max}), {earned:0,max:0});
 const bySlot = (a,b) => a.chaNum-b.chaNum || a.name.localeCompare(b.name,"ko");
 function dailyCmp(a,b){ if(ui.sortSlot) return bySlot(a,b); return (dailyDone(a)-dailyDone(b)) || (gaugeSum(b)-gaugeSum(a)) || a.name.localeCompare(b.name,"ko"); }
@@ -806,7 +808,7 @@ function dailyCard(c){
   return `<article class="card ${done?"done":""} ${warn?"warn":""}" data-card="d-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${warn?`<span class="ctag">휴게 가득</span>`:done?`<span class="ctag">완료</span>`:""}</div>
     ${S.settings.guardian!==false && show("guardian") ? row("guardian","가디언 토벌","--guardian") : ""}
-    ${S.settings.kurzan!==false && show("kurzan") ? row("kurzan","쿠르잔 전선","--kurzan") : ""}
+    ${S.settings.kurzan!==false && show("kurzan") ? row("kurzan",chaosName(c.level),"--kurzan") : ""}
     ${S.settings.guild && show("guild") ? `<div class="row"><span class="lbl">길드 출석</span><span class="spacer"></span>${chk(d.guild.done,"hw",`data-id="${c.id}" data-k="guild"`,`${c.name} 길드 출석 완료`)}</div>` : ""}
     ${clearedCount && !ui.edit ? `<button class="cleared-toggle" data-act="show-cleared-daily" data-id="${c.id}" aria-expanded="${showCleared}">${showCleared ? "완료한 숙제 숨기기" : `완료한 숙제 ${clearedCount}개 보기`}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}
   </article>`;
@@ -998,7 +1000,7 @@ function settingsSheet(){
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">표시할 숙제</h3><div class="group">
       <p class="fine" style="padding-top:10px">켠 숙제만 화면에 보이고, '다 했는지' 판단과 정렬에도 켠 숙제만 쓰여요. 휴식 게이지는 꺼둔 동안에도 계속 쌓여요.</p>
       ${sw("guardian","가디언 토벌","일일")}
-      ${sw("kurzan","쿠르잔 전선","일일")}
+      ${sw("kurzan","카던","일일 · 레벨에 따라 카오스 던전 / 쿠르잔 전선 / 혼돈의 균열")}
       ${sw("guild","길드 출석","일일")}
       ${sw("raids","주간 레이드","주간 · 레이드 관문과 골드")}
       ${sw("paradise","낙원:천상","주간")}
