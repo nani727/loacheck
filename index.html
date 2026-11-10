@@ -1338,9 +1338,9 @@ async function askNotif(){ try{ if(notifPerm()==="default") await Notification.r
 function osNotify(items, hour){
   if(notifPerm()!=="granted") return;
   try{
-    const n = new Notification(`⏰ 2분 뒤 ${hour}시 정각이에요`, {body:`아직 안 한 숙제: ${items.map(k=>EXP_NAME[k]).join(" · ")}`, tag:"loacheck-exp", renotify:true, requireInteraction:true, silent:true});
+    const n = new Notification(`⏰ 2분 뒤 ${hour}시 정각이에요`, {body:`아직 안 한 숙제: ${items.map(k=>EXP_NAME[k]).join(" · ")}`, tag:"loacheck-exp", renotify:true, requireInteraction:false, silent:true});
     n.onclick = ()=>{ window.focus(); n.close(); };
-    setTimeout(()=>n.close(), 180000);
+    setTimeout(()=>n.close(), 5000);   // 윈도우 알림은 5초 뒤 저절로 사라짐
   }catch(e){}
 }
 let actx = null;
