@@ -146,6 +146,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .exp-item .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
 .exp-item.chaos .ico{background:linear-gradient(160deg,#6A3FB5,#2C1B57)}
 .exp-item.boss .ico{background:linear-gradient(160deg,#C2552B,#5A1F0D)}
+.exp-item.solo{border:0;padding:0}
+.exp-item.estate .ico{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
 .exp-item b{flex:1;font-weight:600}
 .exp-item.on b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
 .note{color:var(--muted);font-size:13px}
@@ -366,9 +368,9 @@ function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}�
 /* ───────────── 상태 ───────────── */
 function freshState(){
   return { v:1,
-    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, sortOnlyAll:false},
+    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
-    expedition:{chaos:false, field:false},
+    expedition:{chaos:false, field:false, estateBox:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
     lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
     specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
@@ -379,7 +381,7 @@ function normalize(d){
     settings:{...s.settings, ...(d.settings||{})},
     roster: Array.isArray(d.roster) ? d.roster.map(c=>({id:String(c.id), name:String(c.name??""), job:String(c.job??""), level:Number(c.level)||0, chaNum:Number(c.chaNum)||0})) : s.roster,
     progress: (d.progress && typeof d.progress==="object") ? d.progress : {},
-    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field},
+    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox},
     life:{energy:Number(d.life?.energy ?? MAX_LIFE), ts:Number(d.life?.ts || Date.now())},
     lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
     lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
@@ -428,11 +430,12 @@ function applyResets(){
       }
       p.daily.guild.done = false;
     }
-    S.expedition = {chaos:false, field:false};
+    S.expedition = {...S.expedition, chaos:false, field:false};   // 영지 상자(주간)는 그대로
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
     for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; p.honor=HONOR_MAX; p.hourglass=false; }
+    S.expedition.estateBox = false;   // 주간 원정대 숙제
     S.lastWeekly = today; changed = true;
   }
   if (specRollover()) changed = true;
@@ -821,6 +824,7 @@ function weeklyPanel(){
       <div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
       <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div>
     </div>`}
+    ${S.settings.estateBox!==false ? `<div class="strip"><div class="exp"><div class="exp-item estate solo ${S.expedition.estateBox?"on":""}"><span class="ico">영지</span><b>영지 활동 지원 상자 구입</b>${chk(!!S.expedition.estateBox,"exp",'data-k="estateBox"',"영지 활동 지원 상자 구입 완료")}</div></div></div>` : ""}
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
 }
@@ -1002,6 +1006,7 @@ function settingsSheet(){
       ${sw("sign","이정표 미션","주간")}
       ${sw("honor","명예 부여","주간 · 캐릭터당 3번")}
       ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
+      ${sw("estateBox","영지 활동 지원 상자 구입","주간 · 원정대 공통")}
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">알림 (이 브라우저)</h3><div class="group">
       <div class="opt"><div><b>카오스 게이트 · 필드 보스 알림</b><small>안 한 날, 매시 58분에 오른쪽 아래로 알려줘요. 사이트를 열어둬야 보여요.</small></div><button class="tool" data-act="alarm-test">미리 보기</button><button class="sw" role="switch" aria-checked="${ui.alarm!==false}" aria-label="카오스 게이트 필드 보스 알림" data-act="alarm-toggle"></button></div>
