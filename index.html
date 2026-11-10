@@ -314,6 +314,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .toast-items{display:flex;flex-wrap:wrap;gap:6px}
 .toast-items button{height:32px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);padding:0 10px;font-weight:600;font-size:13px}
 .toast-items button:hover{border-color:var(--accent);color:var(--accent-fg)}
+.vol{width:150px;accent-color:var(--accent)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -413,7 +414,7 @@ const ui = { page:"main", specId:null, menu:false, drafts:{}, showClearedDaily:n
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
 try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
-const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot, alarm:ui.alarm!==false})); }catch(e){} };
+const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot, alarm:ui.alarm!==false, volume:ui.volume})); }catch(e){} };
 
 /* ───────────── 초기화 (매일 06시 / 수요일 06시) ───────────── */
 function applyResets(){
@@ -1011,7 +1012,11 @@ function settingsSheet(){
       ${sw("estateBox","영지 활동 지원 상자 구입","주간 · 원정대 공통")}
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">알림 (이 브라우저)</h3><div class="group">
-      <div class="opt"><div><b>카오스 게이트 · 필드 보스 알림</b><small>안 한 날, 매시 58분에 오른쪽 아래로 알려줘요. 사이트를 열어둬야 보여요.</small></div><button class="tool" data-act="alarm-test">미리 보기</button><button class="sw" role="switch" aria-checked="${ui.alarm!==false}" aria-label="카오스 게이트 필드 보스 알림" data-act="alarm-toggle"></button></div>
+      <div class="opt"><div><b>카오스 게이트 · 필드 보스 알림</b><small>안 한 날, 매시 58분에 알려줘요. 이 사이트를 (다른 탭이어도) 열어둬야 해요.</small></div><button class="sw" role="switch" aria-checked="${ui.alarm!==false}" aria-label="카오스 게이트 필드 보스 알림" data-act="alarm-toggle"></button></div>
+      <div class="opt"><div><b>PC 화면 위에 알림 띄우기</b><small>${notifText()}</small></div>${notifPerm()==="default" ? `<button class="tool" data-act="notif-allow">허용하기</button>` : ""}</div>
+      <div class="opt"><div><b>알림 소리</b><small id="vol-text">${ui.volume>0 ? `음량 ${ui.volume}%` : "소리 끔"}</small></div><input id="alarm-vol" class="vol" type="range" min="0" max="100" step="5" value="${ui.volume}" aria-label="알림 소리 크기"></div>
+      <div class="opt"><div><b>테스트</b><small>'5초 뒤'를 누르고 게임 화면으로 돌아가서 알림이 보이는지 확인해 보세요.</small></div><button class="tool" data-act="alarm-test">지금</button><button class="tool" data-act="alarm-test5">5초 뒤</button></div>
+      <p class="fine" style="padding:8px 0 10px">게임 위에 알림이 안 보이면: 게임을 <b>창 모드 / 전체 창 모드(테두리 없는 창)</b>로 하고, Windows 설정 → 시스템 → 알림에서 <b>방해 금지(집중 지원)</b>와 '게임할 때 알림 끄기'를 꺼 주세요. 소리는 사이트를 연 뒤 한 번이라도 화면을 클릭해 둬야 나요.</p>
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">정렬</h3><div class="group">
       ${sw("sortOnlyAll","모든 숙제를 했을 때만 정렬","켜면 일일 숙제를 다 끝내기 전까지 카드가 제자리를 지킵니다.")}
@@ -1159,7 +1164,9 @@ document.addEventListener("click", e=>{
       if(!left.length) closeToast(b.dataset.t); else { t.dataset.items=left.join(","); b.remove(); t.querySelector("p").textContent = "아직 안 한 숙제: " + left.map(k=>EXP_NAME[k]).join(" · "); }
       break; }
     case "alarm-toggle": ui.alarm = !ui.alarm; saveUi(); render(); break;
-    case "alarm-test": checkAlarm(true); break;
+    case "alarm-test": testAlarm(0); break;
+    case "alarm-test5": testAlarm(5000); break;
+    case "notif-allow": askNotif().then(render); break;
     case "exp-toggle": ui.expOpen=!ui.expOpen; render(); break;
     case "show-cleared-daily": if(ui.showClearedDaily.has(id)) ui.showClearedDaily.delete(id); else ui.showClearedDaily.add(id); render(); break;
     case "show-cleared": if(ui.showCleared.has(id)) ui.showCleared.delete(id); else ui.showCleared.add(id); render(); break;
@@ -1316,13 +1323,50 @@ function checkAlarm(force){
   if(!todo.length && !force) return;
   lastAlarm = key;
   const hour = (now.getUTCHours() + 9 + 1) % 24;          // 한국 시간 기준 다음 정시
-  showToast(force && !todo.length ? ["chaos","field"] : todo, hour);
+  alarmOut(force && !todo.length ? ["chaos","field"] : todo, hour);
 }
 function scheduleAlarm(){
   clearTimeout(alarmTimer);
   const now = new Date();
   alarmTimer = setTimeout(()=>{ checkAlarm(); scheduleAlarm(); }, (60 - now.getSeconds())*1000 - now.getMilliseconds() + 200);   // 매 분 0초마다 확인
 }
+// ── PC 알림 (윈도우 알림: 게임·다른 창 위에도 뜸) + 소리 ──
+const notifPerm = () => ("Notification" in window) ? Notification.permission : "unsupported";
+const notifText = () => ({granted:"허용됨 · 다른 프로그램(게임) 위에도 윈도우 알림으로 떠요.", denied:"차단됨 · 주소창 왼쪽 자물쇠 → 알림 '허용'으로 바꿔 주세요.",
+  default:"'허용하기'를 누르고 브라우저 창에서 '허용'을 고르세요.", unsupported:"이 브라우저는 PC 알림을 지원하지 않아요. (PC의 크롬·엣지에서 사용해 주세요)"})[notifPerm()];
+async function askNotif(){ try{ if(notifPerm()==="default") await Notification.requestPermission(); }catch(e){} }
+function osNotify(items, hour){
+  if(notifPerm()!=="granted") return;
+  try{
+    const n = new Notification(`⏰ 2분 뒤 ${hour}시 정각이에요`, {body:`아직 안 한 숙제: ${items.map(k=>EXP_NAME[k]).join(" · ")}`, tag:"loacheck-exp", renotify:true, requireInteraction:true, silent:true});
+    n.onclick = ()=>{ window.focus(); n.close(); };
+    setTimeout(()=>n.close(), 180000);
+  }catch(e){}
+}
+let actx = null;
+function audio(){
+  if(!actx){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return null; actx = new C(); }
+  if(actx.state==="suspended") actx.resume().catch(()=>{});
+  return actx;
+}
+// 브라우저 정책상 소리는 사용자가 한 번 클릭한 뒤부터 낼 수 있음 → 첫 클릭 때 소리 장치를 준비해 둠
+["pointerdown","keydown"].forEach(t=>document.addEventListener(t, ()=>audio(), {capture:true, passive:true}));
+function chime(times=2){
+  const vol = (ui.volume||0)/100, c = audio(); if(vol<=0 || !c) return;
+  const t0 = c.currentTime + 0.05;
+  for(let r=0; r<times; r++) [[880,0],[1174.66,.16],[1567.98,.32]].forEach(([f,d])=>{
+    const t = t0 + r*1.1 + d, o = c.createOscillator(), g = c.createGain();
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6*vol, t+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t+0.7);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t+0.75);
+  });
+}
+async function testAlarm(delay){
+  await askNotif(); render();
+  if(delay){ const b=document.querySelector('[data-act="alarm-test5"]'); if(b) b.textContent="5초 뒤 울려요…"; }
+  setTimeout(()=>{ const hour=(new Date().getUTCHours()+9+1)%24; alarmOut(["chaos","field"], hour); render(); }, delay);
+}
+function alarmOut(items, hour){ showToast(items, hour); osNotify(items, hour); chime(); }
 function showToast(items, hour){
   const box = document.getElementById("toasts"), id = "t" + (++toastSeq);
   const el = document.createElement("div");
@@ -1337,7 +1381,7 @@ function closeToast(id){
   const el = document.getElementById(id); if(!el || el.classList.contains("out")) return;
   el.classList.add("out"); setTimeout(()=>el.remove(), 230);
 }
-try{ ui.alarm = JSON.parse(localStorage.getItem("loacheck-ui")||"{}").alarm !== false; }catch(e){ ui.alarm = true; }
+try{ const u = JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.alarm = u.alarm !== false; ui.volume = Number.isFinite(u.volume) ? u.volume : 60; }catch(e){ ui.alarm = true; ui.volume = 60; }
 scheduleAlarm();
 
 let flashTimer=null;
@@ -1351,6 +1395,7 @@ document.addEventListener("input", e=>{
     specTimers[el.id] = setTimeout(()=>{ const cur=document.getElementById(el.id); applySpecInput(cur||el); }, 2000);
     return;
   }
+  if(e.target.id==="alarm-vol"){ ui.volume = Number(e.target.value); saveUi(); const t=document.getElementById("vol-text"); if(t) t.textContent = ui.volume>0 ? `음량 ${ui.volume}%` : "소리 끔"; return; }
   if(e.target.id==="api-key"){ ui.apiKeyInput=e.target.value.trim(); const b=document.querySelector('[data-act="api-save"]'); if(b) b.disabled=!ui.apiKeyInput; return; }
   if(e.target.id==="api-name"){ ui.apiName=e.target.value; return; }
   if(e.target.id==="login-email" || e.target.id==="login-pw"){
@@ -1374,6 +1419,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){ if(ui.settings){ closeSettings(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
 document.addEventListener("change", e=>{
+  if(e.target.id==="alarm-vol"){ chime(1); return; }   // 손을 떼면 그 크기로 한 번 들려줌
   if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
   const ck = e.target.dataset?.apiCheck;
   if(ck!=null){ if(e.target.checked) ui.apiChecked.add(ck); else ui.apiChecked.delete(ck); return; }
