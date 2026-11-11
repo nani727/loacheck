@@ -88,6 +88,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   .tool .t{display:inline}
 }
 @media (min-width:640px){.tool .t{display:inline}}
+/* ── 캐릭터 선택 (누르면 그 캐릭터 숙제가 맨 위로) ── */
+.picker{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;padding:9px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);text-align:left;transition:border-color .15s,background .15s,transform .1s}
+.pick:hover{border-color:var(--line-strong)}
+.pick:active{transform:scale(.98)}
+.pick b{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick small{font-size:11.5px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.pick[aria-pressed="true"] b{color:var(--accent-fg)}
+@media (max-width:480px){.pick .pj{display:none}}
+@media (max-width:420px){.pick{padding:8px 9px}.pick b{font-size:13px}}
 
 /* ── 공통 부품 ── */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
@@ -413,8 +424,8 @@ let localKey = "loacheck-state";
 const ui = { page:"main", specId:null, menu:false, drafts:{}, showClearedDaily:new Set(), showCleared:new Set(), expOpen:true, expKey:"", view:"daily", edit:false, sortSlot:false, settings:false, lifeInput:"", flash:null, armDel:null,
   apiKeyInput:"", apiName:"", apiFound:null, apiChecked:new Set(), apiMsg:"", apiErr:false, apiBusy:false,
   authReady:false, user:null, signUp:false, loginEmail:"", loginPw:"", loginMsg:"", loginOk:false, busy:false };
-try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; }catch(e){}
-const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot, alarm:ui.alarm!==false, volume:ui.volume})); }catch(e){} };
+try{ const u=JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.view=u.view==="weekly"?"weekly":"daily"; ui.sortSlot=!!u.sortSlot; ui.pin=u.pin||null; }catch(e){}
+const saveUi = () => { try{ localStorage.setItem("loacheck-ui", JSON.stringify({view:ui.view, sortSlot:ui.sortSlot, alarm:ui.alarm!==false, volume:ui.volume, pin:ui.pin||null})); }catch(e){} };
 
 /* ───────────── 초기화 (매일 06시 / 수요일 06시) ───────────── */
 function applyResets(){
@@ -557,8 +568,10 @@ const fmtLv = v => (Number(v)||0).toFixed(2);
 const chaosName = lv => (Number(lv)||0) < 1640 ? "카오스 던전" : (Number(lv)||0) < 1730 ? "쿠르잔 전선" : "혼돈의 균열";
 const goldOf = c => raidsOf(c).reduce((a,r)=>({earned:a.earned+r.earned, max:a.max+r.max}), {earned:0,max:0});
 const bySlot = (a,b) => a.chaNum-b.chaNum || a.name.localeCompare(b.name,"ko");
-function dailyCmp(a,b){ if(ui.sortSlot) return bySlot(a,b); return (dailyDone(a)-dailyDone(b)) || (gaugeSum(b)-gaugeSum(a)) || a.name.localeCompare(b.name,"ko"); }
-function weeklyCmp(a,b){ if(ui.sortSlot) return bySlot(a,b); const ga=goldOf(a), gb=goldOf(b); return (weeklyDone(a)-weeklyDone(b)) || ((gb.max-gb.earned)-(ga.max-ga.earned)) || a.name.localeCompare(b.name,"ko"); }
+// 캐릭터 선택에서 고른 캐릭터는 일일·주간 모두 맨 위
+const pinCmp = (a,b) => (b.id===ui.pin) - (a.id===ui.pin);
+function dailyCmp(a,b){ const p=pinCmp(a,b); if(p) return p; if(ui.sortSlot) return bySlot(a,b); return (dailyDone(a)-dailyDone(b)) || (gaugeSum(b)-gaugeSum(a)) || a.name.localeCompare(b.name,"ko"); }
+function weeklyCmp(a,b){ const p=pinCmp(a,b); if(p) return p; if(ui.sortSlot) return bySlot(a,b); const ga=goldOf(a), gb=goldOf(b); return (weeklyDone(a)-weeklyDone(b)) || ((gb.max-gb.earned)-(ga.max-ga.earned)) || a.name.localeCompare(b.name,"ko"); }
 
 // 정렬은 0.4초 늦게 따라감 (체크하자마자 카드가 튀지 않게)
 const dOrd={order:null,timer:null}, wOrd={order:null,timer:null}, wMemo={key:null,order:null};
@@ -571,7 +584,7 @@ function settle(o, target, hold){
 }
 function weeklyTarget(){
   // 관문 하나 깰 때마다 움직이지 않도록, 레이드 완료/주간 완료가 바뀔 때만 다시 계산
-  const key = (ui.sortSlot?"s":"g") + JSON.stringify(S.settings) + S.roster.map(c=>c.id+":"+raidsOf(c).map(r=>+r.full).join("")+(+weeklyDone(c))).join("|");
+  const key = (ui.sortSlot?"s":"g") + (ui.pin||"") + JSON.stringify(S.settings) + S.roster.map(c=>c.id+":"+raidsOf(c).map(r=>+r.full).join("")+(+weeklyDone(c))).join("|");
   if(key!==wMemo.key) wMemo.key=key, wMemo.order=[...S.roster].sort(weeklyCmp).map(c=>c.id);
   return wMemo.order;
 }
@@ -749,6 +762,14 @@ function header(){
       <button class="tool" data-act="menu" aria-label="메뉴" aria-expanded="${ui.menu}">${ICON.menu}<span class="t">메뉴</span></button>
     </div>
   </div></header>`;
+}
+
+// 캐릭터 선택: 선택창 순서로 3칸씩. 누르면 그 캐릭터가 맨 위, 다시 누르면 원래 순서
+function pickerBar(){
+  if(!S.roster.length) return "";
+  if(ui.pin && !S.roster.some(c=>c.id===ui.pin)) ui.pin = null;
+  return `<nav class="picker" aria-label="캐릭터 선택">${[...S.roster].sort(bySlot).map(c=>
+    `<button class="pick" data-act="pin" data-id="${c.id}" aria-pressed="${ui.pin===c.id}"><b>${esc(c.name)}</b><small><span class="pj">${esc(c.job)} · </span>${fmtLv(c.level)}</small></button>`).join("")}</nav>`;
 }
 
 function dailyPanel(){
@@ -1081,7 +1102,7 @@ function render(){
   app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
   const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage()
-    : `<main class="board" data-view="${ui.view}">${dailyPanel()}${weeklyPanel()}</main>`;
+    : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
   app.innerHTML = header() + body + menuPanel() + settingsSheet();
   const top = app.querySelector(".top"); if(top) document.documentElement.style.setProperty("--top-h", top.offsetHeight + "px");
@@ -1149,6 +1170,7 @@ document.addEventListener("click", e=>{
     case "view": ui.view=b.dataset.v; saveUi(); render(); break;
     case "edit": ui.edit=!ui.edit; ui.lifeInput=""; render(); break;
     case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
+    case "pin": ui.pin = ui.pin===id ? null : id; dOrd.order=wOrd.order=null; saveUi(); render(); break;
     case "settings": { const fromMenu = ui.menu && history.state?.menu; ui.menu=false; ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; if(fromMenu) replaceNav(); else pushNav(); render(); break; }
     case "close": case "close-bg": closeSettings(); break;
     case "hw": { const h=P(id).daily[b.dataset.k];
