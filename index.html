@@ -316,7 +316,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .hist-char{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
 .hist-char b{display:block;margin-bottom:6px}
 .hist-char ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px;font-variant-numeric:tabular-nums}
-:root{--honor:#AF29C5}
+:root{--honor:#AF29C5;--dispatch:#C52982}
+.strip .row.dispatch{margin-top:4px;padding-top:10px;border-top:1px dashed var(--line-strong);min-height:0}
+.row.dispatch.done .lbl{color:var(--muted);text-decoration:line-through}
 /* ── 카게·필보 알림 토스트 (오른쪽 아래) ── */
 .toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;gap:10px;width:min(340px,calc(100vw - 32px));pointer-events:none}
 .toast{pointer-events:auto;background:var(--surface);border:1px solid var(--line-strong);border-left:4px solid var(--gold);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px 12px 12px 14px;display:flex;flex-direction:column;gap:8px;animation:toastIn .28s cubic-bezier(.2,.8,.2,1)}
@@ -446,7 +448,7 @@ const DEFAULT_ROSTER = [
   {id:"c5",name:"세라믝",job:"기상술사",level:1710,chaNum:5},
   {id:"c6",name:"아이언맨이될래요",job:"스카우터",level:1710,chaNum:6},
 ];
-const MAX_GAUGE=5, PARADISE_MAX=5, SIGN_MAX=3, HONOR_MAX=3, HOURGLASS_LV=1730;
+const MAX_GAUGE=5, PARADISE_MAX=5, SIGN_MAX=3, HONOR_MAX=3, HOURGLASS_LV=1730, DISPATCH_MAX=2;
 const MAX_LIFE=11500, LIFE_TICK=30, TICK_MS=600000, LIFE_USE=4240;
 const DAYS=["일","월","화","수","목","금","토"];
 const CHAOS_DAYS=[1,4,6,0], BOSS_DAYS=[2,5,0];
@@ -461,9 +463,9 @@ function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}�
 /* ───────────── 상태 ───────────── */
 function freshState(){
   return { v:1,
-    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, sortOnlyAll:false},
+    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, dispatch:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
-    expedition:{chaos:false, field:false, estateBox:false},
+    expedition:{chaos:false, field:false, estateBox:false, dispatch:0},
     life:{energy:MAX_LIFE, ts:Date.now()},
     lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
     specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
@@ -474,7 +476,7 @@ function normalize(d){
     settings:{...s.settings, ...(d.settings||{})},
     roster: Array.isArray(d.roster) ? d.roster.map(c=>({id:String(c.id), name:String(c.name??""), job:String(c.job??""), level:Number(c.level)||0, chaNum:Number(c.chaNum)||0})) : s.roster,
     progress: (d.progress && typeof d.progress==="object") ? d.progress : {},
-    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox},
+    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number(d.expedition?.dispatch)||0))},
     life:{energy:Number(d.life?.energy ?? MAX_LIFE), ts:Number(d.life?.ts || Date.now())},
     lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
     lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
@@ -523,7 +525,7 @@ function applyResets(){
       }
       p.daily.guild.done = false;
     }
-    S.expedition = {...S.expedition, chaos:false, field:false};   // 영지 상자(주간)는 그대로
+    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:0};   // 영지 상자(주간)는 그대로
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
@@ -827,7 +829,7 @@ const ICON = {
 const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
 const gauge = (v, n, color, key) => `<div class="gauge" ${key?`data-gkey="${key}"`:""} style="--v:${Math.max(0,Math.min(1,v/n))};--n:${n};--c:var(${color})"></div>`;
 // 게이지 + 값 표시. 누르거나 끌어서 조절 (앱 SlidableGauge와 같은 동작)
-const SLIDE_TEXT = { rest:v=>`${v%1?v.toFixed(1):v}칸`, para:v=>`${v}`, sign:v=>`${v}/${SIGN_MAX}`, honor:v=>`${v}/${HONOR_MAX}` };
+const SLIDE_TEXT = { dispatch:v=>`${v}/${DISPATCH_MAX}`, rest:v=>`${v%1?v.toFixed(1):v}칸`, para:v=>`${v}`, sign:v=>`${v}/${SIGN_MAX}`, honor:v=>`${v}/${HONOR_MAX}` };
 const slideGauge = (kind, id, k, v, n, step, color, label) =>
   `<div class="gwrap slide" data-slide="${kind}" data-id="${id}" data-k="${k||""}" data-max="${n}" data-step="${step}" role="slider" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${v}">${gauge(v,n,color,`${kind}-${id}-${k||""}`)}<span class="gval num">${SLIDE_TEXT[kind](v)}</span></div>`;
 
@@ -891,9 +893,16 @@ function dailyPanel(){
       <div class="bar"><i style="width:${life.cur/MAX_LIFE*100}%"></i></div>
       ${lifeEdit}
     </div>
-    <div class="strip">${exp}</div>
+    <div class="strip">${exp}${S.settings.dispatch!==false ? dispatchRow() : ""}</div>
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
+}
+
+// 원정대 일일 숙제: 특수 파견 (하루 2회, 게이지 2칸 + −/+ 버튼, 게이지는 끌어서도 조절)
+function dispatchRow(){
+  const v = S.expedition.dispatch||0, done = v >= DISPATCH_MAX;
+  return `<div class="row dispatch ${done?"done":""}"><span class="lbl">특수 파견</span>${slideGauge("dispatch","exp","",v,DISPATCH_MAX,1,"--dispatch","특수 파견")}<span class="spacer"></span>
+    <div class="step"><button class="sbtn" data-act="dispatch" data-d="-1" aria-label="특수 파견 줄이기">−</button><button class="sbtn" data-act="dispatch" data-d="1" aria-label="특수 파견 늘리기">+</button></div></div>`;
 }
 
 function dailyCard(c){
@@ -1356,6 +1365,7 @@ function settingsSheet(){
       ${sw("sign","이정표 미션","주간")}
       ${sw("honor","명예 부여","주간 · 캐릭터당 3번")}
       ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
+      ${sw("dispatch","특수 파견","일일 · 원정대 공통, 하루 2회")}
       ${sw("estateBox","영지 활동 지원 상자 구입","주간 · 원정대 공통")}
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">알림 (이 브라우저)</h3><div class="group">
@@ -1509,6 +1519,7 @@ document.addEventListener("click", e=>{
       finishRow(b.closest(".row"), hides, ()=>toggleHw(h), {ratio:after/MAX_GAUGE, text:SLIDE_TEXT.rest(after)}); break; }
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
+    case "dispatch": S.expedition.dispatch = Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch||0) + Number(b.dataset.d))); commit(); break;
     case "toast-close": closeToast(b.dataset.t); break;
     case "toast-done": { S.expedition[b.dataset.k]=true; commit();
       const t=document.getElementById(b.dataset.t), left=(t?.dataset.items||"").split(",").filter(k=>k && k!==b.dataset.k);
@@ -1624,6 +1635,7 @@ function slideShow(e){
 function slideApply(v){
   const {kind, id, k, w} = slide; slide = null;
   if(kind==="rest"){ P(id).daily[k].gauge = Math.max(0, Math.min(MAX_GAUGE, v)); commit(); }
+  else if(kind==="dispatch"){ S.expedition.dispatch = Math.max(0, Math.min(DISPATCH_MAX, v)); commit(); }
   else setWeekly(w, id, kind, v);
 }
 document.addEventListener("pointerdown", e=>{
