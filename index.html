@@ -158,6 +158,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .exp-item.chaos .ico{background:linear-gradient(160deg,#6A3FB5,#2C1B57)}
 .exp-item.boss .ico{background:linear-gradient(160deg,#C2552B,#5A1F0D)}
 .exp-item.solo{border:0;padding:0}
+.total .exp-item{flex:none}
+.total .exp-item.sep{margin-top:4px;padding-top:12px;border-top:1px dashed var(--line-strong);border-radius:0}
 .exp-item.estate .ico{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
 .exp-item b{flex:1;font-weight:600}
 .exp-item.on b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
@@ -844,11 +846,14 @@ function weeklyPanel(){
   const start = weekStart(loaDay());
   return `<section class="panel panel-weekly">
     <div class="panel-head"><h2>주간 숙제</h2><span class="num">${dayLabel(start).replace(/ \(.\)/,"")} 수요일부터</span></div>
-    ${S.settings.raids===false ? "" : `<div class="total">
-      <div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
-      <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div>
-    </div>`}
-    ${S.settings.estateBox!==false ? `<div class="strip"><div class="exp"><div class="exp-item estate solo ${S.expedition.estateBox?"on":""}"><span class="ico">영지</span><b>영지 활동 지원 상자 구입</b>${chk(!!S.expedition.estateBox,"exp",'data-k="estateBox"',"영지 활동 지원 상자 구입 완료")}</div></div></div>` : ""}
+    ${(()=>{ // 주간 원정대 숙제: 원정대 골드 + 영지 상자를 한 칸에
+      const goldOn = S.settings.raids!==false, boxOn = S.settings.estateBox!==false;
+      if(!goldOn && !boxOn) return "";
+      const gold = goldOn ? `<div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
+      <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div>` : "";
+      const box = boxOn ? `<div class="exp-item estate solo ${goldOn?"sep":""} ${S.expedition.estateBox?"on":""}"><span class="ico">영지</span><b>영지 활동 지원 상자 구입</b>${chk(!!S.expedition.estateBox,"exp",'data-k="estateBox"',"영지 활동 지원 상자 구입 완료")}</div>` : "";
+      return `<div class="total">${gold}${box}</div>`;
+    })()}
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
 }
