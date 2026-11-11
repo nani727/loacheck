@@ -474,7 +474,7 @@ function freshState(){
   return { v:1,
     settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, dispatch:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
-    expedition:{chaos:false, field:false, estateBox:false, dispatch:DISPATCH_MAX},
+    expedition:{chaos:false, field:false, estateBox:false, dispatch:0},
     life:{energy:MAX_LIFE, ts:Date.now()},
     lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
     specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
@@ -485,7 +485,7 @@ function normalize(d){
     settings:{...s.settings, ...(d.settings||{})},
     roster: Array.isArray(d.roster) ? d.roster.map(c=>({id:String(c.id), name:String(c.name??""), job:String(c.job??""), level:Number(c.level)||0, chaNum:Number(c.chaNum)||0})) : s.roster,
     progress: (d.progress && typeof d.progress==="object") ? d.progress : {},
-    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number.isFinite(Number(d.expedition?.dispatch)) && d.expedition?.dispatch!=null ? Number(d.expedition.dispatch) : DISPATCH_MAX))},
+    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number(d.expedition?.dispatch)||0))},
     life:{energy:Number(d.life?.energy ?? MAX_LIFE), ts:Number(d.life?.ts || Date.now())},
     lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
     lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
@@ -534,7 +534,7 @@ function applyResets(){
       }
       p.daily.guild.done = false;
     }
-    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:DISPATCH_MAX};   // 영지 상자(주간)는 그대로
+    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:0};   // 영지 상자(주간)는 그대로
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
@@ -898,7 +898,7 @@ function dailyPanel(){
         <button class="pbtn sm ${ui.flash==="use"?"ok":""}" data-act="life-use">${ui.flash==="use"?"반영됨":"-"+fmt(LIFE_USE)}</button>
         <button class="pbtn sm save" id="life-save" data-act="life-save">저장</button>
         <span class="eta">${eta}</span></div>
-      <div class="bar"><i style="width:${life.cur/MAX_LIFE*100}%"></i></div>
+      <div class="bar"><i data-bkey="life" style="width:${life.cur/MAX_LIFE*100}%"></i></div>
       <div class="strip-sep"></div>
       ${exp}${dispatchRow()}
     </div>
@@ -906,10 +906,10 @@ function dailyPanel(){
   </section>`;
 }
 
-// 원정대 일일 숙제: 특수 파견 (남은 횟수 2/2에서 시작, 0/2면 완료 → 숨김. '다시 보기'로 펼칠 수 있음)
+// 원정대 일일 숙제: 특수 파견 (0/2에서 시작, 2/2면 완료 → 숨김. '다시 보기'로 펼칠 수 있음)
 function dispatchRow(){
   if(S.settings.dispatch===false) return "";
-  const v = S.expedition.dispatch ?? DISPATCH_MAX, done = v <= 0;
+  const v = S.expedition.dispatch || 0, done = v >= DISPATCH_MAX;
   if(!done) ui.showDispatch = false;
   if(done && !ui.showDispatch) return `<button class="cleared-toggle" data-act="show-dispatch" aria-expanded="false">특수 파견 완료 · 다시 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
   return `<div class="row dispatch ${done?"done":""}"><span class="lbl">특수 파견</span>${slideGauge("dispatch","exp","",v,DISPATCH_MAX,1,"--dispatch","특수 파견")}<span class="spacer"></span>
@@ -1529,7 +1529,7 @@ document.addEventListener("click", e=>{
       finishRow(b.closest(".row"), hides, ()=>toggleHw(h), {ratio:after/MAX_GAUGE, text:SLIDE_TEXT.rest(after)}); break; }
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
-    case "dispatch": setDispatch(b, Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch ?? DISPATCH_MAX) + Number(b.dataset.d)))); break;
+    case "dispatch": setDispatch(b, Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch || 0) + Number(b.dataset.d)))); break;
     case "toast-close": closeToast(b.dataset.t); break;
     case "toast-done": { S.expedition[b.dataset.k]=true; commit();
       const t=document.getElementById(b.dataset.t), left=(t?.dataset.items||"").split(",").filter(k=>k && k!==b.dataset.k);
@@ -1623,10 +1623,10 @@ function finishRow(rowEl, hides, apply, gaugeTo){
     setTimeout(()=>collapseRow(rowEl).then(()=>{ apply(); commit(); }), wait);
   } else { apply(); commit(); }
 }
-// 특수 파견: 0이 되면 게이지가 먼저 줄어든 뒤 스르륵 접힘
+// 특수 파견: 2/2가 되면 게이지가 먼저 차오른 뒤 스르륵 접힘
 function setDispatch(srcEl, v){
-  const was = (S.expedition.dispatch ?? DISPATCH_MAX) <= 0;
-  finishRow(srcEl?.closest(".row"), v<=0 && !was && !ui.showDispatch, ()=>{ S.expedition.dispatch = v; }, {ratio:v/DISPATCH_MAX, text:SLIDE_TEXT.dispatch(v)});
+  const was = (S.expedition.dispatch || 0) >= DISPATCH_MAX;
+  finishRow(srcEl?.closest(".row"), v>=DISPATCH_MAX && !was && !ui.showDispatch, ()=>{ S.expedition.dispatch = v; }, {ratio:v/DISPATCH_MAX, text:SLIDE_TEXT.dispatch(v)});
 }
 // 주간 게이지 값 바꾸기 (버튼·슬라이더 공용). 끝나서 숨겨지면 접는 애니메이션
 function setWeekly(srcEl, id, kind, v){
