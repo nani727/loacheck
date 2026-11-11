@@ -145,8 +145,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .life-top .eta{margin-left:auto;color:var(--kurzan);font-size:13px;font-weight:600}
 .bar{height:10px;border-radius:999px;background:var(--gauge-empty);overflow:hidden}
 .bar>i{display:block;height:100%;border-radius:inherit;background:var(--c,var(--kurzan));transition:width .35s ease}
-.life-edit{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.life-edit input{flex:1;min-width:120px;height:38px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg);color:var(--fg);padding:0 12px;font:inherit}
+.life-top{align-items:center}
+.life-nums{display:inline-flex;align-items:baseline;gap:4px}
+.life-cur{width:6.2ch;border:1px solid transparent;border-bottom:1px dashed var(--line-strong);border-radius:6px;background:transparent;color:var(--fg);font:inherit;font-weight:700;padding:2px 4px;text-align:right;cursor:text}
+.life-cur:hover{border-color:var(--line-strong)}
+.life-cur:focus{outline:none;border-color:var(--kurzan);background:var(--bg)}
+.pbtn.sm{height:30px;padding:0 10px;font-size:13px;border-radius:8px}
+.life-top .save{display:none;background:var(--kurzan);color:#fff}
+.life-top.editing .save{display:inline-block}
+.life-br{display:none}
+@media (max-width:480px){.life-top b{order:1}.life-top .eta{order:2}.life-br{display:block;order:3;flex-basis:100%;height:0}.life-nums{order:4}.life-top .pbtn{order:5}}
+.strip-sep{border-top:1px dashed var(--line-strong);margin:2px 0}
 .pbtn{height:38px;padding:0 14px;border-radius:9px;border:1.5px solid var(--kurzan);background:transparent;font-weight:700}
 .pbtn:disabled{border-color:var(--line);color:var(--faint);cursor:default}
 .pbtn.ok{background:var(--kurzan);color:#fff;border-color:var(--kurzan)}
@@ -317,7 +326,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .hist-char b{display:block;margin-bottom:6px}
 .hist-char ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:14px;font-variant-numeric:tabular-nums}
 :root{--honor:#AF29C5;--dispatch:#C52982}
-.strip .row.dispatch{margin-top:4px;padding-top:10px;border-top:1px dashed var(--line-strong);min-height:0}
+.strip .row.dispatch{min-height:34px}
 .row.dispatch.done .lbl{color:var(--muted);text-decoration:line-through}
 /* ── 카게·필보 알림 토스트 (오른쪽 아래) ── */
 .toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-direction:column;gap:10px;width:min(340px,calc(100vw - 32px));pointer-events:none}
@@ -465,7 +474,7 @@ function freshState(){
   return { v:1,
     settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, dispatch:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
-    expedition:{chaos:false, field:false, estateBox:false, dispatch:0},
+    expedition:{chaos:false, field:false, estateBox:false, dispatch:DISPATCH_MAX},
     life:{energy:MAX_LIFE, ts:Date.now()},
     lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
     specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
@@ -476,7 +485,7 @@ function normalize(d){
     settings:{...s.settings, ...(d.settings||{})},
     roster: Array.isArray(d.roster) ? d.roster.map(c=>({id:String(c.id), name:String(c.name??""), job:String(c.job??""), level:Number(c.level)||0, chaNum:Number(c.chaNum)||0})) : s.roster,
     progress: (d.progress && typeof d.progress==="object") ? d.progress : {},
-    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number(d.expedition?.dispatch)||0))},
+    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number.isFinite(Number(d.expedition?.dispatch)) && d.expedition?.dispatch!=null ? Number(d.expedition.dispatch) : DISPATCH_MAX))},
     life:{energy:Number(d.life?.energy ?? MAX_LIFE), ts:Number(d.life?.ts || Date.now())},
     lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
     lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
@@ -525,7 +534,7 @@ function applyResets(){
       }
       p.daily.guild.done = false;
     }
-    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:0};   // 영지 상자(주간)는 그대로
+    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:DISPATCH_MAX};   // 영지 상자(주간)는 그대로
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
@@ -841,8 +850,7 @@ function header(){
       <button role="tab" aria-selected="${ui.view==="weekly"}" data-act="view" data-v="weekly">주간</button>
     </div>` : ""}
     <div class="tools" ${ui.page==="main" ? "" : 'style="margin-left:auto"'}>
-      ${ui.page==="main" ? `<button class="tool" aria-pressed="${ui.edit}" data-act="edit" aria-label="수정 모드">${ICON.edit}<span class="t">수정</span></button>
-      <button class="tool" aria-pressed="${ui.sortSlot}" data-act="slot" aria-label="캐릭터 선택창 순서">${ICON.slot}<span class="t">선택창 순</span></button>` : ""}
+      ${ui.page==="main" ? `<button class="tool" aria-pressed="${ui.sortSlot}" data-act="slot" aria-label="캐릭터 선택창 순서">${ICON.slot}<span class="t">선택창 순</span></button>` : ""}
       <button class="tool" data-act="menu" aria-label="메뉴" aria-expanded="${ui.menu}">${ICON.menu}<span class="t">메뉴</span></button>
     </div>
   </div></header>`;
@@ -861,11 +869,7 @@ function dailyPanel(){
   const today = loaDay(), d = dow(today), life = lifeStatus();
   const eta = life.mins<=0 ? "가득 참" : life.mins>=60 ? `${Math.floor(life.mins/60)}시간 ${life.mins%60}분 뒤 가득` : `${life.mins}분 뒤 가득`;
   const showChaos = CHAOS_DAYS.includes(d), showBoss = BOSS_DAYS.includes(d);
-  const lifeEdit = ui.edit ? `<div class="life-edit">
-      <input id="life-input" inputmode="numeric" placeholder="현재 생기 입력" value="${esc(ui.lifeInput)}" aria-label="현재 생기">
-      <button class="pbtn ${ui.flash==="use"?"ok":""}" data-act="life-use">${ui.flash==="use"?"반영됨":"-"+fmt(LIFE_USE)}</button>
-      <button class="pbtn ${ui.flash==="save"?"ok":""}" id="life-save" data-act="life-save" ${ui.lifeInput||ui.flash==="save"?"":"disabled"}>${ui.flash==="save"?"저장됨":"저장"}</button>
-    </div>` : "";
+  // 생기 숫자를 눌러 바로 고침 → 오른쪽에 저장 버튼이 나타남 (엔터로도 저장)
   // 카게·필보: 전부 끝내면 자동으로 접힘 (앱 ExpeditionContentsCard와 같은 동작)
   const noContent = !showChaos && !showBoss;
   const expDone = (!showChaos || S.expedition.chaos) && (!showBoss || S.expedition.field);
@@ -889,18 +893,25 @@ function dailyPanel(){
   return `<section class="panel panel-daily">
     <div class="panel-head"><h2>일일 숙제</h2><span class="num">${dayLabel(today)}</span></div>
     <div class="strip">
-      <div class="life-top"><b>생활의 기운</b><span class="num">${fmt(life.cur)} <span class="note">/ ${fmt(MAX_LIFE)}</span></span><span class="eta">${eta}</span></div>
+      <div class="life-top ${ui.lifeEditing?"editing":""}"><b>생활의 기운</b><i class="life-br"></i>
+        <span class="num life-nums"><input id="life-cur" class="life-cur num" inputmode="numeric" autocomplete="off" aria-label="현재 생활의 기운 (눌러서 고치기)" value="${ui.lifeEditing ? esc(ui.lifeInput) : fmt(life.cur)}" size="6"><span class="note">/ ${fmt(MAX_LIFE)}</span></span>
+        <button class="pbtn sm ${ui.flash==="use"?"ok":""}" data-act="life-use">${ui.flash==="use"?"반영됨":"-"+fmt(LIFE_USE)}</button>
+        <button class="pbtn sm save" id="life-save" data-act="life-save">저장</button>
+        <span class="eta">${eta}</span></div>
       <div class="bar"><i style="width:${life.cur/MAX_LIFE*100}%"></i></div>
-      ${lifeEdit}
+      <div class="strip-sep"></div>
+      ${exp}${dispatchRow()}
     </div>
-    <div class="strip">${exp}${S.settings.dispatch!==false ? dispatchRow() : ""}</div>
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
 }
 
-// 원정대 일일 숙제: 특수 파견 (하루 2회, 게이지 2칸 + −/+ 버튼, 게이지는 끌어서도 조절)
+// 원정대 일일 숙제: 특수 파견 (남은 횟수 2/2에서 시작, 0/2면 완료 → 숨김. '다시 보기'로 펼칠 수 있음)
 function dispatchRow(){
-  const v = S.expedition.dispatch||0, done = v >= DISPATCH_MAX;
+  if(S.settings.dispatch===false) return "";
+  const v = S.expedition.dispatch ?? DISPATCH_MAX, done = v <= 0;
+  if(!done) ui.showDispatch = false;
+  if(done && !ui.showDispatch) return `<button class="cleared-toggle" data-act="show-dispatch" aria-expanded="false">특수 파견 완료 · 다시 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
   return `<div class="row dispatch ${done?"done":""}"><span class="lbl">특수 파견</span>${slideGauge("dispatch","exp","",v,DISPATCH_MAX,1,"--dispatch","특수 파견")}<span class="spacer"></span>
     <div class="step"><button class="sbtn" data-act="dispatch" data-d="-1" aria-label="특수 파견 줄이기">−</button><button class="sbtn" data-act="dispatch" data-d="1" aria-label="특수 파견 늘리기">+</button></div></div>`;
 }
@@ -912,7 +923,6 @@ function dailyCard(c){
     const h = d[k];
     return `<div class="row"><span class="lbl">${label}</span>
       ${slideGauge("rest", c.id, k, h.gauge, MAX_GAUGE, 0.5, color, `${c.name} ${label} 휴식 게이지`)}
-      ${ui.edit ? `<div class="step"><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="-0.5" aria-label="${label} 휴게 줄이기">−</button><button class="sbtn" data-act="gauge" data-id="${c.id}" data-k="${k}" data-d="0.5" aria-label="${label} 휴게 늘리기">+</button></div>` : ""}
       <span class="spacer"></span>${chk(h.done,"hw",`data-id="${c.id}" data-k="${k}"`,`${c.name} ${label} 완료`)}</div>`;
   };
   // 끝낸 일일 숙제는 숨김. '완료한 숙제 N개 보기' 또는 수정 모드에서 다시 보임 (앱 DailyCharacterCard와 같은 동작)
@@ -1365,7 +1375,7 @@ function settingsSheet(){
       ${sw("sign","이정표 미션","주간")}
       ${sw("honor","명예 부여","주간 · 캐릭터당 3번")}
       ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
-      ${sw("dispatch","특수 파견","일일 · 원정대 공통, 하루 2회")}
+      ${sw("dispatch","특수 파견","일일 · 원정대 공통, 하루 2회 (다 하면 숨김)")}
       ${sw("estateBox","영지 활동 지원 상자 구입","주간 · 원정대 공통")}
     </div></div>
     <div><h3 style="margin:0 0 6px;font-size:13px;color:var(--accent-fg)">알림 (이 브라우저)</h3><div class="group">
@@ -1507,7 +1517,7 @@ document.addEventListener("click", e=>{
     case "login-reset": doReset(); break;
     case "logout": ui.settings=false; ui.page="main"; replaceNav(); signOut(auth); break;
     case "view": ui.view=b.dataset.v; saveUi(); render(); break;
-    case "edit": ui.edit=!ui.edit; ui.lifeInput=""; render(); break;
+    case "show-dispatch": ui.showDispatch = true; render(); break;
     case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
     case "pin": ui.pin = ui.pin===id ? null : id; dOrd.order=wOrd.order=null; saveUi(); render(); break;
     case "settings": { const fromMenu = ui.menu && history.state?.menu; ui.menu=false; ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; if(fromMenu) replaceNav(); else pushNav(); render(); break; }
@@ -1519,7 +1529,7 @@ document.addEventListener("click", e=>{
       finishRow(b.closest(".row"), hides, ()=>toggleHw(h), {ratio:after/MAX_GAUGE, text:SLIDE_TEXT.rest(after)}); break; }
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
-    case "dispatch": S.expedition.dispatch = Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch||0) + Number(b.dataset.d))); commit(); break;
+    case "dispatch": setDispatch(b, Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch ?? DISPATCH_MAX) + Number(b.dataset.d)))); break;
     case "toast-close": closeToast(b.dataset.t); break;
     case "toast-done": { S.expedition[b.dataset.k]=true; commit();
       const t=document.getElementById(b.dataset.t), left=(t?.dataset.items||"").split(",").filter(k=>k && k!==b.dataset.k);
@@ -1548,7 +1558,7 @@ document.addEventListener("click", e=>{
     case "honor": { const p=P(id); setWeekly(b, id, "honor", Math.max(0,Math.min(HONOR_MAX,p.honor+Number(b.dataset.d)))); break; }
     case "setting": S.settings[b.dataset.k]=!S.settings[b.dataset.k]; commit(); break;
     case "life-use": { const now=Date.now(), st=lifeStatus(now); S.life={energy:Math.max(0,st.cur-LIFE_USE), ts: st.cur>=MAX_LIFE?now:st.lastTick}; flash("use"); commit(); break; }
-    case "life-save": { const v=parseInt(ui.lifeInput,10); if(!Number.isFinite(v)) break; S.life={energy:Math.max(0,Math.min(MAX_LIFE,v)), ts:Date.now()}; ui.lifeInput=""; flash("save"); commit(); break; }
+    case "life-save": lifeSave(); break;
     case "add": { const id2="c"+Date.now().toString(36); const next=Math.max(0,...S.roster.map(c=>c.chaNum))+1; S.roster.push({id:id2,name:"새 캐릭터",job:"",level:1710,chaNum:next}); commit(); setTimeout(()=>{ const el=document.getElementById("r-name-"+id2); el&&el.select(); },0); break; }
     case "del": if(ui.armDel!==id){ ui.armDel=id; render(); } else { S.roster=S.roster.filter(c=>c.id!==id); delete S.progress[id]; ui.armDel=null; commit(); } break;
   }
@@ -1613,6 +1623,11 @@ function finishRow(rowEl, hides, apply, gaugeTo){
     setTimeout(()=>collapseRow(rowEl).then(()=>{ apply(); commit(); }), wait);
   } else { apply(); commit(); }
 }
+// 특수 파견: 0이 되면 게이지가 먼저 줄어든 뒤 스르륵 접힘
+function setDispatch(srcEl, v){
+  const was = (S.expedition.dispatch ?? DISPATCH_MAX) <= 0;
+  finishRow(srcEl?.closest(".row"), v<=0 && !was && !ui.showDispatch, ()=>{ S.expedition.dispatch = v; }, {ratio:v/DISPATCH_MAX, text:SLIDE_TEXT.dispatch(v)});
+}
 // 주간 게이지 값 바꾸기 (버튼·슬라이더 공용). 끝나서 숨겨지면 접는 애니메이션
 function setWeekly(srcEl, id, kind, v){
   const p = P(id), done = kind==="para" ? v===0 : kind==="sign" ? v>=SIGN_MAX : v===0;
@@ -1635,7 +1650,7 @@ function slideShow(e){
 function slideApply(v){
   const {kind, id, k, w} = slide; slide = null;
   if(kind==="rest"){ P(id).daily[k].gauge = Math.max(0, Math.min(MAX_GAUGE, v)); commit(); }
-  else if(kind==="dispatch"){ S.expedition.dispatch = Math.max(0, Math.min(DISPATCH_MAX, v)); commit(); }
+  else if(kind==="dispatch"){ setDispatch(w, Math.max(0, Math.min(DISPATCH_MAX, v))); }
   else setWeekly(w, id, kind, v);
 }
 document.addEventListener("pointerdown", e=>{
@@ -1749,6 +1764,27 @@ try{ const u = JSON.parse(localStorage.getItem("loacheck-ui")||"{}"); ui.alarm =
 scheduleAlarm();
 
 let flashTimer=null;
+// 생활의 기운 숫자 직접 고치기: 누르면 저장 버튼이 나타나고, 저장(또는 엔터)하면 사라짐
+function lifeSave(){
+  const v = parseInt(ui.lifeInput, 10);
+  ui.lifeEditing = false; ui.lifeInput = "";
+  if(Number.isFinite(v)) S.life = {energy:Math.max(0,Math.min(MAX_LIFE,v)), ts:Date.now()};
+  document.getElementById("life-cur")?.blur();
+  commit();
+}
+document.addEventListener("focusin", e=>{
+  if(rendering || e.target.id!=="life-cur" || ui.lifeEditing) return;
+  ui.lifeEditing = true; ui.lifeInput = String(lifeStatus().cur);
+  e.target.value = ui.lifeInput; e.target.closest(".life-top")?.classList.add("editing");
+  setTimeout(()=>{ try{ e.target.select(); }catch(err){} }, 0);
+});
+document.addEventListener("focusout", e=>{
+  if(rendering || e.target.id!=="life-cur" || !ui.lifeEditing) return;
+  ui.lifeEditing = false; ui.lifeInput = "";      // 저장 안 하고 나가면 원래 값으로
+  e.target.value = fmt(lifeStatus().cur); e.target.closest(".life-top")?.classList.remove("editing");
+});
+// 저장 버튼을 눌러도 입력칸 포커스가 먼저 빠지지 않게
+document.addEventListener("pointerdown", e=>{ if(e.target.closest?.("#life-save")) e.preventDefault(); });
 function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ ui.flash=null; render(); },800); }
 
 document.addEventListener("input", e=>{
@@ -1768,10 +1804,10 @@ document.addEventListener("input", e=>{
     const b=document.getElementById("login-submit"); if(b && !ui.busy) b.disabled = !(ui.loginEmail.includes("@") && ui.loginPw.length>=6);
     return;
   }
-  if(e.target.id==="life-input"){
+  if(e.target.id==="life-cur"){
     const v = e.target.value.replace(/\D/g,"").slice(0,5);
     if(v!==e.target.value) e.target.value=v;
-    ui.lifeInput=v; const s=document.getElementById("life-save"); if(s && ui.flash!=="save") s.disabled=!v;
+    ui.lifeInput = v;
   }
 });
 document.addEventListener("keydown", e=>{
@@ -1780,7 +1816,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape" && ui.menu){ menuBack(); return; }
   if(e.key==="Enter" && (e.target.id==="login-email" || e.target.id==="login-pw")){ doLogin(); return; }
   if(e.key==="Enter" && e.target.id==="api-name" && S.apiKey && !ui.apiBusy){ apiSearch(); return; }
-  if(e.key==="Enter" && e.target.id==="life-input" && ui.lifeInput){ document.getElementById("life-save")?.click(); }
+  if(e.target.id==="life-cur"){ if(e.key==="Enter"){ e.preventDefault(); lifeSave(); } else if(e.key==="Escape"){ e.target.blur(); } }
   if(e.key==="Enter" && e.target.dataset?.field){ e.target.blur(); }
   if(e.key==="Escape"){ if(ui.settings){ closeSettings(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
