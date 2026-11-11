@@ -90,7 +90,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 @media (min-width:640px){.tool .t{display:inline}}
 /* ── 캐릭터 선택 (누르면 그 캐릭터 숙제가 맨 위로) ── */
 .picker{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;padding:9px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);text-align:left;transition:border-color .15s,background .15s,transform .1s}
+.pick-cell{display:flex;gap:6px;min-width:0}
+.pick-spec{flex:none;width:58px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--sec-spec);font-size:12px;font-weight:700;line-height:1.25;padding:4px 6px;word-break:keep-all;transition:border-color .15s,background .15s}
+@media (min-width:640px){.pick-spec{width:84px;white-space:nowrap}}
+.pick-spec:hover{border-color:var(--sec-spec);background:color-mix(in srgb,var(--sec-spec) 12%,var(--surface))}
+.pick{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;padding:9px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);text-align:left;transition:border-color .15s,background .15s,transform .1s}
 .pick:hover{border-color:var(--line-strong)}
 .pick:active{transform:scale(.98)}
 .pick b{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -98,7 +102,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .pick[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
 .pick[aria-pressed="true"] b{color:var(--accent-fg)}
 @media (max-width:480px){.pick .pj{display:none}}
-@media (max-width:420px){.pick{padding:8px 9px}.pick b{font-size:13px}}
+@media (max-width:420px){.pick{padding:8px 9px}.pick b{font-size:13px}.pick-cell{gap:4px}.pick-spec{width:40px;font-size:11px;padding:2px 3px;border-radius:10px}}
 
 /* ── 공통 부품 ── */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
@@ -771,7 +775,7 @@ function pickerBar(){
   if(!S.roster.length) return "";
   if(ui.pin && !S.roster.some(c=>c.id===ui.pin)) ui.pin = null;
   return `<nav class="picker" aria-label="캐릭터 선택">${[...S.roster].sort(bySlot).map(c=>
-    `<button class="pick" data-act="pin" data-id="${c.id}" aria-pressed="${ui.pin===c.id}"><b>${esc(c.name)}</b><small><span class="pj">${esc(c.job)} · </span>${fmtLv(c.level)}</small></button>`).join("")}</nav>`;
+    `<div class="pick-cell"><button class="pick" data-act="pin" data-id="${c.id}" aria-pressed="${ui.pin===c.id}"><b>${esc(c.name)}</b><small><span class="pj">${esc(c.job)} · </span>${fmtLv(c.level)}</small></button><button class="pick-spec" data-act="open-spec" data-id="${c.id}" aria-label="${esc(c.name)} 스펙 현황">스펙 현황</button></div>`).join("")}</nav>`;
 }
 
 function dailyPanel(){
