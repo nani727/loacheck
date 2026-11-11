@@ -332,6 +332,81 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .toast-items button{height:32px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);padding:0 10px;font-weight:600;font-size:13px}
 .toast-items button:hover{border-color:var(--accent);color:var(--accent-fg)}
 .vol{width:150px;accent-color:var(--accent)}
+/* ── 융화재료 계산기 ── */
+.fz{--res-n:#8A96A3;--res-p:#3FA46A;--res-r:#4F7FD6;--res-w:#9567C9;--res-g:var(--gold);--hl:color-mix(in srgb,var(--gold) 18%,transparent);--hl-ink:var(--gold-fg);--plus:#2E9D5B;--minus:var(--danger);
+  max-width:1040px}
+.fz .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.fz-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.fz-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px}
+.fz-head h3{margin:0;font-size:17px;font-weight:700}
+.fz-note{color:var(--muted);font-size:12.5px}
+.fz-fold{display:flex;align-items:center;gap:8px;border:0;background:none;padding:0;font-weight:700;font-size:17px;text-align:left}
+.fz-fold svg{width:18px;height:18px;transition:transform .2s}
+.fz-fold[aria-expanded="true"] svg{transform:rotate(90deg)}
+.fz-btn{height:32px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);padding:0 12px;font-weight:600;font-size:13px}
+.fz-btn:disabled{opacity:.6;cursor:default}
+.fz-err{margin-top:10px;color:var(--danger);font-size:13px}
+.fz-tablewrap{margin-top:12px;overflow-x:auto}
+.fz-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.fz-table th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line-strong)}
+.fz-table td{padding:7px 8px;border-bottom:1px solid var(--line)}
+.fz-table th.r,.fz-table td.r{text-align:right}
+.fz-table tr.grp td{background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;padding:5px 8px}
+.fz-table tr.best td{background:var(--hl)}
+.fz-table tr.best td:first-child{font-weight:700}
+.fz-plus{color:var(--plus);font-weight:600}.fz-minus{color:var(--minus);font-weight:600}
+.fz-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-strong);font-size:13.5px}
+.fz-pick select{border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:8px;padding:6px 8px;font:inherit}
+.fz-pick b{color:var(--accent-fg)}
+.fz-fields{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px}
+.fz-prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-strong)}
+.fz-prices.one{grid-template-columns:minmax(0,1fr);max-width:320px}
+.fz-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fz-field label{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;min-width:0}
+.fz-field label span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fz-dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.fz-field input{width:100%;min-width:0;font:500 16px "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--fg);background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;padding:9px 10px;text-align:right}
+.fz-field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fz-field small{color:var(--muted);font-size:11.5px}
+.fz-field small.max{color:var(--hl-ink);background:var(--hl);border-radius:6px;padding:4px 8px;font-weight:600;align-self:flex-start;font-size:12.5px}
+.fz-recipe{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+.fz-recipe b{color:var(--fg);font-weight:600}
+.fz-recipe span{display:inline-flex;align-items:center;gap:5px}
+.fz-summary{background:var(--accent-soft);border-radius:var(--r);padding:12px 16px;font-size:14px}
+.fz-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.fz-route{display:flex;flex-direction:column;gap:14px;min-width:0}
+.fz-route-head p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+.fz-route-head h3{margin:0;font-size:16px}
+.fz-block{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.fz-block h4{margin:0;font-size:12.5px;font-weight:600;color:var(--muted)}
+.fz-big{display:flex;align-items:baseline;gap:6px}
+.fz-big .n{font:600 36px/1 "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--accent-fg)}
+.fz-big .u{font-size:15px;font-weight:600}
+.fz dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:7px 12px}
+.fz dt{color:var(--muted);font-size:13.5px;min-width:0}
+.fz dd{margin:0;font:600 14.5px "IBM Plex Mono",ui-monospace,Menlo,monospace;text-align:right}
+.fz dt.key,.fz dd.key{background:var(--hl);color:var(--hl-ink)}
+.fz dt.key{padding:2px 8px;border-radius:4px 0 0 4px;font-weight:600}
+.fz dd.key{padding:2px 8px;border-radius:0 4px 4px 0}
+.fz-left{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.fz-chips{display:flex;flex-wrap:wrap;gap:6px}
+.fz-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:999px;padding:2px 10px 2px 8px;font-size:12.5px}
+.fz-chip b{font:600 13px "IBM Plex Mono",ui-monospace,Menlo,monospace}
+.fz-chip.key{background:var(--hl);border-color:transparent;color:var(--hl-ink)}
+.fz-need{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
+.fz-need-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.fz-need-col h4{margin:0;font-size:13.5px}
+.fz-need-total{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.fz-need-total .n{font:600 28px/1.1 "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--accent-fg)}
+.fz-need-total .u{font-weight:600}
+.fz-short{font-size:13.5px}
+.fz-ok{color:var(--plus);font-weight:600}
+.fz-lack{color:var(--hl-ink);background:var(--hl);border-radius:4px;padding:1px 6px;font-weight:600}
+.fz-foot{color:var(--muted);font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.fz-foot p{margin:0}
+@media (max-width:820px){.fz-need{grid-template-columns:minmax(0,1fr)}.fz-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.fz-routes{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.fz-table{font-size:12.5px}.fz-table th,.fz-table td{padding:6px 4px}.fz-table .wide{display:none}}
+@media (max-width:440px){.fz-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.fz-big .n{font-size:30px}.fz-prices{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -746,6 +821,7 @@ const ICON = {
   hist:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4M12 7v5l3 2"/></svg>`,
   back:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`,
   chev:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`,
+  calc:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h0M16 11h0M8 15h2M12 15h0M16 15v3M8 18h2M12 18h0"/></svg>`,
   gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>`
 };
 const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
@@ -908,8 +984,248 @@ function menuPanel(){
     <div class="menu-head"><span>메뉴</span></div>
     ${row("go-main", ICON.list, "일일·주간 숙제", ui.page==="main")}
     ${row("go-specs", ICON.spec, "스펙 현황", ui.page==="specs"||ui.page==="spec"||ui.page==="history")}
+    ${row("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion")}
     ${row("settings", ICON.gear, "설정", false)}
   </nav>`;
+}
+
+/* ───────────── 융화재료 계산기 (웹 전용) ───────────── */
+// 상자 제작 계산기(아티팩트)를 옮겨 온 것 + 거래소 최저가 자동 불러오기
+const FZ_REC = { n: 86, p: 45, r: 33, g: 344 };   // 상자 1개 재료
+const FZ_POWDER_PER_BUY = 80;                      // 1회 구매 시 가루 80개
+const FZ_COST_N = 100;                             // 일반재료 100개 -> 가루 80개
+const FZ_COST_P = 50;                              // 고급재료 50개 -> 가루 80개
+const FZ_POWDER_PER_EX = 100, FZ_RARE_PER_EX = 10; // 가루 100개 -> 희귀재료 10개
+const FZ_LOT = 100;                                // 골드로 100개씩 구매
+const FZ_MAX_T = 30;                               // 목표 상자 수 자동 입력 최대
+// 생활 6종: 일반 / 고급 / 희귀 재료 이름 (거래소 이름과 같아야 함)
+const FZ_FIELDS = [
+  {k:"wood", name:"벌목",  n:"목재",          p:"부드러운 목재", r:"아비도스 목재"},
+  {k:"fish", name:"낚시",  n:"생선",          p:"붉은 살 생선",  r:"아비도스 태양 잉어"},
+  {k:"arch", name:"고고학", n:"고대 유물",     p:"희귀한 유물",   r:"아비도스 유물"},
+  {k:"hunt", name:"수렵",  n:"두툼한 생고기", p:"다듬은 생고기", r:"아비도스 두툼한 생고기"},
+  {k:"mine", name:"채광",  n:"철광석",        p:"묵직한 철광석", r:"아비도스 철광석"},
+  {k:"herb", name:"채집",  n:"들꽃",          p:"수줍은 들꽃",   r:"아비도스 들꽃"},
+];
+// 희귀재료 100개를 가루로 얻을 때 필요한 일반/고급재료 묶음(100개) 수: 가루 1000개 = 12.5회 구매
+const FZ_LOTS_FOR_100_RARE = { n: (100/FZ_RARE_PER_EX*FZ_POWDER_PER_EX/FZ_POWDER_PER_BUY)*FZ_COST_N/100,   // 12.5
+                               p: (100/FZ_RARE_PER_EX*FZ_POWDER_PER_EX/FZ_POWDER_PER_BUY)*FZ_COST_P/100 }; // 6.25
+const FZ_KEY = "loacheck-fusion";
+let FZ = {A:0,B:0,C:0,D:0,W:0,pN:0,pP:0,T:30,field:"auto",open:true,prices:{},ts:0};
+try{ Object.assign(FZ, JSON.parse(localStorage.getItem(FZ_KEY)||"{}")); }catch(e){}
+const fzSave = () => { try{ localStorage.setItem(FZ_KEY, JSON.stringify(FZ)); }catch(e){} };
+let fzLoading = false, fzError = "";
+
+// 희귀재료 교환 손익 (희귀재료 100개 기준, 골드). 양수 = 가루로 교환이 이득
+function fzProfit(f, grade){
+  const r = FZ.prices[f.r], m = FZ.prices[grade==="n" ? f.n : f.p];
+  if(r==null || m==null) return null;
+  return r - FZ_LOTS_FOR_100_RARE[grade] * m;
+}
+// 가장 이득이 큰 분야: 일반·고급을 따로 보고(합치지 않음) 12개 중 최고값의 분야
+function fzBest(){
+  let best = null;
+  FZ_FIELDS.forEach(f=>["n","p"].forEach(g=>{ const v = fzProfit(f,g); if(v!=null && (!best || v > best.v)) best = {f, g, v}; }));
+  return best;
+}
+const fzField = () => FZ.field==="auto" ? (fzBest()?.f || null) : FZ_FIELDS.find(f=>f.k===FZ.field) || null;
+function fzApplyFieldPrices(){
+  const f = fzField(); if(!f) return;
+  if(FZ.prices[f.n]!=null) FZ.pN = Math.round(FZ.prices[f.n]);
+  if(FZ.prices[f.p]!=null) FZ.pP = Math.round(FZ.prices[f.p]);
+}
+
+// 거래소 최저가 (100개 기준 가격으로 맞춤)
+async function fzMarketPrice(name){
+  let res;
+  try{
+    res = await fetch(`${LOA_API}/markets/items`, {method:"POST",
+      headers:{accept:"application/json","content-type":"application/json", authorization:"bearer "+S.apiKey},
+      body: JSON.stringify({Sort:"CURRENT_MIN_PRICE", SortCondition:"ASC", CategoryCode:90000, ItemName:name, PageNo:1})});
+  }catch(e){ throw new Error("로스트아크 서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요."); }
+  if(res.status===401) throw new Error("API 키가 올바르지 않아요. 설정에서 키를 확인해 주세요.");
+  if(res.status===429) throw new Error("요청이 너무 많아요. 1분 뒤 다시 시도해 주세요.");
+  if(res.status===503) throw new Error("로스트아크 서버 점검 중이에요.");
+  if(!res.ok) throw new Error(`가격을 불러오지 못했어요. (오류 ${res.status})`);
+  const data = await res.json().catch(()=>null);
+  const it = (data?.Items||[]).find(x=>x.Name===name);
+  if(!it || it.CurrentMinPrice==null) return null;
+  const bundle = Number(it.BundleCount)||1;
+  return Number(it.CurrentMinPrice) * 100 / bundle;
+}
+async function fzLoad(force){
+  if(fzLoading) return;
+  if(!S.apiKey){ fzError = "설정 → 로스트아크 API에서 키를 먼저 저장해 주세요."; if(ui.page==="fusion") render(); return; }
+  if(!force && Date.now()-FZ.ts < 10*60e3 && Object.keys(FZ.prices).length >= 18) return;   // 10분 안에 불러온 값은 그대로 사용
+  fzLoading = true; fzError = ""; if(ui.page==="fusion") render();
+  const names = FZ_FIELDS.flatMap(f=>[f.n, f.p, f.r]);
+  const out = await Promise.all(names.map(n=>fzMarketPrice(n).then(v=>({v}), e=>({e}))));
+  const err = out.find(o=>o.e)?.e;
+  const prices = {}; names.forEach((n,i)=>{ if(out[i].v!=null) prices[n] = out[i].v; });
+  if(Object.keys(prices).length){ FZ.prices = {...FZ.prices, ...prices}; FZ.ts = Date.now(); fzApplyFieldPrices(); fzSave(); }
+  const missing = names.filter(n=>!(n in prices));
+  fzError = err ? err.message : missing.length ? `거래소에서 못 찾은 재료: ${missing.join(", ")}` : "";
+  fzLoading = false;
+  if(ui.page==="fusion") render();
+}
+
+// ---- 계산 (아티팩트와 같은 규칙) ----
+const fzCdiv = (a,b) => a <= 0 ? 0 : Math.ceil(a/b);
+function fzSolveOwned(route, s){
+  const kmax = route==="N" ? Math.floor(s.A/FZ_COST_N) : Math.floor(s.B/FZ_COST_P);
+  let best = null;
+  for(let k=0; k<=kmax; k++){
+    const n = s.A - (route==="N" ? FZ_COST_N*k : 0), p = s.B - (route==="P" ? FZ_COST_P*k : 0);
+    const powder = s.W + FZ_POWDER_PER_BUY*k, e = Math.floor(powder/FZ_POWDER_PER_EX), rare = s.C + FZ_RARE_PER_EX*e;
+    const x = Math.min(Math.floor(n/FZ_REC.n), Math.floor(p/FZ_REC.p), Math.floor(rare/FZ_REC.r), Math.floor(s.D/FZ_REC.g));
+    if(best===null || x > best.x) best = {k, x};
+  }
+  const X = best.x, K = best.k, powderAll = s.W + FZ_POWDER_PER_BUY*K;
+  const eUsed = Math.min(Math.floor(powderAll/FZ_POWDER_PER_EX), fzCdiv(FZ_REC.r*X - s.C, FZ_RARE_PER_EX));
+  return { x:X, k:K, e:eUsed, m:0, q:0,
+    left:{ n: s.A - (route==="N" ? FZ_COST_N*K : 0) - FZ_REC.n*X, p: s.B - (route==="P" ? FZ_COST_P*K : 0) - FZ_REC.p*X,
+           r: s.C + FZ_RARE_PER_EX*eUsed - FZ_REC.r*X, w: powderAll - FZ_POWDER_PER_EX*eUsed, g: s.D - FZ_REC.g*X },
+    buyGold:0 };
+}
+function fzPlanBuy(route, s, X){
+  const eNeed = fzCdiv(FZ_REC.r*X - s.C, FZ_RARE_PER_EX);
+  const k = fzCdiv(FZ_POWDER_PER_EX*eNeed - s.W, FZ_POWDER_PER_BUY);
+  const needN = FZ_REC.n*X + (route==="N" ? FZ_COST_N*k : 0), needP = FZ_REC.p*X + (route==="P" ? FZ_COST_P*k : 0);
+  const m = fzCdiv(needN - s.A, FZ_LOT), q = fzCdiv(needP - s.B, FZ_LOT);
+  const buyGold = m*s.pN + q*s.pP, cost = FZ_REC.g*X + buyGold, powderAll = s.W + FZ_POWDER_PER_BUY*k;
+  return { x:X, k, e:eNeed, m, q, buyGold, cost,
+    left:{ n: s.A + FZ_LOT*m - needN, p: s.B + FZ_LOT*q - needP, r: s.C + FZ_RARE_PER_EX*eNeed - FZ_REC.r*X,
+           w: powderAll - FZ_POWDER_PER_EX*eNeed, g: s.D - cost } };
+}
+function fzSolveBuy(route, s){
+  for(let X = Math.floor(s.D/FZ_REC.g); X >= 0; X--){ const plan = fzPlanBuy(route, s, X); if(plan.cost <= s.D) return plan; }
+  return fzPlanBuy(route, s, 0);
+}
+const fzState = () => ({A:FZ.A, B:FZ.B, C:FZ.C, D:FZ.D, W:FZ.W, pN:FZ.pN, pP:FZ.pP});
+const fzMaxBoxes = () => { const s = fzState(); return Math.max(fzSolveBuy("N",s).x, fzSolveBuy("P",s).x); };
+
+// ---- 화면 ----
+const FZ_RES = { n:{name:"일반",color:"var(--res-n)"}, p:{name:"고급",color:"var(--res-p)"}, r:{name:"희귀",color:"var(--res-r)"}, w:{name:"가루",color:"var(--res-w)"}, g:{name:"골드",color:"var(--res-g)"} };
+const fzDot = c => `<i class="fz-dot" style="background:${c}"></i>`;
+const fzRow = (label, value, key) => `<dt${key?' class="key"':""}>${label}</dt><dd${key?' class="key"':""}>${value}</dd>`;
+const fzChips = (left, keyRes) => `<div class="fz-chips">${["n","p","r","w","g"].map(k=>`<span class="fz-chip${k===keyRes?" key":""}">${fzDot(FZ_RES[k].color)}${FZ_RES[k].name} <b>${fmt(left[k])}</b></span>`).join("")}</div>`;
+function fzOwnedBlock(res, route){
+  const src = route==="N" ? "일반재료" : "고급재료", keyRes = route==="N" ? "p" : "n", keyName = route==="N" ? "고급재료" : "일반재료";
+  return `<div class="fz-block"><h4>가진 재료만 사용 (재료 구매 없음)</h4><div class="fz-big"><span class="n">${fmt(res.x)}</span><span class="u">상자</span></div>
+    <dl>${fzRow(src+"로 가루 구매", fmt(res.k)+"회", true)}${fzRow("가루 → 희귀재료 교환", fmt(res.e)+"회", true)}${fzRow("남는 "+keyName, fmt(res.left[keyRes])+"개")}</dl>
+    <div><div class="fz-left">제작 후 남는 자원</div>${fzChips(res.left, keyRes)}</div></div>`;
+}
+function fzBuyBlock(res, route){
+  const src = route==="N" ? "일반재료" : "고급재료", keyRes = route==="N" ? "p" : "n", keyName = route==="N" ? "고급재료" : "일반재료";
+  let rows = fzRow(src+" 구매 (골드, 100개씩)", fmt(route==="N" ? res.m : res.q)+"회", true);
+  if(route==="N" && res.q > 0) rows += fzRow("고급재료 구매 (골드, 100개씩)", fmt(res.q)+"회");
+  if(route==="P" && res.m > 0) rows += fzRow("일반재료 구매 (골드, 100개씩)", fmt(res.m)+"회");
+  rows += fzRow(src+"로 가루 구매", fmt(res.k)+"회", true) + fzRow("가루 → 희귀재료 교환", fmt(res.e)+"회", true)
+        + fzRow("재료 구매에 쓴 골드", fmt(res.buyGold)) + fzRow("상자 제작에 쓴 골드", fmt(res.x*FZ_REC.g)) + fzRow("남는 "+keyName, fmt(res.left[keyRes])+"개");
+  return `<div class="fz-block"><h4>골드로 재료까지 구매</h4><div class="fz-big"><span class="n">${fmt(res.x)}</span><span class="u">상자</span></div>
+    <dl>${rows}</dl><div><div class="fz-left">제작 후 남는 자원</div>${fzChips(res.left, keyRes)}</div></div>`;
+}
+function fzRouteCard(route, own, buy){
+  const title = route==="N" ? "1. 일반재료로 가루 구매" : "2. 고급재료로 가루 구매";
+  const rule = route==="N" ? "일반재료 100개 → 가루 80개 → (100개당) 희귀재료 10개" : "고급재료 50개 → 가루 80개 → (100개당) 희귀재료 10개";
+  const goal = route==="N" ? "상자를 최대로 만들 때 남는 고급재료가 최소가 되는 구매 횟수" : "상자를 최대로 만들 때 남는 일반재료가 최소가 되는 구매 횟수";
+  return `<section class="fz-panel fz-route"><div class="fz-route-head"><h3>${title}</h3><p>${rule}</p><p>${goal}</p></div>${fzOwnedBlock(own, route)}${fzBuyBlock(buy, route)}</section>`;
+}
+function fzNeedCol(route, p, s){
+  const src = route==="N" ? "일반재료" : "고급재료", title = route==="N" ? "1. 일반재료로 가루 구매" : "2. 고급재료로 가루 구매";
+  let rows = fzRow(`상자 제작 골드 (${fmt(p.x)} × ${FZ_REC.g})`, fmt(p.x*FZ_REC.g)) + fzRow("재료 구매 골드", fmt(p.buyGold)) + fzRow(src+" 구매 (100개씩)", fmt(route==="N" ? p.m : p.q)+"회");
+  if(route==="N" && p.q > 0) rows += fzRow("고급재료 구매 (100개씩)", fmt(p.q)+"회");
+  if(route==="P" && p.m > 0) rows += fzRow("일반재료 구매 (100개씩)", fmt(p.m)+"회");
+  rows += fzRow(src+"로 가루 구매", fmt(p.k)+"회") + fzRow("가루 → 희귀재료 교환", fmt(p.e)+"회");
+  const diff = p.cost - s.D;
+  const st = diff > 0 ? `<span class="fz-lack">골드 ${fmt(diff)} 부족</span>` : `<span class="fz-ok">골드 충분 (${fmt(-diff)} 남음)</span>`;
+  return `<div class="fz-need-col"><h4>${title}</h4><div class="fz-need-total"><span class="n">${fmt(p.cost)}</span><span class="u">골드 필요</span></div>
+    <div class="fz-short">현재 골드 <b class="mono">${fmt(s.D)}</b> · ${st}</div><dl>${rows}</dl></div>`;
+}
+// 결과 부분만 (입력할 때마다 이 부분만 다시 그림)
+function fzResults(){
+  const s = fzState(), T = FZ.T;
+  const ownN = fzSolveOwned("N", s), ownP = fzSolveOwned("P", s), buyN = fzSolveBuy("N", s), buyP = fzSolveBuy("P", s);
+  const better = buyN.x===buyP.x ? "두 경로의 상자 수가 같아요." : buyN.x > buyP.x ? `일반재료 경로가 ${fmt(buyN.x-buyP.x)}개 더 많아요.` : `고급재료 경로가 ${fmt(buyP.x-buyN.x)}개 더 많아요.`;
+  const extra = (!s.pN || !s.pP) ? " 재료 가격이 비어 있거나 0이라 재료 구매 골드가 0으로 계산돼요." : "";
+  const needN = fzPlanBuy("N", s, T), needP = fzPlanBuy("P", s, T);
+  const cheaper = needN.cost===needP.cost ? "두 경로의 필요 골드가 같아요." : needN.cost < needP.cost ? `일반재료 경로가 ${fmt(needP.cost-needN.cost)} 골드 더 적게 들어요.` : `고급재료 경로가 ${fmt(needN.cost-needP.cost)} 골드 더 적게 들어요.`;
+  return {
+    summary: `골드로 재료까지 사면 일반재료 경로 <b class="mono">${fmt(buyN.x)}</b>개, 고급재료 경로 <b class="mono">${fmt(buyP.x)}</b>개를 만들 수 있어요. ${better}${extra}`,
+    need: `<div class="fz-head"><h3>상자 ${fmt(T)}개를 만들려면 필요한 골드</h3><span class="fz-note">가진 재료를 먼저 쓰고, 모자란 만큼만 골드로 사요.</span></div>
+      <div class="fz-need">${fzNeedCol("N", needN, s)}${fzNeedCol("P", needP, s)}</div><p class="fz-note" style="margin:12px 0 0">${cheaper}</p>`,
+    routes: fzRouteCard("N", ownN, buyN) + fzRouteCard("P", ownP, buyP),
+  };
+}
+function fzMaxNote(){ const mx = fzMaxBoxes(); return mx > FZ_MAX_T ? `최대 ${fmt(mx)}회 제작 가능` : ""; }
+function fzUpdate(){
+  const r = fzResults();
+  const set = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
+  set("fz-summary", r.summary); set("fz-need", r.need); set("fz-routes", r.routes);
+  const note = document.getElementById("fz-tnote"); if(note){ const t = fzMaxNote(); note.textContent = t; note.hidden = !t; }
+}
+function fzPriceTable(){
+  const best = fzBest(), when = FZ.ts ? new Date(FZ.ts).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+  const price = n => FZ.prices[n]!=null ? fmt(Math.round(FZ.prices[n])) : "-";
+  const prof = v => v==null ? "-" : `<span class="${v>=0?"fz-plus":"fz-minus"}">${v>=0?"+":""}${fmt(Math.round(v))}</span>`;
+  const rows = (title, grade) => `<tr class="grp"><td colspan="4">${title}</td></tr>` + FZ_FIELDS.map(f=>{
+    const name = grade==="n" ? f.n : grade==="p" ? f.p : f.r;
+    const v = grade==="r" ? null : fzProfit(f, grade);
+    const isBest = best && grade!=="r" && best.f===f && best.g===grade;
+    return `<tr class="${isBest?"best":""}"><td>${esc(name)}${isBest?" ★":""}</td><td>${f.name}</td><td class="r mono">${price(name)}</td><td class="r mono">${grade==="r" ? "" : prof(v)}</td></tr>`;
+  }).join("");
+  return `<section class="fz-panel">
+    <div class="fz-head"><button class="fz-fold" data-act="fz-fold" aria-expanded="${FZ.open}">${ICON.chev||""}<span>재료 가격표</span></button>
+      <span style="display:flex;align-items:center;gap:10px"><span class="fz-note">${fzLoading ? "불러오는 중…" : when ? `${when} 기준 · 거래소 최저가` : "아직 불러오지 않았어요"}</span>
+      <button class="fz-btn" data-act="fz-refresh" ${fzLoading?"disabled":""}>새로고침</button></span></div>
+    ${fzError ? `<div class="fz-err">${esc(fzError)}</div>` : ""}
+    ${FZ.open ? `<div class="fz-tablewrap"><table class="fz-table">
+      <thead><tr><th>이름</th><th>종류</th><th class="r">최저가<span class="wide"> (100개)</span></th><th class="r"><span class="wide">희귀재료 </span>교환 손익</th></tr></thead>
+      <tbody>${rows("일반재료","n")}${rows("고급재료","p")}${rows("희귀재료","r")}</tbody></table></div>
+      <p class="fz-note" style="margin:8px 0 0">희귀재료 교환 손익 = 희귀재료 100개를 그냥 살 때 가격 − 그 재료로 가루를 만들어 교환할 때 드는 가격 (일반재료 1,250개 / 고급재료 625개). 양수(+)면 가루로 교환하는 게 이득이에요. ★ = 가장 이득인 재료</p>` : ""}
+    <div class="fz-pick"><label for="fz-field">생활 분야</label>
+      <select id="fz-field"><option value="auto" ${FZ.field==="auto"?"selected":""}>자동 (가장 이득)</option>${FZ_FIELDS.map(f=>`<option value="${f.k}" ${FZ.field===f.k?"selected":""}>${f.name}</option>`).join("")}</select>
+      <span>${fzField() ? `→ <b>${fzField().name}</b> 재료 가격을 아래에 넣었어요` : "가격을 불러오면 가장 이득인 분야를 골라요"}</span></div>
+  </section>`;
+}
+function fusionPage(){
+  const f = fzField(), fn = f ? f.name : "골드";
+  const lab = (base, item) => f ? `${base}(${item})` : base;
+  const input = (id, key, label, color, extra="") => `<div class="fz-field"><label for="${id}">${color?fzDot(color):""}<span>${label}</span></label><input id="${id}" data-fz="${key}" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${FZ[key]?FZ[key]:""}">${extra}</div>`;
+  const r = fzResults(), note = fzMaxNote();
+  return `<div class="page fz">
+    <div class="page-head"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>융화재료 계산기</h2></div>
+    ${fzPriceTable()}
+    <section class="fz-panel">
+      <div class="fz-head"><h3>현재 보유량</h3><span class="fz-note">빈칸은 0으로 계산돼요.</span></div>
+      <div class="fz-fields">
+        ${input("fz-A","A",lab("일반재료", f?.n),"var(--res-n)")}
+        ${input("fz-B","B",lab("고급재료", f?.p),"var(--res-p)")}
+        ${input("fz-C","C",lab("희귀재료", f?.r),"var(--res-r)")}
+        ${input("fz-D","D","골드","var(--res-g)")}
+        ${input("fz-W","W","가루","var(--res-w)")}
+      </div>
+      <div class="fz-prices">
+        ${input("fz-pN","pN",`일반재료 100개 가격(${fn})`,"","<small>재료 가격표에서 자동으로 들어가요. 직접 고쳐도 돼요.</small>")}
+        ${input("fz-pP","pP",`고급재료 100개 가격(${fn})`,"","<small>재료 가격표에서 자동으로 들어가요. 직접 고쳐도 돼요.</small>")}
+      </div>
+      <div class="fz-prices one">
+        ${input("fz-T","T","목표 상자 수","",`<small>골드를 입력하면 만들 수 있는 최대 개수(최대 ${FZ_MAX_T}개)가 자동으로 들어가요.</small><small class="max" id="fz-tnote" ${note?"":"hidden"}>${note}</small>`)}
+      </div>
+      <div class="fz-recipe"><span>상자 1개 =</span><span>${fzDot("var(--res-n)")}일반 <b class="mono">86</b></span><span>${fzDot("var(--res-p)")}고급 <b class="mono">45</b></span><span>${fzDot("var(--res-r)")}희귀 <b class="mono">33</b></span><span>${fzDot("var(--res-g)")}골드 <b class="mono">344</b></span></div>
+    </section>
+    <div class="fz-summary" id="fz-summary" aria-live="polite">${r.summary}</div>
+    <section class="fz-panel" id="fz-need">${r.need}</section>
+    <div class="fz-routes" id="fz-routes">${r.routes}</div>
+    <div class="fz-foot"><p>계산 기준: 구매한 가루는 모두 희귀재료 교환에 쓰고, 상자를 최대로 만든 뒤 가루 구매 횟수는 가장 적은 경우를 보여줘요.</p><p>골드는 상자 제작(1개당 344)과 재료 구매에 함께 쓰이며, 재료 구매는 100개 단위예요.</p></div>
+  </div>`;
+}
+// 입력칸: 숫자만, 입력할 때마다 결과만 다시 계산
+function fzInput(el){
+  const key = el.dataset.fz, v = parseInt(String(el.value).replace(/[^0-9]/g,""), 10);
+  FZ[key] = Number.isFinite(v) ? v : 0;
+  if(key==="D"){ FZ.T = Math.min(FZ_MAX_T, fzMaxBoxes()); const t = document.getElementById("fz-T"); if(t) t.value = FZ.T || ""; }
+  fzSave(); fzUpdate();
 }
 
 /* ───────────── 스펙 현황 화면 ───────────── */
@@ -1110,7 +1426,7 @@ function render(){
   app.querySelectorAll("[data-nkey]").forEach(el=>prevN.set(el.dataset.nkey, Number(el.dataset.shown ?? el.dataset.n)));
   app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
-  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage()
+  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage()
     : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
   app.innerHTML = header() + body + menuPanel() + settingsSheet();
@@ -1164,9 +1480,12 @@ document.addEventListener("click", e=>{
     case "menu-close": menuBack(); break;
     case "go-main": goPage("main"); break;
     case "go-specs": goPage("specs"); break;
+    case "go-fusion": goPage("fusion"); fzLoad(false); break;
+    case "fz-fold": FZ.open = !FZ.open; fzSave(); render(); break;
+    case "fz-refresh": fzLoad(true); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
     case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
-    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = ui.page==="main" ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
+    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
     case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
@@ -1321,6 +1640,7 @@ document.addEventListener("pointercancel", e=>{ if(slide && e.pointerId===slide.
 // 원래 값은 흐리게 보이고, 아무것도 안 쓰고 나가면 원래 값으로 돌아감 (앱 DebouncedField clearOnFocus와 같음)
 let focusSess = null;
 function blankField(el){ el.dataset.ph ??= el.placeholder; if(el.value) el.placeholder = el.value; el.value = ""; }
+document.addEventListener("focusin", e=>{ if(e.target.dataset?.fz && !rendering){ const el=e.target; setTimeout(()=>{ try{ el.select(); }catch(err){} }, 0); } });
 document.addEventListener("focusin", e=>{
   const el = e.target; if(rendering || !el.dataset?.spec || el.dataset.spec==="power") return;
   focusSess = {id:el.id, edited: ui.drafts[el.id]!=null, orig:el.value, ph:el.placeholder};
@@ -1426,6 +1746,7 @@ document.addEventListener("input", e=>{
     specTimers[el.id] = setTimeout(()=>{ const cur=document.getElementById(el.id); applySpecInput(cur||el); }, 2000);
     return;
   }
+  if(e.target.dataset?.fz){ fzInput(e.target); return; }
   if(e.target.id==="alarm-vol"){ ui.volume = Number(e.target.value); saveUi(); const t=document.getElementById("vol-text"); if(t) t.textContent = ui.volume>0 ? `음량 ${ui.volume}%` : "소리 끔"; return; }
   if(e.target.id==="api-key"){ ui.apiKeyInput=e.target.value.trim(); const b=document.querySelector('[data-act="api-save"]'); if(b) b.disabled=!ui.apiKeyInput; return; }
   if(e.target.id==="api-name"){ ui.apiName=e.target.value; return; }
@@ -1450,7 +1771,8 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){ if(ui.settings){ closeSettings(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
 document.addEventListener("change", e=>{
-  if(e.target.id==="alarm-vol"){ chime(1); return; }   // 손을 떼면 그 크기로 한 번 들려줌
+  if(e.target.id==="alarm-vol"){ chime(1); return; }
+  if(e.target.id==="fz-field"){ FZ.field = e.target.value; fzApplyFieldPrices(); fzSave(); render(); return; }   // 손을 떼면 그 크기로 한 번 들려줌
   if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
   const ck = e.target.dataset?.apiCheck;
   if(ck!=null){ if(e.target.checked) ui.apiChecked.add(ck); else ui.apiChecked.delete(ck); return; }
