@@ -1670,7 +1670,7 @@ let focusSess = null;
 function blankField(el){ el.dataset.ph ??= el.placeholder; if(el.value) el.placeholder = el.value; el.value = ""; }
 document.addEventListener("focusin", e=>{ if(e.target.dataset?.fz && !rendering){ const el=e.target; setTimeout(()=>{ try{ el.select(); }catch(err){} }, 0); } });
 document.addEventListener("focusin", e=>{
-  const el = e.target; if(rendering || !el.dataset?.spec || el.dataset.spec==="power") return;
+  const el = e.target; if(rendering || !el.dataset?.spec) return;
   focusSess = {id:el.id, edited: ui.drafts[el.id]!=null, orig:el.value, ph:el.placeholder};
   if(!focusSess.edited) blankField(el);
 });
