@@ -90,6 +90,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 @media (min-width:640px){.tool .t{display:inline}}
 /* ── 캐릭터 선택 (누르면 그 캐릭터 숙제가 맨 위로) ── */
 .picker{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.brand-home{border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer}
 .pick-txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
 .pick-spec{flex:none;align-self:center;border-radius:8px;border:1px solid var(--line-strong);background:var(--bg);color:var(--sec-spec);font-size:12px;font-weight:700;line-height:1.2;padding:6px 8px;white-space:nowrap;transition:border-color .15s,background .15s}
 .pick-spec:hover{border-color:var(--sec-spec);background:color-mix(in srgb,var(--sec-spec) 12%,var(--surface))}
@@ -847,7 +848,7 @@ const slideGauge = (kind, id, k, v, n, step, color, label) =>
 
 function header(){
   return `<header class="top"><div class="top-in">
-    <div class="brand"><b>로아<i>췍</i></b><span class="sync" data-sync data-s="${syncState}">${SYNC_TEXT[syncState]}</span></div>
+    <div class="brand"><button class="brand-home" data-act="go-home" aria-label="일일·주간 숙제 화면으로"><b>로아<i>췍</i></b></button><span class="sync" data-sync data-s="${syncState}">${SYNC_TEXT[syncState]}</span></div>
     ${ui.page==="main" ? `<div class="tabs" role="tablist">
       <button role="tab" aria-selected="${ui.view==="daily"}" data-act="view" data-v="daily">일일</button>
       <button role="tab" aria-selected="${ui.view==="weekly"}" data-act="view" data-v="weekly">주간</button>
@@ -1188,16 +1189,9 @@ function fzResults(){
 async function fzNotify(route){
   const s = fzState(), p = fzPlanBuy(route, s, FZ.T);
   const src = route==="N" ? "일반재료" : "고급재료", diff = p.cost - s.D;
-  const lines = [
-    `현재 골드 ${fmt(s.D)} · ${diff > 0 ? `골드 ${fmt(diff)} 부족` : `골드 충분 (${fmt(-diff)} 남음)`}`,
-    `상자 제작 골드 (${fmt(p.x)} × ${FZ_REC.g}) ${fmt(p.x*FZ_REC.g)}`,
-    `재료 구매 골드 ${fmt(p.buyGold)}`,
-    `${src} 구매 (100개씩) ${fmt(route==="N" ? p.m : p.q)}회`,
-  ];
-  if(route==="N" && p.q > 0) lines.push(`고급재료 구매 (100개씩) ${fmt(p.q)}회`);
-  if(route==="P" && p.m > 0) lines.push(`일반재료 구매 (100개씩) ${fmt(p.m)}회`);
-  lines.push(`${src}로 가루 구매 ${fmt(p.k)}회`, `가루 → 희귀재료 교환 ${fmt(p.e)}회`);
-  const title = `${fmt(p.cost)} 골드 필요 · 상자 ${fmt(p.x)}개 (${route==="N" ? "1. 일반재료로 가루 구매" : "2. 고급재료로 가루 구매"})`;
+  // 간단히 4줄: 첫 줄은 알림 제목, 나머지 3줄은 내용
+  const title = `일반재료 ${fmt(p.m)}회 구매`;
+  const lines = [`고급재료 ${fmt(p.q)}회 구매`, `${src}로 ${fmt(p.k)}회 가루 구매`, `가루로 희귀재료 ${fmt(p.e)}회 교환`];
   await askNotif();
   if(notifPerm()==="granted"){
     try{
@@ -1536,6 +1530,7 @@ document.addEventListener("click", e=>{
     case "menu": if(ui.menu) menuBack(); else { ui.menu=true; ui.menuClosing=false; pushNav(); render(); } break;
     case "menu-close": menuBack(); break;
     case "go-main": goPage("main"); break;
+    case "go-home": if(ui.page!=="main" || ui.settings || ui.menu){ ui.menu=false; ui.settings=false; ui.page="main"; pushNav(); render(); } window.scrollTo({top:0, behavior:"smooth"}); break;
     case "go-specs": goPage("specs"); break;
     case "go-fusion": goPage("fusion"); fzLoad(false); break;
     case "fz-fold": FZ.open = !FZ.open; fzSave(); render(); break;
