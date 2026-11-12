@@ -381,6 +381,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fz-field input{width:100%;min-width:0;font:500 16px "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--fg);background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;padding:9px 10px;text-align:right}
 .fz-field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .fz-field small{color:var(--muted);font-size:11.5px}
+/* 추천: 가루로 교환할 재료 칸을 노란 테두리로 강조 */
+.fz-field.rec input{border:2px solid #F2C230;box-shadow:0 0 0 3px color-mix(in srgb,#F2C230 22%,transparent)}
+.fz-field small.rec-tag{color:#C99A00;font-weight:700}
+:root[data-theme="dark"] .fz-field small.rec-tag{color:#F2C230}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fz-field small.rec-tag{color:#F2C230}}
 .fz-field small.max{color:var(--hl-ink);background:var(--hl);border-radius:6px;padding:4px 8px;font-weight:600;align-self:flex-start;font-size:12.5px}
 .fz-recipe{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;font-size:12.5px;color:var(--muted)}
 .fz-recipe b{color:var(--fg);font-weight:600}
@@ -1050,13 +1055,25 @@ function fzProfit(f, grade){
   if(r==null || m==null) return null;
   return r - FZ_LOTS_FOR_100_RARE[grade] * m;
 }
-// 가장 이득이 큰 분야: 일반·고급을 따로 보고(합치지 않음) 12개 중 최고값의 분야
-function fzBest(){
+// 추천: 6개 분야 × (일반재료로 가루 / 고급재료로 가루) 12가지 중, 같은 수(상자 30개)를 처음부터 골드로 만들 때 골드가 가장 적게 드는 조합
+// (보유 재료는 분야마다 달라서 비교할 때는 0으로 둠. 계산은 fzPlanBuy 그대로)
+const FZ_CMP_BOXES = 30;
+function fzCostFor(f, route){
+  const pN = FZ.prices[f.n], pP = FZ.prices[f.p];
+  if(pN==null || pP==null) return null;
+  return fzPlanBuy(route, {A:0,B:0,C:0,D:0,W:0,pN,pP}, FZ_CMP_BOXES).cost;
+}
+function fzRecommend(onlyField){
   let best = null;
-  FZ_FIELDS.forEach(f=>["n","p"].forEach(g=>{ const v = fzProfit(f,g); if(v!=null && (!best || v > best.v)) best = {f, g, v}; }));
+  (onlyField ? [onlyField] : FZ_FIELDS).forEach(f=>["N","P"].forEach(route=>{
+    const cost = fzCostFor(f, route);
+    if(cost!=null && (!best || cost < best.cost)) best = {f, route, cost};
+  }));
   return best;
 }
-const fzField = () => FZ.field==="auto" ? (fzBest()?.f || null) : FZ_FIELDS.find(f=>f.k===FZ.field) || null;
+const fzField = () => FZ.field==="auto" ? (fzRecommend()?.f || null) : FZ_FIELDS.find(f=>f.k===FZ.field) || null;
+// 지금 분야에서 가루로 교환할 재료 (N = 일반재료, P = 고급재료)
+const fzRec = () => { const f = fzField(); return f ? fzRecommend(f) : null; };
 function fzApplyFieldPrices(){
   const f = fzField(); if(!f) return;
   if(FZ.prices[f.n]!=null) FZ.pN = Math.round(FZ.prices[f.n]);
@@ -1215,13 +1232,13 @@ function fzUpdate(){
   const note = document.getElementById("fz-tnote"); if(note){ const t = fzMaxNote(); note.textContent = t; note.hidden = !t; }
 }
 function fzPriceTable(){
-  const best = fzBest(), when = FZ.ts ? new Date(FZ.ts).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+  const rec = fzRec(), when = FZ.ts ? new Date(FZ.ts).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
   const price = n => FZ.prices[n]!=null ? fmt(Math.round(FZ.prices[n])) : "-";
   const prof = v => v==null ? "-" : `<span class="${v>=0?"fz-plus":"fz-minus"}">${v>=0?"+":""}${fmt(Math.round(v))}</span>`;
   const rows = (title, grade) => `<tr class="grp"><td colspan="4">${title}</td></tr>` + FZ_FIELDS.map(f=>{
     const name = grade==="n" ? f.n : grade==="p" ? f.p : f.r;
     const v = grade==="r" ? null : fzProfit(f, grade);
-    const isBest = best && grade!=="r" && best.f===f && best.g===grade;
+    const isBest = rec && grade!=="r" && rec.f===f && (rec.route==="N" ? "n" : "p")===grade;
     return `<tr class="${isBest?"best":""}"><td>${esc(name)}${isBest?" ★":""}</td><td>${f.name}</td><td class="r mono">${price(name)}</td><td class="r mono">${grade==="r" ? "" : prof(v)}</td></tr>`;
   }).join("");
   return `<section class="fz-panel">
@@ -1232,16 +1249,19 @@ function fzPriceTable(){
     ${FZ.open ? `<div class="fz-tablewrap"><table class="fz-table">
       <thead><tr><th>이름</th><th>종류</th><th class="r">최저가<span class="wide"> (100개)</span></th><th class="r"><span class="wide">희귀재료 </span>교환 손익</th></tr></thead>
       <tbody>${rows("일반재료","n")}${rows("고급재료","p")}${rows("희귀재료","r")}</tbody></table></div>
-      <p class="fz-note" style="margin:8px 0 0">희귀재료 교환 손익 = 희귀재료 100개를 그냥 살 때 가격 − 그 재료로 가루를 만들어 교환할 때 드는 가격 (일반재료 1,250개 / 고급재료 625개). 양수(+)면 가루로 교환하는 게 이득이에요. ★ = 가장 이득인 재료</p>` : ""}
+      <p class="fz-note" style="margin:8px 0 0">희귀재료 교환 손익 = 희귀재료 100개를 그냥 살 때 가격 − 그 재료로 가루를 만들어 교환할 때 드는 가격 (일반재료 1,250개 / 고급재료 625개). 양수(+)면 가루로 교환하는 게 이득이에요. ★ = 추천: 6개 분야에서 상자 30개를 골드로 만들 때 골드가 가장 적게 드는 분야와 가루로 교환할 재료</p>` : ""}
     <div class="fz-pick"><label for="fz-field">생활 분야</label>
-      <select id="fz-field"><option value="auto" ${FZ.field==="auto"?"selected":""}>자동 (가장 이득)</option>${FZ_FIELDS.map(f=>`<option value="${f.k}" ${FZ.field===f.k?"selected":""}>${f.name}</option>`).join("")}</select>
-      <span>${fzField() ? `→ <b>${fzField().name}</b> 재료 가격을 아래에 넣었어요` : "가격을 불러오면 가장 이득인 분야를 골라요"}</span></div>
+      <select id="fz-field"><option value="auto" ${FZ.field==="auto"?"selected":""}>자동 (골드 가장 적게)</option>${FZ_FIELDS.map(f=>`<option value="${f.k}" ${FZ.field===f.k?"selected":""}>${f.name}</option>`).join("")}</select>
+      <span>${(()=>{ const r = fzRec(); if(!r) return "가격을 불러오면 골드가 가장 적게 드는 분야를 골라요";
+        const m = r.route==="N" ? r.f.n : r.f.p;
+        return `→ <b>${r.f.name}</b> · 가루로 교환할 재료: <b>${r.route==="N"?"일반재료":"고급재료"}(${esc(m)})</b> <span class="fz-note">(상자 ${FZ_CMP_BOXES}개 ${fmt(r.cost)} 골드)</span>`; })()}</span></div>
   </section>`;
 }
 function fusionPage(){
   const f = fzField(), fn = f ? f.name : "골드";
   const lab = (base, item) => f ? `${base}(${item})` : base;
-  const input = (id, key, label, color, extra="") => `<div class="fz-field"><label for="${id}">${color?fzDot(color):""}<span>${label}</span></label><input id="${id}" data-fz="${key}" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${FZ[key]?FZ[key]:""}">${extra}</div>`;
+  const rec = fzRec(), recKey = rec ? (rec.route==="N" ? "A" : "B") : "";
+  const input = (id, key, label, color, extra="") => `<div class="fz-field${key===recKey?" rec":""}"><label for="${id}">${color?fzDot(color):""}<span>${label}</span></label><input id="${id}" data-fz="${key}" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="${FZ[key]?FZ[key]:""}">${extra}</div>`;
   const r = fzResults(), note = fzMaxNote();
   return `<div class="page fz">
     <div class="page-head"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>융화재료 계산기</h2></div>
@@ -1249,8 +1269,8 @@ function fusionPage(){
     <section class="fz-panel">
       <div class="fz-head"><h3>현재 보유량</h3><span class="fz-note">빈칸은 0으로 계산돼요.</span></div>
       <div class="fz-fields">
-        ${input("fz-A","A",lab("일반재료", f?.n),"var(--res-n)")}
-        ${input("fz-B","B",lab("고급재료", f?.p),"var(--res-p)")}
+        ${input("fz-A","A",lab("일반재료", f?.n),"var(--res-n)", recKey==="A" ? `<small class="rec-tag">가루로 교환 추천</small>` : "")}
+        ${input("fz-B","B",lab("고급재료", f?.p),"var(--res-p)", recKey==="B" ? `<small class="rec-tag">가루로 교환 추천</small>` : "")}
         ${input("fz-C","C",lab("희귀재료", f?.r),"var(--res-r)")}
         ${input("fz-D","D","골드","var(--res-g)")}
         ${input("fz-W","W","가루","var(--res-w)")}
