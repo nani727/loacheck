@@ -172,6 +172,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .exp-item.boss .ico{background:linear-gradient(160deg,#C2552B,#5A1F0D)}
 .exp-item.solo{border:0;padding:0}
 .total .exp-item{flex:none}
+.total .estate-toggle{margin:6px auto -4px}
 .total .exp-item.sep{margin-top:4px;padding-top:12px;border-top:1px dashed var(--line-strong);border-radius:0}
 .exp-item.estate .ico{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
 .exp-item b{flex:1;font-weight:600}
@@ -953,7 +954,11 @@ function weeklyPanel(){
       if(!goldOn && !boxOn) return "";
       const gold = goldOn ? `<div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
       <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div>` : "";
-      const box = boxOn ? `<div class="exp-item estate solo ${goldOn?"sep":""} ${S.expedition.estateBox?"on":""}"><span class="ico">영지</span><b>영지 활동 지원 상자 구입</b>${chk(!!S.expedition.estateBox,"exp",'data-k="estateBox"',"영지 활동 지원 상자 구입 완료")}</div>` : "";
+      // 영지 상자: 구입하면 스르륵 숨김 → '다시 보기'로 펼칠 수 있음
+      const boxDone = !!S.expedition.estateBox; if(!boxDone) ui.showEstate = false;
+      const box = !boxOn ? "" : (boxDone && !ui.showEstate)
+        ? `<button class="cleared-toggle estate-toggle" data-act="show-estate" aria-expanded="false">영지 활동 지원 상자 구입 완료 · 다시 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`
+        : `<div class="exp-item estate solo ${goldOn?"sep":""} ${S.expedition.estateBox?"on":""}"><span class="ico">영지</span><b>영지 활동 지원 상자 구입</b>${chk(!!S.expedition.estateBox,"exp",'data-k="estateBox"',"영지 활동 지원 상자 구입 완료")}</div>`;
       return `<div class="total">${gold}${box}</div>`;
     })()}
     <div class="cards">${cards || emptyRoster()}</div>
@@ -1560,7 +1565,10 @@ document.addEventListener("click", e=>{
       const after = !h.done ? h.gauge - (h.gauge>=1 ? 1 : 0) : h.gauge;
       finishRow(b.closest(".row"), hides, ()=>toggleHw(h), {ratio:after/MAX_GAUGE, text:SLIDE_TEXT.rest(after)}); break; }
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
-    case "exp": S.expedition[b.dataset.k]=!S.expedition[b.dataset.k]; commit(); break;
+    case "exp": { const k = b.dataset.k;
+      if(k==="estateBox"){ const row = b.closest(".exp-item"); finishRow(row, !S.expedition.estateBox && !ui.showEstate, ()=>{ S.expedition.estateBox = !S.expedition.estateBox; }); break; }
+      S.expedition[k]=!S.expedition[k]; commit(); break; }
+    case "show-estate": ui.showEstate = true; render(); break;
     case "dispatch": setDispatch(b, Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch || 0) + Number(b.dataset.d)))); break;
     case "toast-close": closeToast(b.dataset.t); break;
     case "toast-done": { S.expedition[b.dataset.k]=true; commit();
