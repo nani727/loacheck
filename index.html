@@ -407,6 +407,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fz-need{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
 .fz-need-col{display:flex;flex-direction:column;gap:10px;min-width:0}
 .fz-need-col h4{margin:0;font-size:13.5px}
+.fz-need-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fz-need-h .fz-btn{height:28px;padding:0 10px;font-size:12.5px}
 .fz-need-total{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
 .fz-need-total .n{font:600 28px/1.1 "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--accent-fg)}
 .fz-need-total .u{font-weight:600}
@@ -1159,7 +1161,7 @@ function fzNeedCol(route, p, s){
   rows += fzRow(src+"로 가루 구매", fmt(p.k)+"회") + fzRow("가루 → 희귀재료 교환", fmt(p.e)+"회");
   const diff = p.cost - s.D;
   const st = diff > 0 ? `<span class="fz-lack">골드 ${fmt(diff)} 부족</span>` : `<span class="fz-ok">골드 충분 (${fmt(-diff)} 남음)</span>`;
-  return `<div class="fz-need-col"><h4>${title}</h4><div class="fz-need-total"><span class="n">${fmt(p.cost)}</span><span class="u">골드 필요</span></div>
+  return `<div class="fz-need-col"><h4 class="fz-need-h">${title}<button class="fz-btn" data-act="fz-notify" data-route="${route}" aria-label="${title} 내용을 윈도우 알림으로 띄우기">띄우기</button></h4><div class="fz-need-total"><span class="n">${fmt(p.cost)}</span><span class="u">골드 필요</span></div>
     <div class="fz-short">현재 골드 <b class="mono">${fmt(s.D)}</b> · ${st}</div><dl>${rows}</dl></div>`;
 }
 // 결과 부분만 (입력할 때마다 이 부분만 다시 그림)
@@ -1176,6 +1178,35 @@ function fzResults(){
       <div class="fz-need">${fzNeedCol("N", needN, s)}${fzNeedCol("P", needP, s)}</div><p class="fz-note" style="margin:12px 0 0">${cheaper}</p>`,
     routes: fzRouteCard("N", ownN, buyN) + fzRouteCard("P", ownP, buyP),
   };
+}
+// '띄우기': 필요한 골드 ~ 가루 교환 횟수를 윈도우 알림으로 1분간 띄움 (재료 사고 만드는 동안 보도록)
+async function fzNotify(route){
+  const s = fzState(), p = fzPlanBuy(route, s, FZ.T);
+  const src = route==="N" ? "일반재료" : "고급재료", diff = p.cost - s.D;
+  const lines = [
+    `현재 골드 ${fmt(s.D)} · ${diff > 0 ? `골드 ${fmt(diff)} 부족` : `골드 충분 (${fmt(-diff)} 남음)`}`,
+    `상자 제작 골드 (${fmt(p.x)} × ${FZ_REC.g}) ${fmt(p.x*FZ_REC.g)}`,
+    `재료 구매 골드 ${fmt(p.buyGold)}`,
+    `${src} 구매 (100개씩) ${fmt(route==="N" ? p.m : p.q)}회`,
+  ];
+  if(route==="N" && p.q > 0) lines.push(`고급재료 구매 (100개씩) ${fmt(p.q)}회`);
+  if(route==="P" && p.m > 0) lines.push(`일반재료 구매 (100개씩) ${fmt(p.m)}회`);
+  lines.push(`${src}로 가루 구매 ${fmt(p.k)}회`, `가루 → 희귀재료 교환 ${fmt(p.e)}회`);
+  const title = `${fmt(p.cost)} 골드 필요 · 상자 ${fmt(p.x)}개 (${route==="N" ? "1. 일반재료로 가루 구매" : "2. 고급재료로 가루 구매"})`;
+  await askNotif();
+  if(notifPerm()==="granted"){
+    try{
+      const n = new Notification(title, {body: lines.join("\n"), tag:"loacheck-fusion-"+route, renotify:true, requireInteraction:true, silent:true});
+      n.onclick = ()=>{ window.focus(); n.close(); };
+      setTimeout(()=>n.close(), 60000);   // 1분 뒤 닫힘
+      return;
+    }catch(e){}
+  }
+  // 윈도우 알림을 못 쓰면 사이트 안 알림으로 1분간
+  const box = document.getElementById("toasts"), id = "t" + (++toastSeq), el = document.createElement("div");
+  el.className = "toast"; el.id = id;
+  el.innerHTML = `<div class="toast-head"><b>${esc(title)}</b><button class="toast-x" data-act="toast-close" data-t="${id}" aria-label="알림 닫기">×</button></div><p>${lines.map(esc).join("<br>")}</p><p>윈도우 알림을 쓰려면 설정 → 알림에서 'PC 화면 위에 알림 띄우기'를 허용해 주세요.</p>`;
+  box.appendChild(el); setTimeout(()=>closeToast(id), 60000);
 }
 function fzMaxNote(){ const mx = fzMaxBoxes(); return mx > FZ_MAX_T ? `최대 ${fmt(mx)}회 제작 가능` : ""; }
 function fzUpdate(){
@@ -1504,6 +1535,7 @@ document.addEventListener("click", e=>{
     case "go-fusion": goPage("fusion"); fzLoad(false); break;
     case "fz-fold": FZ.open = !FZ.open; fzSave(); render(); break;
     case "fz-refresh": fzLoad(true); break;
+    case "fz-notify": fzNotify(b.dataset.route); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
     case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
     case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
