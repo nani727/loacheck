@@ -1207,8 +1207,11 @@ async function fzNotify(route){
   const s = fzState(), p = fzPlanBuy(route, s, FZ.T);
   const src = route==="N" ? "일반재료" : "고급재료", diff = p.cost - s.D;
   // 간단히 4줄: 첫 줄은 알림 제목, 나머지 3줄은 내용
-  const title = `일반재료 ${fmt(p.m)}회 구매`;
-  const lines = [`고급재료 ${fmt(p.q)}회 구매`, `${src}로 ${fmt(p.k)}회 가루 구매`, `가루로 희귀재료 ${fmt(p.e)}회 교환`];
+  // 재료 이름은 지금 분야의 실제 이름으로 (예: 생선, 붉은 살 생선). 희귀재료는 알림이 길어지지 않게 '희귀재료' 그대로
+  const f = fzField(), nName = f?.n || "일반재료", pName = f?.p || "고급재료";
+  const srcName = route==="N" ? nName : pName;
+  const title = `${nName} ${fmt(p.m)}회 구매`;
+  const lines = [`${pName} ${fmt(p.q)}회 구매`, `${srcName}${(()=>{ const j=(srcName.charCodeAt(srcName.length-1)-0xAC00)%28; return /[가-힣]$/.test(srcName) && j && j!==8 ? "으로" : "로"; })()} ${fmt(p.k)}회 가루 구매`, `가루로 희귀재료 ${fmt(p.e)}회 교환`];
   await askNotif();
   if(notifPerm()==="granted"){
     try{
