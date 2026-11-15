@@ -71,6 +71,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .tool svg{width:18px;height:18px;flex:none}
 .tool[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-fg)}
 .tool .t{display:none}
+/* 로고 옆 이동 버튼 (좁은 화면에서는 둘째 줄로 내려가고, 넘치면 옆으로 밀어서 봄) */
+.top-in{flex-wrap:wrap}
+.nav{display:flex;gap:4px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{display:flex;align-items:center;gap:6px;flex:none;height:36px;padding:0 11px;border:1px solid transparent;border-radius:10px;background:none;color:var(--muted);font-weight:600;font-size:13.5px;white-space:nowrap}
+.nav-btn svg{width:17px;height:17px;flex:none}
+.nav-btn:hover{background:var(--surface-done);color:var(--fg)}
+.nav-btn[aria-current="page"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-fg)}
+@media (max-width:760px){.nav{order:5;flex-basis:100%;margin:0 -4px}.nav-btn{height:34px;padding:0 10px;font-size:13px}}
+@media (max-width:480px){.nav{gap:2px}.nav-btn{flex:1 1 auto;justify-content:center;padding:0 6px;gap:4px;font-size:12.5px}.nav-btn svg{display:none}}
 
 /* ── 보드 ── */
 .board{max-width:1240px;margin:0 auto;display:grid;gap:28px;padding-block:18px 40px;
@@ -414,6 +424,40 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fz-need{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
 .fz-need-col{display:flex;flex-direction:column;gap:10px;min-width:0}
 .fz-need-col h4{margin:0;font-size:13.5px}
+.fz-tabs{display:flex;background:var(--surface-done);border:1px solid var(--line);border-radius:999px;padding:3px}
+.fz-tabs button{border:0;background:none;padding:6px 14px;border-radius:999px;font-weight:700;color:var(--muted);font-size:14px}
+.fz-tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.fz-items{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.fz-items button{border:1.5px solid var(--line-strong);background:var(--bg);border-radius:10px;padding:7px 12px;font-weight:600;font-size:13.5px}
+.fz-items button small{color:var(--muted);font-weight:500}
+.fz-items button[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-fg)}
+.fz-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.fz-legend span{display:inline-flex;align-items:center;gap:5px}
+.fz-mline{display:inline-block;width:16px;border-top:2px dashed var(--danger)}
+.fz-chart{margin-top:10px;padding-left:46px}
+.fz-plot{position:relative;height:260px;border-bottom:1px solid var(--line-strong)}
+.fz-tick{position:absolute;left:0;right:0;border-top:1px solid var(--line);height:0}
+.fz-tick span{position:absolute;right:calc(100% + 6px);top:-8px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fz-market{position:absolute;left:0;right:0;border-top:2px dashed var(--danger);z-index:2;pointer-events:none;height:0}
+.fz-market span{position:absolute;right:0;top:3px;font-size:11px;font-weight:700;color:var(--danger);background:var(--surface);padding:0 4px;border-radius:4px}
+.fz-grps{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.fz-grp{display:flex;align-items:flex-end;justify-content:center;gap:3px;height:100%;padding:0 2px}
+.fz-bar{position:relative;flex:1;max-width:26px;min-width:0;display:flex;flex-direction:column-reverse;border:0;padding:0;background:none;border-radius:4px 4px 0 0;transform-origin:bottom;cursor:pointer}
+.fz-bar.empty{background:repeating-linear-gradient(45deg,var(--line) 0 3px,transparent 3px 6px);height:6px;cursor:default}
+.fz-bar i{display:block;width:100%;flex:none}
+.fz-bar i:last-of-type{border-radius:4px 4px 0 0}
+.fz-bar.sel{outline:2px solid var(--fg);outline-offset:1px}
+.fz-bar.min{box-shadow:0 0 0 2px #F2C230}
+.fz-btot{position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fz-star{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);color:#E0A800;font-size:15px;line-height:1}
+.fz-glabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:4px}
+.fz-glab{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.fz-glab b{font-size:13px;white-space:nowrap}
+.fz-sub3{display:flex;justify-content:center;gap:3px;width:100%;padding:0 2px}
+.fz-sub3 i{flex:1;max-width:26px;font-style:normal;font-size:10px;color:var(--muted);text-align:center}
+.fz-detail{display:flex;flex-direction:column;gap:4px;margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg);font-size:13px}
+.fz-detail span{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+@media (max-width:560px){.fz-chart{padding-left:38px}.fz-plot{height:220px}.fz-btot{display:none}.fz-bar.min .fz-btot{display:block}.fz-grps,.fz-glabs{gap:3px}.fz-grp{gap:2px;padding:0}.fz-glab b{font-size:11.5px}.fz-star{bottom:calc(100% + 13px)}}
 .fz-sub{display:block;font-size:11px;color:var(--muted);font-weight:400}
 .fz-warn{color:#E0A100;cursor:help}
 .fz-basis{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px;font-size:13px}
@@ -862,15 +906,26 @@ const slideGauge = (kind, id, k, v, n, step, color, label) =>
 function header(){
   return `<header class="top"><div class="top-in">
     <div class="brand"><button class="brand-home" data-act="go-home" aria-label="일일·주간 숙제 화면으로"><b>로아<i>췍</i></b></button><span class="sync" data-sync data-s="${syncState}">${SYNC_TEXT[syncState]}</span></div>
+    ${navBar()}
     ${ui.page==="main" ? `<div class="tabs" role="tablist">
       <button role="tab" aria-selected="${ui.view==="daily"}" data-act="view" data-v="daily">일일</button>
       <button role="tab" aria-selected="${ui.view==="weekly"}" data-act="view" data-v="weekly">주간</button>
     </div>` : ""}
     <div class="tools" ${ui.page==="main" ? "" : 'style="margin-left:auto"'}>
       ${ui.page==="main" ? `<button class="tool" aria-pressed="${ui.sortSlot}" data-act="slot" aria-label="캐릭터 선택창 순서">${ICON.slot}<span class="t">선택창 순</span></button>` : ""}
-      <button class="tool" data-act="menu" aria-label="메뉴" aria-expanded="${ui.menu}">${ICON.menu}<span class="t">메뉴</span></button>
     </div>
   </div></header>`;
+}
+
+// 로고 옆 이동 버튼 (메뉴 창 대신). 누르면 바로 그 화면으로
+function navBar(){
+  const b = (act, icon, label, current) => `<button class="nav-btn" data-act="${act}" ${current?'aria-current="page"':""}>${icon}<span>${label}</span></button>`;
+  return `<nav class="nav" aria-label="화면 이동">
+    ${b("go-main", ICON.list, "숙제", ui.page==="main" && !ui.settings)}
+    ${b("go-specs", ICON.spec, "스펙 현황", (ui.page==="specs"||ui.page==="spec"||ui.page==="history") && !ui.settings)}
+    ${b("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion" && !ui.settings)}
+    ${b("settings", ICON.gear, "설정", ui.settings)}
+  </nav>`;
 }
 
 // 캐릭터 선택: 선택창 순서로 3칸씩. 누르면 그 캐릭터가 맨 위, 다시 누르면 원래 순서
@@ -1296,6 +1351,75 @@ function fzUpdate(){
   const note = document.getElementById("fz-tnote"); if(note){ const t = fzMaxNote(); note.textContent = t; note.hidden = !t; }
   FZ_FUSION.forEach((x,i)=>set("fz-fu-"+i, fzGainText(fzFusionGain(fzRec()?.route || "N", x))));   // 가격 칸을 고치면 가격표의 융화재료 이득도 다시 계산
 }
+/* ── 비교 그래프: 6개 분야 × (일반재료로 교환 / 고급재료로 교환 / 희귀재료 그냥 구매) = 18개 막대 ──
+   막대 하나 = 융화재료 1개를 만드는 데 드는 골드 (보유량은 0으로 보고, 상자 30개를 골드로 만든다고 계산한 뒤 1개당으로 나눔)
+   아래부터 쌓는 순서: 골드(제작비) → 일반재료 → 고급재료 → 희귀재료(교환에 쓴 재료 또는 직접 산 희귀재료) */
+const FZ_SEG = [ {k:"g", name:"골드 (제작비)", color:"#F2C230"}, {k:"n", name:"일반재료", color:"#C9CFD8"}, {k:"p", name:"고급재료", color:"#3FA46A"}, {k:"r", name:"희귀재료", color:"#4F7FD6"} ];
+const FZ_ROUTE_NAME = { N:"일반재료로 교환", P:"고급재료로 교환", R:"희귀재료 구매" };
+function fzBar(f, route, per){
+  const pN = FZ.prices[f.n], pP = FZ.prices[f.p], pR = FZ.prices[f.r], X = FZ_CMP_BOXES;
+  if(pN==null || pP==null || (route==="R" && pR==null)) return null;
+  let seg;
+  if(route==="R"){
+    // 교환 없이 전부 구매: 일반·고급·희귀 모두 100개 단위로 삼
+    seg = { g: FZ_REC.g*X, n: fzCdiv(FZ_REC.n*X, FZ_LOT)*pN, p: fzCdiv(FZ_REC.p*X, FZ_LOT)*pP, r: fzCdiv(FZ_REC.r*X, FZ_LOT)*pR };
+  } else {
+    const pl = fzPlanBuy(route, {A:0,B:0,C:0,D:0,W:0,pN,pP}, X);
+    // 가루 구매에 쓴 재료(k회)는 '희귀재료' 칸으로, 나머지는 원래 재료 칸으로
+    const exch = route==="N" ? pl.k*FZ_COST_N/FZ_LOT*pN : pl.k*FZ_COST_P/FZ_LOT*pP;
+    seg = { g: FZ_REC.g*X, n: pl.m*pN - (route==="N" ? exch : 0), p: pl.q*pP - (route==="P" ? exch : 0), r: exch };
+  }
+  const d = X * per;   // 융화재료 개수로 나눠 1개당 골드
+  Object.keys(seg).forEach(k=>seg[k] = Math.max(0, seg[k]) / d);
+  return { f, route, seg, total: seg.g + seg.n + seg.p + seg.r };
+}
+let fzChartAnimKey = "";
+function fzChart(){
+  const item = FZ_FUSION.find(x=>x.name===FZ.chartItem) || FZ_FUSION[0];
+  const groups = FZ_FIELDS.map(f=>({f, bars:["N","P","R"].map(r=>fzBar(f, r, item.per))}));
+  const all = groups.flatMap(g=>g.bars).filter(Boolean);
+  const pick = `<div class="fz-items" role="radiogroup" aria-label="제작할 아이템">${FZ_FUSION.map(x=>`<button role="radio" aria-checked="${x===item}" data-act="fz-item" data-v="${esc(x.name)}">${esc(x.name)} <small>(상자당 ${x.per}개)</small></button>`).join("")}</div>`;
+  if(!all.length) return pick + `<p class="fz-note" style="margin:14px 0 4px">재료 가격을 불러오면 그래프가 나와요. 오른쪽 위 '새로고침'을 눌러 주세요.</p>`;
+  const min = all.reduce((a,b)=>b.total < a.total ? b : a);
+  const market = FZ.fusion[item.name];
+  // 세로축 눈금: 보기 좋은 숫자로
+  const top = Math.max(...all.map(b=>b.total), market||0) * 1.12;
+  const stepRaw = top / 5, mag = Math.pow(10, Math.floor(Math.log10(stepRaw))), step = [1,2,2.5,5,10].map(x=>x*mag).find(x=>x >= stepRaw);
+  const nTick = Math.ceil(top / step), yMax = step * nTick;
+  const sel = all.find(b=>`${b.f.k}-${b.route}`===ui.fzBar) || min;
+  const ticks = Array.from({length:nTick+1}, (_,i)=>`<div class="fz-tick" style="bottom:${i/nTick*100}%"><span>${fmt(Math.round(step*i))}</span></div>`).join("");
+  const bars = groups.map(g=>`<div class="fz-grp">${g.bars.map((b,i)=>{
+      const route = ["N","P","R"][i];
+      if(!b) return `<div class="fz-bar empty"></div>`;
+      const isMin = b===min, key = `${g.f.k}-${route}`;
+      const tip = `${g.f.name} · ${FZ_ROUTE_NAME[route]}: 1개당 ${fmt(Math.round(b.total))}골드`;
+      return `<button class="fz-bar ${isMin?"min":""} ${b===sel?"sel":""}" data-act="fz-bar" data-v="${key}" style="height:${b.total/yMax*100}%" title="${tip}" aria-label="${tip}">
+        ${isMin ? `<span class="fz-star">★</span>` : ""}<span class="fz-btot">${fmt(Math.round(b.total))}</span>
+        ${FZ_SEG.map(sg=>`<i style="height:${b.seg[sg.k]/b.total*100}%;background:${sg.color}"></i>`).join("")}</button>`;
+    }).join("")}</div>`).join("");
+  const labels = groups.map(g=>`<div class="fz-glab"><span class="fz-sub3"><i>일</i><i>고</i><i>희</i></span><b>${g.f.name}</b></div>`).join("");
+  const detail = `<div class="fz-detail"><b>${sel.f.name} · ${FZ_ROUTE_NAME[sel.route]}${sel===min?" ★ 가장 적게 듦":""}</b>
+    <span>${FZ_SEG.map(sg=>`${fzDot(sg.color)}${sg.name} ${fmt(Math.round(sg.k==="g"?sel.seg.g:sel.seg[sg.k]))}`).join(" · ")} = <b>${item.name} 1개당 ${fmt(Math.round(sel.total))}골드</b></span>
+    ${market!=null ? `<span class="fz-note">거래소 ${item.name} 가격 ${fmt(Math.round(market))}골드 → ${market>=sel.total ? `<span class="fz-plus">제작이 ${fmt(Math.round(market-sel.total))}골드 이득</span>` : `<span class="fz-minus">제작이 ${fmt(Math.round(sel.total-market))}골드 손해</span>`}</span>` : ""}</div>`;
+  const animKey = item.name + "|" + all.map(b=>Math.round(b.total)).join(",");
+  return `${pick}
+    <div class="fz-legend">${FZ_SEG.map(sg=>`<span>${fzDot(sg.color)}${sg.name}</span>`).join("")}${market!=null ? `<span><i class="fz-mline"></i>거래소 가격</span>` : ""}</div>
+    <div class="fz-chart" data-anim="${esc(animKey)}" role="group" aria-label="${item.name} 1개를 만드는 데 드는 골드 비교">
+      <div class="fz-plot">${ticks}${market!=null && market < yMax ? `<div class="fz-market" style="bottom:${market/yMax*100}%"><span>거래소 ${fmt(Math.round(market))}</span></div>` : ""}<div class="fz-grps">${bars}</div></div>
+      <div class="fz-glabs">${labels}</div>
+    </div>
+    ${detail}
+    <p class="fz-note" style="margin:6px 0 0">세로축 = ${item.name} 1개를 만드는 데 드는 골드 (보유 재료는 없다고 보고 계산). 막대마다 왼쪽부터 일반재료로 교환 / 고급재료로 교환 / 희귀재료 그냥 구매. 막대를 누르면 내역이 보여요.</p>`;
+}
+// 그래프가 새로 그려질 때(아이템을 바꾸거나 가격이 바뀔 때)만 아래에서 위로 솟는 애니메이션
+function fzAnimateChart(){
+  const c = document.querySelector(".fz-chart"); if(!c) return;
+  if(c.dataset.anim === fzChartAnimKey) return;
+  fzChartAnimKey = c.dataset.anim;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  c.querySelectorAll(".fz-bar:not(.empty)").forEach((b,i)=>b.animate([{transform:"scaleY(0)"},{transform:"scaleY(1)"}],
+    {duration:600, delay:i*25, easing:"cubic-bezier(.2,.8,.2,1)", fill:"backwards"}));
+}
 function fzPriceTable(){
   const rec = fzRec(), when = FZ.ts ? new Date(FZ.ts).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
   // 가격 칸: 계산에 쓰는 가격 + (기준이 최저가가 아니면) 작게 최저가, 물량 적을 수 있으면 ⚠
@@ -1318,17 +1442,21 @@ function fzPriceTable(){
     const isBest = rec && grade!=="r" && rec.f===f && (rec.route==="N" ? "n" : "p")===grade;
     return `<tr class="${isBest?"best":""}"><td>${esc(name)}${isBest?" ★":""}</td><td>${f.name}</td><td class="r mono">${price(name)}</td><td class="r mono">${grade==="r" ? "" : prof(v)}</td></tr>`;
   }).join("");
+  // 비교창: [비교] 막대그래프 / [재료 가격표] 두 탭
+  const tab = FZ.tab==="table" ? "table" : "chart";
   return `<section class="fz-panel">
-    <div class="fz-head"><button class="fz-fold" data-act="fz-fold" aria-expanded="${FZ.open}">${ICON.chev||""}<span>재료 가격표</span></button>
+    <div class="fz-head"><div class="fz-tabs" role="tablist" aria-label="비교창">
+        <button role="tab" aria-selected="${tab==="chart"}" data-act="fz-tab" data-v="chart">비교</button>
+        <button role="tab" aria-selected="${tab==="table"}" data-act="fz-tab" data-v="table">재료 가격표</button></div>
       <span style="display:flex;align-items:center;gap:10px"><span class="fz-note">${fzLoading ? "불러오는 중…" : when ? `${when} 기준 · 거래소` : "아직 불러오지 않았어요"}</span>
       <button class="fz-btn" data-act="fz-refresh" ${fzLoading?"disabled":""}>새로고침</button></span></div>
     ${fzError ? `<div class="fz-err">${esc(fzError)}</div>` : ""}
-    ${FZ.open ? `<div class="fz-tablewrap"><table class="fz-table">
+    ${tab==="chart" ? fzChart() : `<div class="fz-tablewrap"><table class="fz-table">
       <thead><tr><th>이름</th><th>종류</th><th class="r">가격<span class="wide"> (100개)</span></th><th class="r"><span class="wide">희귀재료 </span>교환 손익</th></tr></thead>
       <tbody>${rows("일반재료","n")}${rows("고급재료","p")}${rows("희귀재료","r")}${fusionRows()}</tbody></table></div>
-      <div class="fz-basis"><label for="fz-basis">계산에 쓸 가격</label><select id="fz-basis">${Object.entries(FZ_BASIS).map(([k,t])=>`<option value="${k}" ${FZ.basis===k?"selected":""}>${t}</option>`).join("")}</select>
-        <span class="fz-note">거래소 API는 최저가에 몇 개가 올라와 있는지 알려주지 않아요. ⚠ = 최저가가 전일 평균가보다 10% 넘게 싸서 물량이 적을 수 있는 재료예요.</span></div>
-      <p class="fz-note" style="margin:8px 0 0">희귀재료 교환 손익 = 희귀재료 100개를 그냥 살 때 가격 − 그 재료로 가루를 만들어 교환할 때 드는 가격 (일반재료 1,250개 / 고급재료 625개). 양수(+)면 가루로 교환하는 게 이득이에요. ★ = 추천: 6개 분야에서 상자 30개를 골드로 만들 때 골드가 가장 적게 드는 분야와 가루로 교환할 재료</p>` : ""}
+      <p class="fz-note" style="margin:8px 0 0">희귀재료 교환 손익 = 희귀재료 100개를 그냥 살 때 가격 − 그 재료로 가루를 만들어 교환할 때 드는 가격 (일반재료 1,250개 / 고급재료 625개). 양수(+)면 가루로 교환하는 게 이득이에요. ★ = 추천: 6개 분야에서 상자 30개를 골드로 만들 때 골드가 가장 적게 드는 분야와 가루로 교환할 재료</p>`}
+    <div class="fz-basis"><label for="fz-basis">계산에 쓸 가격</label><select id="fz-basis">${Object.entries(FZ_BASIS).map(([k,t])=>`<option value="${k}" ${FZ.basis===k?"selected":""}>${t}</option>`).join("")}</select>
+      <span class="fz-note">거래소 API는 최저가에 몇 개가 올라와 있는지 알려주지 않아요. ⚠ = 최저가가 전일 평균가보다 10% 넘게 싸서 물량이 적을 수 있는 재료예요.</span></div>
     <div class="fz-pick"><label for="fz-field">생활 분야</label>
       <select id="fz-field"><option value="auto" ${FZ.field==="auto"?"selected":""}>자동 (골드 가장 적게)</option>${FZ_FIELDS.map(f=>`<option value="${f.k}" ${FZ.field===f.k?"selected":""}>${f.name}</option>`).join("")}</select>
       <span>${(()=>{ const r = fzRec(); if(!r) return "가격을 불러오면 골드가 가장 적게 드는 분야를 골라요";
@@ -1579,7 +1707,7 @@ function render(){
   const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage()
     : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
-  app.innerHTML = header() + body + menuPanel() + settingsSheet();
+  app.innerHTML = header() + body + settingsSheet();
   const top = app.querySelector(".top"); if(top) document.documentElement.style.setProperty("--top-h", top.offsetHeight + "px");
 
   if(sheetScroll) app.querySelector(".sheet").scrollTop = sheetScroll;
@@ -1587,6 +1715,7 @@ function render(){
     // 눌러만 두고 아직 안 쓴 입력칸은 다시 그린 뒤에도 빈 칸 상태 유지
     if(el && focusSess && focusSess.id===aid && !focusSess.edited){ focusSess.orig = el.value; focusSess.ph = el.placeholder; blankField(el); } }
   rendering = false;
+  if(ui.page==="fusion") fzAnimateChart();
   if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
     app.querySelectorAll("[data-gkey]").forEach(el=>{
       const from = prevG.get(el.dataset.gkey); if(from==null) return;
@@ -1631,8 +1760,10 @@ document.addEventListener("click", e=>{
     case "go-main": goPage("main"); break;
     case "go-home": if(ui.page!=="main" || ui.settings || ui.menu){ ui.menu=false; ui.settings=false; ui.page="main"; pushNav(); render(); } window.scrollTo({top:0, behavior:"smooth"}); break;
     case "go-specs": goPage("specs"); break;
-    case "go-fusion": goPage("fusion"); fzLoad(false); break;
-    case "fz-fold": FZ.open = !FZ.open; fzSave(); render(); break;
+    case "go-fusion": fzChartAnimKey = ""; goPage("fusion"); fzLoad(false); break;
+    case "fz-tab": FZ.tab = b.dataset.v; fzChartAnimKey = ""; fzSave(); render(); break;
+    case "fz-item": FZ.chartItem = b.dataset.v; ui.fzBar = null; fzSave(); render(); break;
+    case "fz-bar": ui.fzBar = b.dataset.v; render(); break;
     case "fz-refresh": fzLoad(true); break;
     case "fz-notify": fzNotify(b.dataset.route); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
@@ -1651,7 +1782,7 @@ document.addEventListener("click", e=>{
     case "show-dispatch": ui.showDispatch = true; render(); break;
     case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
     case "pin": ui.pin = ui.pin===id ? null : id; dOrd.order=wOrd.order=null; saveUi(); render(); break;
-    case "settings": { const fromMenu = ui.menu && history.state?.menu; ui.menu=false; ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; if(fromMenu) replaceNav(); else pushNav(); render(); break; }
+    case "settings": { if(ui.settings) break; const fromMenu = ui.menu && history.state?.menu; ui.menu=false; ui.settings=true; ui.armDel=null; if(!ui.apiName) ui.apiName=[...S.roster].sort(bySlot)[0]?.name||""; if(fromMenu) replaceNav(); else pushNav(); render(); break; }
     case "close": case "close-bg": closeSettings(); break;
     case "hw": { const h=P(id).daily[b.dataset.k];
       // 체크해서 숨겨지는 줄은 스르륵 접힌 뒤 사라짐
