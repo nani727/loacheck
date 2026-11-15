@@ -414,6 +414,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fz-need{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
 .fz-need-col{display:flex;flex-direction:column;gap:10px;min-width:0}
 .fz-need-col h4{margin:0;font-size:13.5px}
+.fz-sub{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.fz-warn{color:#E0A100;cursor:help}
+.fz-basis{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px;font-size:13px}
+.fz-basis select{border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:8px;padding:5px 8px;font:inherit}
+.fz-need-zero{color:var(--muted);font-size:12.5px;margin-top:-4px}
+.fz-fusion{border-top:1px dashed var(--line-strong);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.fz-fusion dt small{font-size:11.5px}
+.fz-fusion dd{font-family:inherit;font-size:13.5px}
 .fz-need-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .fz-need-h .fz-btn{height:28px;padding:0 10px;font-size:12.5px}
 .fz-need-total{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
@@ -1043,9 +1051,31 @@ const FZ_FIELDS = [
 // 희귀재료 100개를 가루로 얻을 때 필요한 일반/고급재료 묶음(100개) 수: 가루 1000개 = 12.5회 구매
 const FZ_LOTS_FOR_100_RARE = { n: (100/FZ_RARE_PER_EX*FZ_POWDER_PER_EX/FZ_POWDER_PER_BUY)*FZ_COST_N/100,   // 12.5
                                p: (100/FZ_RARE_PER_EX*FZ_POWDER_PER_EX/FZ_POWDER_PER_BUY)*FZ_COST_P/100 }; // 6.25
+// 융화재료: 상자 1개에서 나오는 개수 (아비도스 10개 / 상급 아비도스 5개)
+const FZ_FUSION = [ {name:"아비도스 융화 재료", per:10}, {name:"상급 아비도스 융화 재료", per:5} ];
 const FZ_KEY = "loacheck-fusion";
-let FZ = {A:0,B:0,C:0,D:0,W:0,pN:0,pP:0,T:30,field:"auto",open:true,prices:{},ts:0};
+let FZ = {A:0,B:0,C:0,D:0,W:0,pN:0,pP:0,T:30,field:"auto",open:true,prices:{},fusion:{},ts:0};
 try{ Object.assign(FZ, JSON.parse(localStorage.getItem(FZ_KEY)||"{}")); }catch(e){}
+if(!FZ.fusion) FZ.fusion = {};
+if(!FZ.raw) FZ.raw = {};            // 거래소 원래 값 {min 최저가, avg 전일 평균가, recent 최근 거래가} (생활재료 100개 / 융화재료 1개 기준)
+if(!FZ.basis) FZ.basis = "safe";    // 계산에 쓸 가격 기준
+// 거래소 API는 최저가에 몇 개가 올라와 있는지(등록 수량)는 알려주지 않음 → 최저가가 전일 평균보다 많이 싸면 물량이 적을 수 있어서 '안전' 기준을 기본으로
+const FZ_BASIS = { safe:"안전 (최저가·전일 평균가 중 높은 값)", min:"최저가", avg:"전일 평균가", recent:"최근 거래가" };
+function fzEff(q){
+  if(!q) return null;
+  const avg = q.avg || q.min, recent = q.recent || q.min;
+  return FZ.basis==="min" ? q.min : FZ.basis==="avg" ? avg : FZ.basis==="recent" ? recent : Math.max(q.min, avg);
+}
+// 최저가가 전일 평균가보다 10% 넘게 싸면 '물량 적을 수 있음' 표시
+const fzThin = q => q && q.avg && q.min < q.avg * 0.9;
+// 가격 기준이 바뀌거나 새로 불러오면 계산용 가격을 다시 만듦
+function fzRebuild(){
+  Object.entries(FZ.raw).forEach(([n,q])=>{
+    const v = fzEff(q); if(v==null) return;
+    if(FZ_FUSION.some(x=>x.name===n)) FZ.fusion[n] = v; else FZ.prices[n] = v;
+  });
+  fzApplyFieldPrices();
+}
 const fzSave = () => { try{ localStorage.setItem(FZ_KEY, JSON.stringify(FZ)); }catch(e){} };
 let fzLoading = false, fzError = "";
 
@@ -1081,12 +1111,20 @@ function fzApplyFieldPrices(){
 }
 
 // 거래소 최저가 (100개 기준 가격으로 맞춤)
-async function fzMarketPrice(name){
+// perUnit: true면 1개 가격, 아니면 100개 가격. cats: 찾아볼 거래소 분류 (생활 90000, 강화 재료 50000)
+async function fzMarketPrice(name, perUnit=false, cats=[90000]){
+  for(const cat of cats){
+    const q = await fzMarketPriceIn(name, cat);
+    if(q!=null){ if(perUnit){ q.min/=100; q.avg/=100; q.recent/=100; } return q; }
+  }
+  return null;
+}
+async function fzMarketPriceIn(name, cat){
   let res;
   try{
     res = await fetch(`${LOA_API}/markets/items`, {method:"POST",
       headers:{accept:"application/json","content-type":"application/json", authorization:"bearer "+S.apiKey},
-      body: JSON.stringify({Sort:"CURRENT_MIN_PRICE", SortCondition:"ASC", CategoryCode:90000, ItemName:name, PageNo:1})});
+      body: JSON.stringify({Sort:"CURRENT_MIN_PRICE", SortCondition:"ASC", CategoryCode:cat, ItemName:name, PageNo:1})});
   }catch(e){ throw new Error("로스트아크 서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요."); }
   if(res.status===401) throw new Error("API 키가 올바르지 않아요. 설정에서 키를 확인해 주세요.");
   if(res.status===429) throw new Error("요청이 너무 많아요. 1분 뒤 다시 시도해 주세요.");
@@ -1095,20 +1133,26 @@ async function fzMarketPrice(name){
   const data = await res.json().catch(()=>null);
   const it = (data?.Items||[]).find(x=>x.Name===name);
   if(!it || it.CurrentMinPrice==null) return null;
-  const bundle = Number(it.BundleCount)||1;
-  return Number(it.CurrentMinPrice) * 100 / bundle;
+  const k = 100 / (Number(it.BundleCount)||1);   // 100개 기준으로 맞춤
+  return { min: Number(it.CurrentMinPrice)*k, avg: (Number(it.YDayAvgPrice)||0)*k, recent: (Number(it.RecentPrice)||0)*k };
 }
 async function fzLoad(force){
   if(fzLoading) return;
   if(!S.apiKey){ fzError = "설정 → 로스트아크 API에서 키를 먼저 저장해 주세요."; if(ui.page==="fusion") render(); return; }
-  if(!force && Date.now()-FZ.ts < 10*60e3 && Object.keys(FZ.prices).length >= 18) return;   // 10분 안에 불러온 값은 그대로 사용
+  if(!force && Date.now()-FZ.ts < 10*60e3 && Object.keys(FZ.prices).length >= 18 && Object.keys(FZ.fusion).length >= FZ_FUSION.length) return;   // 10분 안에 불러온 값은 그대로 사용
   fzLoading = true; fzError = ""; if(ui.page==="fusion") render();
   const names = FZ_FIELDS.flatMap(f=>[f.n, f.p, f.r]);
-  const out = await Promise.all(names.map(n=>fzMarketPrice(n).then(v=>({v}), e=>({e}))));
-  const err = out.find(o=>o.e)?.e;
+  const [out, fout] = await Promise.all([
+    Promise.all(names.map(n=>fzMarketPrice(n).then(v=>({v}), e=>({e})))),
+    Promise.all(FZ_FUSION.map(x=>fzMarketPrice(x.name, true, [50000, 90000]).then(v=>({v}), e=>({e})))),   // 융화재료는 1개 가격
+  ]);
+  const err = [...out, ...fout].find(o=>o.e)?.e;
   const prices = {}; names.forEach((n,i)=>{ if(out[i].v!=null) prices[n] = out[i].v; });
-  if(Object.keys(prices).length){ FZ.prices = {...FZ.prices, ...prices}; FZ.ts = Date.now(); fzApplyFieldPrices(); fzSave(); }
-  const missing = names.filter(n=>!(n in prices));
+  const fusion = {}; FZ_FUSION.forEach((x,i)=>{ if(fout[i].v!=null) fusion[x.name] = fout[i].v; });
+  FZ.raw = {...FZ.raw, ...prices, ...fusion};
+  if(Object.keys(prices).length) FZ.ts = Date.now();
+  fzRebuild(); fzSave();
+  const missing = [...names.filter(n=>!(n in prices)), ...FZ_FUSION.map(x=>x.name).filter(n=>!(n in fusion))];
   fzError = err ? err.message : missing.length ? `거래소에서 못 찾은 재료: ${missing.join(", ")}` : "";
   fzLoading = false;
   if(ui.page==="fusion") render();
@@ -1185,7 +1229,8 @@ function fzNeedCol(route, p, s){
   const diff = p.cost - s.D;
   const st = diff > 0 ? `<span class="fz-lack">골드 ${fmt(diff)} 부족</span>` : `<span class="fz-ok">골드 충분 (${fmt(-diff)} 남음)</span>`;
   return `<div class="fz-need-col"><h4 class="fz-need-h">${title}<button class="fz-btn" data-act="fz-notify" data-route="${route}" aria-label="${title} 내용을 윈도우 알림으로 띄우기">띄우기</button></h4><div class="fz-need-total"><span class="n">${fmt(p.cost)}</span><span class="u">골드 필요</span></div>
-    <div class="fz-short">현재 골드 <b class="mono">${fmt(s.D)}</b> · ${st}</div><dl>${rows}</dl></div>`;
+    <div class="fz-need-zero">(모든 재료가 없을 시 ${fmt(fzPlanBuy(route, {A:0,B:0,C:0,D:0,W:0,pN:s.pN,pP:s.pP}, p.x).cost)}골드 필요)</div>
+    <div class="fz-short">현재 골드 <b class="mono">${fmt(s.D)}</b> · ${st}</div><dl>${rows}</dl>${fzFusionBlock(route)}</div>`;
 }
 // 결과 부분만 (입력할 때마다 이 부분만 다시 그림)
 function fzResults(){
@@ -1227,17 +1272,46 @@ async function fzNotify(route){
   el.innerHTML = `<div class="toast-head"><b>${esc(title)}</b><button class="toast-x" data-act="toast-close" data-t="${id}" aria-label="알림 닫기">×</button></div><p>${lines.map(esc).join("<br>")}</p><p>윈도우 알림을 쓰려면 설정 → 알림에서 'PC 화면 위에 알림 띄우기'를 허용해 주세요.</p>`;
   box.appendChild(el); setTimeout(()=>closeToast(id), 60000);
 }
+// 재료를 모두 골드로 사서 만들 때 상자 1개 비용 (상자 30개 기준, 지금 칸에 들어간 일반/고급재료 가격 사용)
+function fzBoxCost(route){
+  if(!FZ.pN || !FZ.pP) return null;
+  return fzPlanBuy(route, {A:0,B:0,C:0,D:0,W:0,pN:FZ.pN,pP:FZ.pP}, FZ_CMP_BOXES).cost / FZ_CMP_BOXES;
+}
+// 융화재료 1개: 거래소 가격 − 만들 때 드는 가격 (양수 = 제작이 이득)
+function fzFusionGain(route, x){
+  const price = FZ.fusion[x.name], box = fzBoxCost(route);
+  if(price==null || box==null) return null;
+  return price - box / x.per;
+}
+const fzGainText = v => v==null ? "-" : `<span class="${v>=0?"fz-plus":"fz-minus"}">제작시 개당 ${fmt(Math.abs(Math.round(v)))}골드 ${v>=0?"이득":"손해"}</span>`;
+function fzFusionBlock(route){
+  return `<div class="fz-fusion"><div class="fz-left">거래소 융화재료 가격과 비교 (재료를 모두 사서 만들 때)</div>
+    <dl>${FZ_FUSION.map(x=>fzRow(`${x.name} <small>(상자 1개 = ${x.per}개)</small>`, fzGainText(fzFusionGain(route, x)))).join("")}</dl></div>`;
+}
 function fzMaxNote(){ const mx = fzMaxBoxes(); return mx > FZ_MAX_T ? `최대 ${fmt(mx)}회 제작 가능` : ""; }
 function fzUpdate(){
   const r = fzResults();
   const set = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
   set("fz-summary", r.summary); set("fz-need", r.need); set("fz-routes", r.routes);
   const note = document.getElementById("fz-tnote"); if(note){ const t = fzMaxNote(); note.textContent = t; note.hidden = !t; }
+  FZ_FUSION.forEach((x,i)=>set("fz-fu-"+i, fzGainText(fzFusionGain(fzRec()?.route || "N", x))));   // 가격 칸을 고치면 가격표의 융화재료 이득도 다시 계산
 }
 function fzPriceTable(){
   const rec = fzRec(), when = FZ.ts ? new Date(FZ.ts).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
-  const price = n => FZ.prices[n]!=null ? fmt(Math.round(FZ.prices[n])) : "-";
+  // 가격 칸: 계산에 쓰는 가격 + (기준이 최저가가 아니면) 작게 최저가, 물량 적을 수 있으면 ⚠
+  const priceCell = (n, v) => {
+    const q = FZ.raw[n]; if(v==null) return "-";
+    const warn = fzThin(q) ? ` <span class="fz-warn" title="최저가(${fmt(Math.round(q.min))})가 전일 평균가(${fmt(Math.round(q.avg))})보다 많이 싸요. 최저가 물량이 적어서 사다 보면 가격이 오를 수 있어요.">⚠</span>` : "";
+    const sub = q && FZ.basis!=="min" && Math.round(q.min)!==Math.round(v) ? `<small class="fz-sub">최저 ${fmt(Math.round(q.min))}</small>` : "";
+    return `${fmt(Math.round(v))}${warn}${sub}`;
+  };
+  const price = n => priceCell(n, FZ.prices[n]);
   const prof = v => v==null ? "-" : `<span class="${v>=0?"fz-plus":"fz-minus"}">${v>=0?"+":""}${fmt(Math.round(v))}</span>`;
+  // 융화재료: 1개 가격 + 지금 분야에서 더 싸게 만드는 방법으로 만들었을 때 이득/손해
+  const fusionRows = () => `<tr class="grp"><td colspan="4">융화재료 (1개 가격)</td></tr>` + FZ_FUSION.map(x=>{
+    const pr = FZ.fusion[x.name], route = rec?.route || "N";
+    return `<tr><td>${esc(x.name)}</td><td>상자당 ${x.per}개</td><td class="r mono">${priceCell(x.name, pr)}</td><td class="r" id="fz-fu-${FZ_FUSION.indexOf(x)}">${fzGainText(fzFusionGain(route, x))}</td></tr>`;
+  }).join("");
   const rows = (title, grade) => `<tr class="grp"><td colspan="4">${title}</td></tr>` + FZ_FIELDS.map(f=>{
     const name = grade==="n" ? f.n : grade==="p" ? f.p : f.r;
     const v = grade==="r" ? null : fzProfit(f, grade);
@@ -1246,12 +1320,14 @@ function fzPriceTable(){
   }).join("");
   return `<section class="fz-panel">
     <div class="fz-head"><button class="fz-fold" data-act="fz-fold" aria-expanded="${FZ.open}">${ICON.chev||""}<span>재료 가격표</span></button>
-      <span style="display:flex;align-items:center;gap:10px"><span class="fz-note">${fzLoading ? "불러오는 중…" : when ? `${when} 기준 · 거래소 최저가` : "아직 불러오지 않았어요"}</span>
+      <span style="display:flex;align-items:center;gap:10px"><span class="fz-note">${fzLoading ? "불러오는 중…" : when ? `${when} 기준 · 거래소` : "아직 불러오지 않았어요"}</span>
       <button class="fz-btn" data-act="fz-refresh" ${fzLoading?"disabled":""}>새로고침</button></span></div>
     ${fzError ? `<div class="fz-err">${esc(fzError)}</div>` : ""}
     ${FZ.open ? `<div class="fz-tablewrap"><table class="fz-table">
-      <thead><tr><th>이름</th><th>종류</th><th class="r">최저가<span class="wide"> (100개)</span></th><th class="r"><span class="wide">희귀재료 </span>교환 손익</th></tr></thead>
-      <tbody>${rows("일반재료","n")}${rows("고급재료","p")}${rows("희귀재료","r")}</tbody></table></div>
+      <thead><tr><th>이름</th><th>종류</th><th class="r">가격<span class="wide"> (100개)</span></th><th class="r"><span class="wide">희귀재료 </span>교환 손익</th></tr></thead>
+      <tbody>${rows("일반재료","n")}${rows("고급재료","p")}${rows("희귀재료","r")}${fusionRows()}</tbody></table></div>
+      <div class="fz-basis"><label for="fz-basis">계산에 쓸 가격</label><select id="fz-basis">${Object.entries(FZ_BASIS).map(([k,t])=>`<option value="${k}" ${FZ.basis===k?"selected":""}>${t}</option>`).join("")}</select>
+        <span class="fz-note">거래소 API는 최저가에 몇 개가 올라와 있는지 알려주지 않아요. ⚠ = 최저가가 전일 평균가보다 10% 넘게 싸서 물량이 적을 수 있는 재료예요.</span></div>
       <p class="fz-note" style="margin:8px 0 0">희귀재료 교환 손익 = 희귀재료 100개를 그냥 살 때 가격 − 그 재료로 가루를 만들어 교환할 때 드는 가격 (일반재료 1,250개 / 고급재료 625개). 양수(+)면 가루로 교환하는 게 이득이에요. ★ = 추천: 6개 분야에서 상자 30개를 골드로 만들 때 골드가 가장 적게 드는 분야와 가루로 교환할 재료</p>` : ""}
     <div class="fz-pick"><label for="fz-field">생활 분야</label>
       <select id="fz-field"><option value="auto" ${FZ.field==="auto"?"selected":""}>자동 (골드 가장 적게)</option>${FZ_FIELDS.map(f=>`<option value="${f.k}" ${FZ.field===f.k?"selected":""}>${f.name}</option>`).join("")}</select>
@@ -1880,6 +1956,7 @@ document.addEventListener("keydown", e=>{
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="alarm-vol"){ chime(1); return; }
+  if(e.target.id==="fz-basis"){ FZ.basis = e.target.value; fzRebuild(); fzSave(); render(); return; }
   if(e.target.id==="fz-field"){ FZ.field = e.target.value; fzApplyFieldPrices(); fzSave(); render(); return; }   // 손을 떼면 그 크기로 한 번 들려줌
   if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
   const ck = e.target.dataset?.apiCheck;
