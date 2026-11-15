@@ -1106,8 +1106,8 @@ const FZ_FIELDS = [
 // 희귀재료 100개를 가루로 얻을 때 필요한 일반/고급재료 묶음(100개) 수: 가루 1000개 = 12.5회 구매
 const FZ_LOTS_FOR_100_RARE = { n: (100/FZ_RARE_PER_EX*FZ_POWDER_PER_EX/FZ_POWDER_PER_BUY)*FZ_COST_N/100,   // 12.5
                                p: (100/FZ_RARE_PER_EX*FZ_POWDER_PER_EX/FZ_POWDER_PER_BUY)*FZ_COST_P/100 }; // 6.25
-// 융화재료: 상자 1개에서 나오는 개수 (아비도스 10개 / 상급 아비도스 5개)
-const FZ_FUSION = [ {name:"아비도스 융화 재료", per:10}, {name:"상급 아비도스 융화 재료", per:5} ];
+// 융화재료: 상자 1개에서 나오는 개수 (아비도스 10개 / 상급 아비도스 10개)
+const FZ_FUSION = [ {name:"아비도스 융화 재료", per:10}, {name:"상급 아비도스 융화 재료", per:10} ];
 const FZ_KEY = "loacheck-fusion";
 let FZ = {A:0,B:0,C:0,D:0,W:0,pN:0,pP:0,T:30,field:"auto",open:true,prices:{},fusion:{},ts:0};
 try{ Object.assign(FZ, JSON.parse(localStorage.getItem(FZ_KEY)||"{}")); }catch(e){}
