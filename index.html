@@ -1813,6 +1813,11 @@ document.addEventListener("click", e=>{
         b.style.pointerEvents="none";
         const pip = b.querySelectorAll(".pips i")[cur];
         if(pip){ pip.classList.add("on"); pip.animate([{backgroundSize:"0% 100%, auto"},{backgroundSize:"100% 100%, auto"}],{duration:320,easing:"ease"}); }
+        // 관문 칸이 차는 동안 골드 게이지(캐릭터·원정대)도 같이 오름 → 다 오른 뒤 레이드 버튼이 사라짐
+        const gain = (RAIDS[t]||[0])[cur] || 0, c = byIdS(id), g = goldOf(c);
+        const total = S.roster.reduce((a,x)=>{ const y=goldOf(x); return {earned:a.earned+y.earned, max:a.max+y.max}; }, {earned:0,max:0});
+        growGold(`gold-${id}`, g.max ? (g.earned+gain)/g.max : 0, g.max-g.earned-gain);
+        growGold("gold-total", total.max ? (total.earned+gain)/total.max : 0, total.earned+gain);
         setTimeout(()=>{ b.animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.92)"}],{duration:200,easing:"ease-in",fill:"forwards"}).finished.catch(()=>{}).then(()=>{ p.raids[t]=next; commit(); }); }, 330);
       } else { p.raids[t]=next; commit(); }
       break; }
@@ -1828,6 +1833,14 @@ document.addEventListener("click", e=>{
     case "del": if(ui.armDel!==id){ ui.armDel=id; render(); } else { S.roster=S.roster.filter(c=>c.id!==id); delete S.progress[id]; ui.armDel=null; commit(); } break;
   }
 });
+// 골드 막대와 숫자를 지금 자리에서 새 값으로 움직임 (다시 그릴 때 또 움직이지 않도록 값도 미리 바꿔 둠)
+function growGold(key, ratio, num){
+  const bar = document.querySelector(`[data-bkey="${key}"]`);
+  if(bar){ const from = bar.style.width, to = `${Math.max(0,Math.min(1,ratio))*100}%`; bar.style.width = to;
+    if(from!==to) bar.animate([{width:from},{width:to}], {duration:450, easing:"cubic-bezier(.2,.8,.2,1)"}); }
+  const n = document.querySelector(`[data-nkey="${key}"]`);
+  if(n){ const from = Number(n.dataset.shown ?? n.dataset.n); n.dataset.n = num; if(from!==num) countUp(n, from, num); }
+}
 // 메뉴 닫기 (밀려 들어가는 애니메이션 후 제거). instant=true면 바로 닫음
 function closeMenu(instant){
   if(!ui.menu) return render();
