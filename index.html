@@ -190,11 +190,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .exp-item{flex:1 1 160px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .exp-item .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
 /* 유리 스타일: 두꺼운 유리 테두리 + 왼쪽 위 빛 반사로 볼록하게 (사용자가 '유리 스타일'로 이름 붙임) */
-.exp-item .ico.glass{position:relative;width:38px;height:38px;padding:3px;border-radius:24%;display:block;
-  background:linear-gradient(145deg,rgba(255,255,255,.7),rgba(255,255,255,.12) 40%,rgba(0,0,0,.35));box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.8)}
-.ico.glass .in{display:grid;place-items:center;width:100%;height:100%;border-radius:18%;object-fit:cover;background:#000}
-.ico.glass::before{content:"";position:absolute;inset:3px;border-radius:18%;box-shadow:inset 1px 1px 2px rgba(255,255,255,.55),inset -2px -2px 4px rgba(0,0,0,.6);pointer-events:none}
+.exp-item .ico.glass{position:relative;width:36px;height:36px;padding:0;border-radius:24%;display:block;overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.ico.glass .in{display:grid;place-items:center;width:100%;height:100%;border-radius:inherit;object-fit:cover;background:#000}
+/* 유리 크기 = 그림 크기 (틈 없음). 흰 윤곽선 없이 빛 반사·그림자만 그림 위에 얹음 */
+.ico.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.8),inset 1px 1px 2px rgba(255,255,255,.55),inset -2px -2px 4px rgba(0,0,0,.6)}
 .ico.glass::after{content:"";position:absolute;left:14%;top:12%;width:34%;height:22%;border-radius:50%;background:radial-gradient(rgba(255,255,255,.9),rgba(255,255,255,0) 70%);transform:rotate(-25deg);pointer-events:none}
+/* 물방울 스타일 (시안 A): 위쪽 반달 광택 + 아래 안쪽 그림자. .glass.drop 이면 유리 스타일 대신 이걸로 */
+.ico.glass.drop{border-radius:22%;box-shadow:0 2px 5px rgba(0,0,0,.45)}
+.ico.glass.drop::before{box-shadow:inset 0 -4px 7px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.35)}
+.ico.glass.drop::after{left:8%;right:8%;top:4%;width:auto;height:46%;transform:none;border-radius:50% 50% 45% 45%/70% 70% 30% 30%;background:linear-gradient(rgba(255,255,255,.75),rgba(255,255,255,.08))}
 .exp-item.on .ico.glass .in{opacity:.55;filter:grayscale(.4)}
 .exp-item.solo{border:0;padding:0}
 .total .exp-item{flex:none}
