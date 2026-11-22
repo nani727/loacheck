@@ -189,16 +189,19 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .reddot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:none}
 .exp-item{flex:1 1 160px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .exp-item .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
-.exp-item .ico.pic{width:36px;height:36px;object-fit:cover;background:#000}
-.exp-item.on .ico.pic{opacity:.55;filter:grayscale(.4)}
-.exp-item.chaos .ico{background:linear-gradient(160deg,#6A3FB5,#2C1B57)}
-.exp-item.boss .ico{background:linear-gradient(160deg,#C2552B,#5A1F0D)}
+/* 유리 스타일: 두꺼운 유리 테두리 + 왼쪽 위 빛 반사로 볼록하게 (사용자가 '유리 스타일'로 이름 붙임) */
+.exp-item .ico.glass{position:relative;width:38px;height:38px;padding:3px;border-radius:24%;display:block;
+  background:linear-gradient(145deg,rgba(255,255,255,.7),rgba(255,255,255,.12) 40%,rgba(0,0,0,.35));box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.8)}
+.ico.glass .in{display:grid;place-items:center;width:100%;height:100%;border-radius:18%;object-fit:cover;background:#000}
+.ico.glass::before{content:"";position:absolute;inset:3px;border-radius:18%;box-shadow:inset 1px 1px 2px rgba(255,255,255,.55),inset -2px -2px 4px rgba(0,0,0,.6);pointer-events:none}
+.ico.glass::after{content:"";position:absolute;left:14%;top:12%;width:34%;height:22%;border-radius:50%;background:radial-gradient(rgba(255,255,255,.9),rgba(255,255,255,0) 70%);transform:rotate(-25deg);pointer-events:none}
+.exp-item.on .ico.glass .in{opacity:.55;filter:grayscale(.4)}
 .exp-item.solo{border:0;padding:0}
 .total .exp-item{flex:none}
 .total .estate-toggle{margin:6px auto -4px}
 .total .exp-item.sep{margin-top:4px;padding-top:12px;border-top:1px dashed var(--line-strong);border-radius:0}
-.exp-item.estate .ico{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
-.exp-item.serka .ico{background:linear-gradient(160deg,#C9A23A,#5C4410);font-size:10.5px}
+.exp-item.estate .ico .in{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
+.exp-item.serka .ico .in{background:linear-gradient(160deg,#C9A23A,#5C4410);font-size:9.5px;letter-spacing:-.03em}
 .exp-item b{flex:1;font-weight:600}
 .exp-item.on b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
 .note{color:var(--muted);font-size:13px}
@@ -994,8 +997,8 @@ function dailyPanel(){
     </button>`;
   const exp = (noContent || !ui.expOpen) ? expHead : expHead +
     `<div class="exp">
-      ${showChaos ? `<div class="exp-item chaos ${S.expedition.chaos?"on":""}"><img class="ico pic" src="${ICON_CHAOS}" alt=""><b>카오스 게이트</b>${chk(S.expedition.chaos,"exp",'data-k="chaos"',"카오스 게이트 완료")}</div>` : ""}
-      ${showBoss ? `<div class="exp-item boss ${S.expedition.field?"on":""}"><img class="ico pic" src="${ICON_BOSS}" alt=""><b>필드 보스</b>${chk(S.expedition.field,"exp",'data-k="field"',"필드 보스 완료")}</div>` : ""}
+      ${showChaos ? `<div class="exp-item chaos ${S.expedition.chaos?"on":""}"><span class="ico glass"><img class="in" src="${ICON_CHAOS}" alt=""></span><b>카오스 게이트</b>${chk(S.expedition.chaos,"exp",'data-k="chaos"',"카오스 게이트 완료")}</div>` : ""}
+      ${showBoss ? `<div class="exp-item boss ${S.expedition.field?"on":""}"><span class="ico glass"><img class="in" src="${ICON_BOSS}" alt=""></span><b>필드 보스</b>${chk(S.expedition.field,"exp",'data-k="field"',"필드 보스 완료")}</div>` : ""}
     </div>`;
 
   const order = settle(dOrd, [...S.roster].sort(dailyCmp).map(c=>c.id), ui.edit);
@@ -1072,7 +1075,7 @@ function weeklyPanel(){
       const doneN = items.filter(x=>S.expedition[x.k]).length; if(!doneN) ui.showEstate = false;
       let first = !goldOn;
       const rows = items.filter(x=>!S.expedition[x.k] || ui.showEstate).map(x=>{
-        const html = `<div class="exp-item ${x.cls} solo ${first?"":"sep"} ${S.expedition[x.k]?"on":""}"><span class="ico">${x.ico}</span><b>${x.name}</b>${chk(!!S.expedition[x.k],"exp",`data-k="${x.k}"`,`${x.name} 완료`)}</div>`;
+        const html = `<div class="exp-item ${x.cls} solo ${first?"":"sep"} ${S.expedition[x.k]?"on":""}"><span class="ico glass"><span class="in">${x.ico}</span></span><b>${x.name}</b>${chk(!!S.expedition[x.k],"exp",`data-k="${x.k}"`,`${x.name} 완료`)}</div>`;
         first = false; return html;
       }).join("");
       const toggle = doneN && !ui.showEstate ? `<button class="cleared-toggle estate-toggle" data-act="show-estate" aria-expanded="false">완료한 원정대 숙제 ${doneN}개 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : "";
