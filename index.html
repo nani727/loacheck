@@ -511,6 +511,61 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 @media (max-width:820px){.fz-need{grid-template-columns:minmax(0,1fr)}.fz-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.fz-routes{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){.fz-table{font-size:12.5px}.fz-table th,.fz-table td{padding:6px 4px}.fz-table .wide{display:none}}
 @media (max-width:440px){.fz-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.fz-big .n{font-size:30px}.fz-prices{grid-template-columns:minmax(0,1fr)}}
+
+/* ── 스펙 현황(신) ── */
+:root{--fx-green:#5E9A00;--fx-orange:#D96300;--fx-purple:#9B4FB8;--fx-blue:#1E88B8;--fx-lock:#8A8F99;--s2-box:#373C47;--s2-head:#2E8A00;--s2-num:#3F51B5;--s2-bar:#AF29C5}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--fx-green:#9CF006;--fx-orange:#F67500;--fx-purple:#CF93E2;--fx-blue:#69CAEC;--fx-lock:#7F7F7F;--s2-head:#50E307;--s2-num:#93B6FF}}
+:root[data-theme="dark"]{--fx-green:#9CF006;--fx-orange:#F67500;--fx-purple:#CF93E2;--fx-blue:#69CAEC;--fx-lock:#7F7F7F;--s2-head:#50E307;--s2-num:#93B6FF}
+.page.s2{max-width:1060px}
+.s2-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;color:var(--s2-head);font-size:22px;font-weight:500;border-bottom:2px solid var(--s2-head);padding-bottom:6px}
+.s2-top span{display:flex;align-items:baseline;gap:8px}
+.s2-top input{width:6.5em;border:0;border-bottom:1px dashed color-mix(in srgb,var(--s2-head) 60%,transparent);background:transparent;color:inherit;font:inherit;font-variant-numeric:tabular-nums;padding:0 2px}
+.s2-top input:focus{outline:none;border-bottom-style:solid}
+.s2-top input::placeholder,.s2-ref input::placeholder{color:inherit;opacity:.35}
+.s2-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;align-items:start}
+@media (max-width:820px){.s2-cols{grid-template-columns:minmax(0,1fr)}}
+.s2-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.s2-h{margin:0 auto;font-size:26px;font-weight:800;padding:0 40px 4px;border-bottom:2px solid var(--fg);letter-spacing:-.02em}
+.s2-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px 10px}
+.s2-item{grid-column:span 2;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.s2-item:nth-child(7){grid-column:2 / span 2}
+.s2-badge{width:100%;max-width:120px;height:32px;border-radius:7px;border:2px solid var(--g-line);background:var(--s2-box);color:var(--g-ink);font-weight:700;font-size:14px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s2-badge:hover{filter:brightness(1.12)}
+.s2-dots{display:flex;gap:6px;border:0;background:none;padding:2px 4px;border-radius:6px}
+.s2-dots i{width:8px;height:8px;border-radius:50%}
+.s2-dots:hover{background:var(--surface-done)}
+.s2-gems{display:flex;gap:1px}
+.s2-gem{border:0;background:none;padding:0;width:21px;height:21px;display:grid;place-items:center;border-radius:4px}
+.s2-gem img{width:19px;height:19px;display:block}
+.s2-gem:hover{background:var(--surface-done)}
+.s2-ref{display:flex;align-items:baseline;justify-content:center;gap:3px;color:var(--s2-num);font-variant-numeric:tabular-nums}
+.s2-ref input{border:0;background:transparent;color:inherit;font:inherit;padding:0 1px;border-radius:4px;cursor:text}
+.s2-ref input:focus{outline:none;background:color-mix(in srgb,var(--s2-num) 14%,transparent)}
+.s2-ref .big{width:2.1ch;font-size:19px;text-align:right}
+.s2-ref .small{width:4.6ch;font-size:11.5px;text-align:left}
+.s2-det{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.s2-dh{display:block;width:100%;min-height:36px;border-radius:7px;border:2px solid var(--g-line,#C2A866);background:var(--s2-box);color:var(--g-ink,#DAD2BC);font-weight:700;font-size:15px;text-align:center;padding:6px 10px}
+.s2-dh.empty{border-color:#2F91C7;color:#9FB7FF;font-weight:600}
+.s2-pick{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;max-width:420px;width:100%;margin:0 auto}
+.s2-pick .s2-badge{grid-column:span 2;max-width:none}
+.s2-pick .s2-badge:nth-child(7){grid-column:2 / span 2}
+.s2-rows{display:flex;flex-direction:column;gap:4px}
+.s2-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;min-height:30px;font-size:15px}
+.s2-row select{justify-self:end;max-width:100%;appearance:none;-webkit-appearance:none;border:0;background:transparent;color:var(--fg);font:inherit;font-weight:600;text-align:right;text-align-last:right;padding:2px 4px;border-radius:5px;cursor:pointer}
+.s2-row select:hover,.s2-row select:focus{background:var(--surface-done);outline:none}
+.s2-row select option{background:var(--surface);color:var(--fg)}
+.s2-fxv{justify-self:start;width:8ch;border:0;background:transparent;font:inherit;font-weight:700;font-variant-numeric:tabular-nums;padding:2px 4px;border-radius:5px;cursor:text}
+.s2-fxv:hover,.s2-fxv:focus{background:var(--surface-done);outline:none}
+.s2-row.locked{display:block;border:0;background:none;color:var(--fx-lock);text-align:center;font:inherit;font-size:15px;border-radius:5px}
+.s2-phase{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+.s2-phase-top{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.s2-pbar{height:9px;border-radius:999px;background:#7F7F7F;overflow:hidden}
+.s2-pbar i{display:block;height:100%;background:var(--s2-bar);border-radius:inherit}
+.s2-scrim{position:fixed;inset:0;z-index:25;background:rgba(5,8,15,.45);display:grid;place-items:center;padding:16px}
+.s2-pop{display:grid;grid-template-columns:repeat(3,minmax(0,92px));gap:8px 10px;background:#373C47;border:3px solid #fff;border-radius:22px;padding:24px 26px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.s2-badge.big{height:42px;max-width:none;font-size:18px;background:#5B5F68;border-width:3px;border-radius:9px}
+.s2-badge.big.cur{box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+@media (max-width:480px){.s2-grid{gap:12px 6px}.s2-badge{font-size:13px;height:30px}.s2-gem{width:18px;height:18px}.s2-gem img{width:16px;height:16px}.s2-h{font-size:22px}.s2-top{font-size:18px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -971,7 +1026,8 @@ function navBar(){
   const b = (act, icon, label, current) => `<button class="nav-btn" data-act="${act}" ${current?'aria-current="page"':""}>${icon}<span>${label}</span></button>`;
   return `<nav class="nav" aria-label="화면 이동">
     ${b("go-main", ICON.list, "숙제", ui.page==="main" && !ui.settings)}
-    ${b("go-specs", ICON.spec, "스펙 현황", (ui.page==="specs"||ui.page==="spec"||ui.page==="history") && !ui.settings)}
+    ${b("go-specs", ICON.spec, "스펙 현황(구)", (ui.page==="specs"||ui.page==="spec"||ui.page==="history") && !ui.settings)}
+    ${b("go-spec2", ICON.spec, "스펙 현황(신)", ui.page==="spec2" && !ui.settings)}
     ${b("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion" && !ui.settings)}
     ${b("settings", ICON.gear, "설정", ui.settings)}
   </nav>`;
@@ -1136,7 +1192,8 @@ function menuPanel(){
   <nav class="menu ${ui.menuClosing?"closing":""}" aria-label="메뉴">
     <div class="menu-head"><span>메뉴</span></div>
     ${row("go-main", ICON.list, "일일·주간 숙제", ui.page==="main")}
-    ${row("go-specs", ICON.spec, "스펙 현황", ui.page==="specs"||ui.page==="spec"||ui.page==="history")}
+    ${row("go-specs", ICON.spec, "스펙 현황(구)", ui.page==="specs"||ui.page==="spec"||ui.page==="history")}
+    ${row("go-spec2", ICON.spec, "스펙 현황(신)", ui.page==="spec2")}
     ${row("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion")}
     ${row("settings", ICON.gear, "설정", false)}
   </nav>`;
@@ -1638,6 +1695,7 @@ function historyPage(){
 // 스펙 숫자 입력 적용 (입력을 멈추고 2초 뒤, 또는 Enter)
 const specTimers = {};
 function applySpecInput(el){
+  if(el.dataset.spec==="s2") return applyS2Input(el);   // 스펙 현황(신)
   const id = el.dataset.id, k = el.dataset.k, kind = el.dataset.spec, raw = el.value.trim();
   delete ui.drafts[el.id]; clearTimeout(specTimers[el.id]);
   const sp = SPEC(id);
@@ -1646,6 +1704,157 @@ function applySpecInput(el){
   else if(kind==="adv"){ const n=parseInt(raw,10); sp.adv[k] = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(ADV_MAX,n)) : sp.adv[k]); }
   else if(kind==="power"){ const n=parseFloat(raw.replace(/,/g,"")); sp.power = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.round(n*100)/100) : sp.power); }
   syncBase(id); commit();
+}
+
+
+/* ───────────── 스펙 현황(신) (만들어 두기만 함, 아직 캐릭터와 연결 안 함) ───────────── */
+// 저장: 이 브라우저 localStorage "loacheck-spec2" 에만 (공유 Firebase 문서에는 안 넣음)
+const S2_EQ = [["helmet","투구"],["shoulder","견갑"],["chest","상의"],["belt","허리띠"],["pants","하의"],["gloves","장갑"],["bracer","완갑"],["weapon","무기"]];
+const S2_AC = [["neck","목걸이"],["ear1","귀걸이"],["ear2","귀걸이"],["ring1","반지"],["ring2","반지"],["brace","팔찌"],["seal","인장"],["relic","성물"]];
+const S2_EQ_ROWS = 5, S2_AC_ROWS = 3, S2_PHASE_MAX = 10000;
+// 등급: 테두리 색(line) / 글자 색(ink)
+const S2_GRADES = [
+  {k:"uncommon", name:"고급", line:"#85B244", ink:"#9CF006"},
+  {k:"rare",     name:"희귀", line:"#2F91C7", ink:"#69CAEC"},
+  {k:"hero",     name:"영웅", line:"#B15ECE", ink:"#CF93E2"},
+  {k:"legend",   name:"전설", line:"#F6BB00", ink:"#F5CF6C"},
+  {k:"relic",    name:"유물", line:"#F67500", ink:"#EEB28B"},
+  {k:"ancient",  name:"고대", line:"#C2A866", ink:"#DAD2BC"},
+];
+const S2_GRADE = Object.fromEntries(S2_GRADES.map(g=>[g.k,g]));
+// 세부효과: fmt = int(정수) / dec(소수 2자리) / pct(소수 2자리 + %)
+const FX_EQ = { brk:{name:"무력화 피해", fmt:"dec", c:"--fx-green"}, ext:{name:"극대화", fmt:"int", c:"--fx-orange"}, stat:{name:"힘 / 민첩 / 지능", fmt:"int", c:"--fx-purple"} };
+const FX_AC = { mana:{name:"최대 마나", fmt:"int", c:"--fx-orange"}, skill:{name:"스킬 위력", fmt:"pct", c:"--fx-green"}, atk:{name:"기본 공격력", fmt:"int", c:"--fx-blue"} };
+const GEM_ON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAlCAYAAAAqXEs9AAAEwElEQVR4Xs2YTWgcZRjH/8987G5iGprYWpMmpgk22BoSkdpLFTwIYsxFpNlSPJSC7UGoOWhpPjYZ2e1G8RZQyUU9SISK9FBEaEBKKYVSD23BWiW0trRJzSZNUlLdyWTmlWc+stnN7O7sbg7+YfaLmff5vf/nY3YX2AyZ6T5Ek32bsVTlMtN9ZK0IRJN8VAwlVUQkjFNE0qf2GuYqP36G3uRAJWuWD2Qa/SSEBiBsA+jLgKGHQNAQPT1YLlR5QMLoJ1oH48n4l6FUCNIQHS0LqnQgUx9wnQn5usBQq7oCiE/Qmxwq1anSgIQxQEScJn+YbKdk8LmHRmOlQAUHMvVB1xk1UAA7fWkZXGfR5HCga4CAQMIYdJ0JBpPtlASQht7RkSBQxR0y9SHXGSXIghvETpkGgZvg0GlONxVapzCQMIaIJN5ZeTCeeCTwnBI0gmhSA7S8cfMDmXrMcUZUBpMLBQwjGhqB5g/lDySMGBGxM3LgNEkBuD2nGOqmquHgmQ3rbwQy9WG3ZoLDsCI1gFpVnN+DIopBntLwupa1k2wgYQy7zhQvdj+p4dKgBIawQ9VwbHytezOBTX3EdaY8GE9BoYy0ewUNYnFew0HNHrZOcGGMuM4UbEk/bQNwhnKyGwTKWgXSy86ShAHIqoa3xsKKDePctUtWDwhfkowmv30wlGnADpxPHhTXn6B+1C6TgokLirDYJQH8dR/45wnA7yGcz1hr7/nLRgTY2QDIEs4pEs7Jsv2avv/IP+yl68D8QuHNPl0HvNoFIYQiYd5IAPjcDs5HIRgPUCZAkQAXhoEqFRHGIIXiEk506yAjARNjaG4Eqqr8nfFgVtLA9N+AJDkHwzCYnwK6Qwe6xi3oCRA9drb2XvdjwEzAwjiaGoFItZ0xJ21uOu0WIOfQ08DCkuuSBKg+QH/cDZQqeq3rG0tS46AtqUyXsY52pyBEAsL6Fk0NQJidWgdDLgyxMwQ8euQEVBUglAPEMLfuFM0iHeicsGCxMw+8k7OT/373fSiIwxITqN+aSR3DcN14MJ5TDLXgQnkKCIOX9/5kSYiDIrfXk2+sxqM9t2FRAuHIj2hshD+MVzsSkJoD5twuCgqz78Xz4rlnBkHhW7k25h+EX5x9CSTHoa/0YGYmUz/rYbxOUyTQK3uK1wxrX8cF0bTtJCh0NRcmu4Zy9cE71yDLCWypnkRLswu0zhmvu+xnKRjM/o7L4tm6WD6YwkCs429fgSInUFtzEbt2uW3O9SQBijMQ11wqpv0dv4rG7TGoVZcKnVp8oh158yJkJLC15graW91hmA1DxQZjW+PvYkf9MEj9pRh3cSDW4TcmoUgJ1NVeQ3NDZv7IMsib2vnU2jQlOnf3Q4n8XAyGVdrdffLquwiF4pid24OZWZDCtxB2SwbqazbGa2u+Kzp3fwxSfggCUzoQ6/KNwwxFD1NtmH7owHC31VZnx3y+eUZ0tJ0Ehb8LClMeEOvG1BEKKQlMz+7EvQeOS09FMnHbW1Jib+spUOjrUmDKB2LdmT5OITmOezPb7a8tEffXdXvLknihtR9y6KtSYSrX7NwJWlxcous3BZ09L+i3P59ArHxY+cKVaHm5L2ykBc2mhP3X3v9Bx8yVvs2C+Q+Bn7ewNkP2EwAAAABJRU5ErkJggg==";
+const GEM_OFF = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACUAAAAlCAYAAADFniADAAAEbUlEQVR4Xr2YS2gzVRTHz53M2KTP6cLSzbfTbnTXnVKomWxKN7oIdudOV0qFCtUkM2eS0i5c1O+jYIWCpZRS0I1SKi6qlIob3YgrKRQ3SkFa2kofaR5X/vPNhEmaZB4N/uGSyUzuPb+c87+PhKhHYub5dDo934vhlF4MwsyfEtGqEGK1F2DiMVDMPExEeSL6COMcHh6Soij3RGQfHBwsxx07dqaWl5dfJKKSBwRVKhWqVqsvEBGn0+nc/wqVy+WeVCoVAH3QGrhWqwFME0LEBoucKWZ+SdO0kpTyvU6ZcMFUIYSdyWRQ3kiKBFUsFl9xS/ZOUBQXLCGlZMMwCkGf9ys0VKFQmJRSomRzYQN4YPCYYRhm2H6hoJj5tUQigZK9FXZgTy4Y4sBjVpj+gVC2bb/hlmwmzIDt5IIJmD+TyTBR96WoK5RpmgBBydJxgVoyRlJKyzAMgHWM3fEBM7+pKApK9vpjgVrBiMg0DMNi5rbx2960bfttN0OTUYAUJdANXikdsKOjI85ms5gI3WefbduY7ijZq1GAIE3TKJF4EOOBXI/hfuHs7Iynp6fVjksCM7+LaS+lfDkqkCdVVSOBCSHyqqry5OSk5o3RyLdt2++7GXoSFygumJQyp+s6Sol98zmUaZrY5VGysThA/f39lM1mm7pGzRgRfXJ+fs4zMzN9KjNjb8pJKZNxgCYmJmh2dpaGh3GKaRbAIHiom7znqqp+XC6XhXpycgJnOkA4elxeXj7oL6VsugczDw4OOrPt+PiY9vf34Q2amppqG/v09JTu7u4Cv/P4+Dglk0lV2drasrEFIDCCpVKpps6tQHhfrVbp/v7eAfG3drq4uAgFpOs6gJ7BRo6nAIbdHNeASiafV7IdEAQQfHO0blAAQgsSgHRd/6JcLi8x81Vj9m1vbzcy5gfz5AF6EJAfrHXhjAj0paqqpZWVlX8wbtMSDDBkDADIVmvG/EDe9e3trQPnXzQjAu0Q0VI+n//LS8CDfWFnZ6eRMUD19fU1SgYQr3z+a0Dd3Nw4zyICfQ0PMfOJv8Qdf83Mzc3h7OP4DKb2Zk9rtlA23MPr2NhYaFPruv5trVYzS6XSb62e67iD7u7uOhlDMHgMrRuQZ/4guab+XlGUpXZADzzVKg8MAbFqo3nl82fID9tNABodHf0RHjJN85dOnw08a8BjiqI0wAYGBtoCeR7rJDdDP0spMe1/6gYfCAVhHQMYsjM0NNQEFrR4Qi7Qr/V6HUA/BJU4FBS0ublpJxIJJ2PY57DN+IE6HfBcoN+FEEvFYvG7IKBAT7VqY2PDAQMAwNC8mdeufK6H/hBClCzL+iYMUGQoaH19vVFKQI2MjLQ1upuhP+Ehy7K+CgsUCwpaW1trgAEKzV8+F+hvd2HcjgLkzO6oHfxaWFiwMAGwxVxdXdH19bUHdCaEKFiW9Xmc8R8FBS0uLjbAcB5LpVL/4geBZVlP4wA9OlOeCoXCqqZp8/V6Hbc+ZObP4gL1VHt7e6v437MXg/4HLAPrbAqb2UQAAAAASUVORK5CYII=";
+// 처음 보여줄 예시 값 (보내준 그림 기준)
+function s2Default(){
+  const eq = (grade, gems, lv, exp, fx) => ({grade, gems, lv, exp, fx});
+  const ac = (grade, gems, lv, exp, fx) => ({grade, gems, lv, exp, fx});
+  const F = (k,v) => ({k,v});
+  return { ilv:1734.16, power:2857.31,
+    eq:{ helmet:eq("hero",2,11,9.53,[F("stat",15800),F("brk",0.37)]), shoulder:eq("uncommon",3,12,0,[F("brk",0.37),F("ext",75),F("stat",15800)]),
+         chest:eq("legend",3,12,0,[F("ext",75),F("brk",0.37),F("ext",75),F("stat",15800)]), belt:eq("uncommon",2,11,9.53,[F("stat",15800),F("brk",0.37)]),
+         pants:eq("rare",3,12,0,[F("ext",75),F("brk",0.37),F("stat",15800)]), gloves:eq("relic",3,12,0,[F("ext",75),F("stat",15800),F("brk",0.37)]),
+         bracer:eq("hero",3,12,0,[F("ext",75),F("brk",0.37),F("stat",15800)]), weapon:eq("ancient",3,12,0,[F("brk",0.37),F("ext",75),F("stat",15800)]) },
+    ac:{ neck:ac("hero",3,2,9053,[F("mana",25),F("atk",1850),F("skill",0.24)]), ear1:ac("uncommon",3,6,1253,[F("atk",1850),F("skill",0.24),F("mana",25)]),
+         ear2:ac("legend",3,6,1253,[F("skill",0.24),F("atk",1850),F("mana",25)]), ring1:ac("uncommon",3,2,9053,[F("mana",25),F("atk",1850),F("skill",0.24)]),
+         ring2:ac("rare",3,6,1253,[F("atk",1850),F("skill",0.24),F("mana",25)]), brace:ac("relic",3,6,1253,[F("mana",25),F("skill",0.24),F("atk",1850)]),
+         seal:ac("hero",3,6,1253,[F("mana",25),F("skill",0.24),F("atk",1850)]), relic:ac("ancient",3,6,1253,[F("mana",25),F("skill",0.24),F("atk",1850)]) } };
+}
+function s2Norm(d){
+  const b = s2Default(); if(!d || typeof d!=="object") return b;
+  const num = (v, dflt) => fin(v) ? v : dflt;
+  const fixItem = (x, base, fxDef, rows, locked) => {
+    x = (x && typeof x==="object") ? x : {};
+    const fx = Array.isArray(x.fx) ? x.fx.filter(f=>f && fxDef[f.k]).map(f=>({k:f.k, v:num(f.v,0)})).slice(0, rows) : base.fx;
+    if(!locked) while(fx.length < rows) fx.push({k:Object.keys(fxDef)[fx.length % rows], v:0});   // 장신구는 잠금 없음 → 항상 3줄
+    return { grade: S2_GRADE[x.grade] ? x.grade : base.grade, gems: Math.max(0, Math.min(4, num(x.gems, base.gems)|0)),
+             lv: x.lv===null ? null : num(x.lv, base.lv), exp: num(x.exp, base.exp), fx };
+  };
+  return { ilv: d.ilv===null ? null : num(d.ilv, b.ilv), power: d.power===null ? null : num(d.power, b.power),
+    eq: Object.fromEntries(S2_EQ.map(([k])=>[k, fixItem(d.eq?.[k], b.eq[k], FX_EQ, S2_EQ_ROWS, true)])),
+    ac: Object.fromEntries(S2_AC.map(([k])=>[k, fixItem(d.ac?.[k], b.ac[k], FX_AC, S2_AC_ROWS, false)])) };
+}
+let S2 = s2Default();
+try{ S2 = s2Norm(JSON.parse(localStorage.getItem("loacheck-spec2"))); }catch(e){}
+const s2Save = () => { try{ localStorage.setItem("loacheck-spec2", JSON.stringify(S2)); }catch(e){} };
+ui.s2Sel = {eq:null, ac:null}; ui.s2Grade = null;
+
+const s2Fx = side => side==="eq" ? FX_EQ : FX_AC;
+const s2Names = side => side==="eq" ? S2_EQ : S2_AC;
+const s2Name = (side, k) => s2Names(side).find(x=>x[0]===k)[1];
+function s2FmtVal(f, v){
+  if(!fin(v)) return "";
+  const sign = v < 0 ? "-" : "+", a = Math.abs(v);
+  return f.fmt==="int" ? sign + Math.round(a) : f.fmt==="pct" ? sign + a.toFixed(2) + "%" : sign + a.toFixed(2);
+}
+const s2Gcls = g => `style="--g-line:${S2_GRADE[g].line};--g-ink:${S2_GRADE[g].ink}"`;
+function s2Item(side, k, name){
+  const it = S2[side][k], defs = s2Fx(side), rows = side==="eq" ? S2_EQ_ROWS : S2_AC_ROWS;
+  const dots = Array.from({length:rows}, (_,i)=>{ const f = it.fx[i]; return `<i style="background:${f ? `var(${defs[f.k].c})` : "var(--fx-lock)"}"></i>`; }).join("");
+  const gems = [1,2,3,4].map(i=>`<button class="s2-gem" data-act="s2-gem" data-side="${side}" data-k="${k}" data-i="${i}" aria-label="${name} 연마 ${i}단계"><img src="${i<=it.gems?GEM_ON:GEM_OFF}" alt=""></button>`).join("");
+  const id = `s2-${side}-${k}`;
+  const lvTxt = it.lv==null ? "" : String(it.lv);
+  const expTxt = side==="eq" ? (it.exp>0 ? f2(it.exp) : "") : String(it.exp||0);
+  return `<div class="s2-item">
+    <button class="s2-badge" ${s2Gcls(it.grade)} data-act="s2-grade" data-side="${side}" data-k="${k}" aria-label="${name} 등급 바꾸기 (지금 ${S2_GRADE[it.grade].name})">${name}</button>
+    <button class="s2-dots" data-act="s2-sel" data-side="${side}" data-k="${k}" aria-label="${name} 세부효과 보기">${dots}</button>
+    <div class="s2-gems">${gems}</div>
+    <div class="s2-ref">
+      <input class="big" id="${id}-lv" data-spec="s2" data-f="lv" data-side="${side}" data-k="${k}" inputmode="numeric" maxlength="2" value="${esc(draftVal(id+"-lv", lvTxt))}" placeholder="-" aria-label="${name} ${side==="eq"?"재련 단계":"위상 단계"}">
+      <input class="small" id="${id}-exp" data-spec="s2" data-f="exp" data-side="${side}" data-k="${k}" inputmode="${side==="eq"?"decimal":"numeric"}" maxlength="${side==="eq"?6:5}" value="${esc(draftVal(id+"-exp", expTxt))}" placeholder="${side==="eq"?"0.00":"0"}" aria-label="${name} ${side==="eq"?"장인의 기운":"마력 포획도"}">
+    </div>
+  </div>`;
+}
+function s2Detail(side){
+  const sel = ui.s2Sel[side], what = side==="eq" ? "장비" : "장신구";
+  if(!sel) return `<div class="s2-det">
+    <div class="s2-dh empty">연마옵션을 확인할 ${what}를 선택하세요</div>
+    <div class="s2-pick">${s2Names(side).map(([k,name])=>`<button class="s2-badge" ${s2Gcls(S2[side][k].grade)} data-act="s2-sel" data-side="${side}" data-k="${k}">${name}</button>`).join("")}</div>
+  </div>`;
+  const it = S2[side][sel], defs = s2Fx(side), name = s2Name(side, sel);
+  const row = (f, i) => {
+    const d = defs[f.k], id = `s2-${side}-${sel}-fx${i}`;
+    const opts = Object.entries(defs).map(([k,x])=>`<option value="${k}" ${k===f.k?"selected":""}>${esc(x.name)}</option>`).join("");
+    return `<div class="s2-row"><select class="s2-fxk" data-side="${side}" data-k="${sel}" data-i="${i}" aria-label="세부효과 ${i+1} 종류">${opts}</select>
+      <input class="s2-fxv" id="${id}" data-spec="s2" data-f="fxv" data-side="${side}" data-k="${sel}" data-i="${i}" inputmode="decimal" style="color:var(${d.c})" value="${esc(draftVal(id, s2FmtVal(d, f.v)))}" placeholder="+0" aria-label="${esc(d.name)} 값"></div>`;
+  };
+  let rows = it.fx.map(row).join("");
+  if(side==="eq") for(let i=it.fx.length; i<S2_EQ_ROWS; i++) rows += `<div class="s2-row locked">잠금</div>`;   // 잠금/해금은 보석 수에 따라 정해질 예정 (규칙이 나오면 추가)
+  else {
+    const pct = Math.max(0, Math.min(1, (it.exp||0)/S2_PHASE_MAX));
+    rows += `<div class="s2-phase"><div class="s2-phase-top"><span>제 ${it.lv ?? 0}위상</span><span class="num">${it.exp||0}/${S2_PHASE_MAX}</span></div><div class="s2-pbar"><i style="width:${pct*100}%"></i></div></div>`;
+  }
+  return `<div class="s2-det">
+    <button class="s2-dh" ${s2Gcls(it.grade)} data-act="s2-unsel" data-side="${side}" title="다른 ${what} 고르기">${name}</button>
+    <div class="s2-rows">${rows}</div>
+  </div>`;
+}
+function s2GradePopup(){
+  const g = ui.s2Grade; if(!g) return "";
+  const cur = S2[g.side][g.k].grade;
+  return `<div class="s2-scrim" data-act="s2-grade-close"><div class="s2-pop" role="dialog" aria-label="${s2Name(g.side,g.k)} 등급 선택">
+    ${S2_GRADES.map(x=>`<button class="s2-badge big ${x.k===cur?"cur":""}" ${s2Gcls(x.k)} data-act="s2-grade-pick" data-g="${x.k}">${x.name}</button>`).join("")}
+  </div></div>`;
+}
+function spec2Page(){
+  const col = (side, title) => `<section class="s2-col"><h3 class="s2-h">${title}</h3>
+    <div class="s2-grid">${s2Names(side).map(([k,name])=>s2Item(side,k,name)).join("")}</div>${s2Detail(side)}</section>`;
+  return `<main class="page s2">
+    <div class="page-head"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>스펙 현황(신) <small>미리 만들어 둔 화면 · 캐릭터와 연결 안 됨</small></h2></div>
+    <div class="s2-top">
+      <span>아이템 레벨 : <input id="s2-ilv" data-spec="s2" data-f="ilv" inputmode="decimal" value="${esc(draftVal("s2-ilv", S2.ilv==null?"":f2(S2.ilv)))}" placeholder="0.00" aria-label="아이템 레벨"></span>
+      <span>전투력 : <input id="s2-power" data-spec="s2" data-f="power" inputmode="numeric" value="${esc(draftVal("s2-power", S2.power==null?"":f2(S2.power)))}" placeholder="0.00" aria-label="전투력"></span>
+    </div>
+    <div class="s2-cols">${col("eq","장비")}${col("ac","장신구")}</div>
+    ${s2GradePopup()}
+  </main>`;
+}
+// 숫자 칸 저장 (입력을 멈추고 2초 뒤 / Enter / 다른 칸으로 이동할 때 — 지금 스펙 현황과 같음)
+function applyS2Input(el){
+  const f = el.dataset.f, side = el.dataset.side, k = el.dataset.k, raw = el.value.trim();
+  delete ui.drafts[el.id]; clearTimeout(specTimers[el.id]);
+  const n = parseFloat(raw.replace(/[^0-9.\-]/g,""));
+  if(f==="ilv") S2.ilv = raw==="" ? null : (fin(n) ? Math.max(0, Math.round(n*100)/100) : S2.ilv);
+  else if(f==="power") S2.power = raw==="" ? null : (fin(n) ? Math.max(0, Math.round(n*100)/100) : S2.power);
+  else {
+    const it = S2[side][k];
+    if(f==="lv"){ const v = parseInt(raw,10); it.lv = raw==="" ? null : (fin(v) ? Math.max(0, Math.min(side==="eq" ? REFINE_MAX : 99, v)) : it.lv); }
+    else if(f==="exp"){
+      if(side==="eq") it.exp = raw==="" ? 0 : (fin(n) ? Math.max(0, Math.min(99.99, Math.round(n*100)/100)) : it.exp);
+      else if(raw==="") it.exp = 0;
+      else if(fin(n)) it.exp = Math.max(0, Math.min(S2_PHASE_MAX, Math.floor(n)));   // 마력 포획도 0~10000 (위상은 자동으로 안 올림)
+    }
+    else if(f==="fxv"){ const fx = it.fx[Number(el.dataset.i)]; if(fx && raw!=="" && fin(n)) fx.v = s2Fx(side)[fx.k].fmt==="int" ? Math.round(n) : Math.round(n*100)/100; }
+  }
+  s2Save(); render();
+}
+// 세부효과 종류 바꾸기
+function s2SetFx(sel){
+  const it = S2[sel.dataset.side][sel.dataset.k], i = Number(sel.dataset.i);
+  if(it.fx[i] && it.fx[i].k!==sel.value) it.fx[i] = {k:sel.value, v:0};   // 종류가 바뀌면 값은 0부터
+  s2Save(); render();
 }
 
 const emptyRoster = () => `<div class="empty">등록된 캐릭터가 없어요. <button class="linkbtn" data-act="settings">설정</button>에서 캐릭터를 추가하세요.</div>`;
@@ -1757,7 +1966,7 @@ function render(){
   app.querySelectorAll("[data-nkey]").forEach(el=>prevN.set(el.dataset.nkey, Number(el.dataset.shown ?? el.dataset.n)));
   app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
-  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage()
+  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page()
     : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
   app.innerHTML = header() + body + settingsSheet();
@@ -1813,6 +2022,13 @@ document.addEventListener("click", e=>{
     case "go-main": goPage("main"); break;
     case "go-home": if(ui.page!=="main" || ui.settings || ui.menu){ ui.menu=false; ui.settings=false; ui.page="main"; pushNav(); render(); } window.scrollTo({top:0, behavior:"smooth"}); break;
     case "go-specs": goPage("specs"); break;
+    case "go-spec2": goPage("spec2"); break;
+    case "s2-grade": ui.s2Grade = {side:b.dataset.side, k:b.dataset.k}; render(); break;
+    case "s2-grade-pick": { const g = ui.s2Grade; if(g){ S2[g.side][g.k].grade = b.dataset.g; s2Save(); } ui.s2Grade = null; render(); break; }
+    case "s2-grade-close": if(e.target===b){ ui.s2Grade = null; render(); } break;
+    case "s2-gem": { const it = S2[b.dataset.side][b.dataset.k], i = Number(b.dataset.i); /* 누른 보석까지 파랑. 첫 번째만 파란 상태에서 첫 번째를 다시 누르면 전부 검정 */ it.gems = (i===1 && it.gems===1) ? 0 : i; s2Save(); render(); break; }
+    case "s2-sel": ui.s2Sel[b.dataset.side] = b.dataset.k; render(); break;
+    case "s2-unsel": ui.s2Sel[b.dataset.side] = null; render(); break;
     case "go-fusion": fzChartAnimKey = ""; goPage("fusion"); fzLoad(false); break;
     case "fz-tab": FZ.tab = b.dataset.v; fzChartAnimKey = ""; fzSave(); render(); break;
     case "fz-item": FZ.chartItem = b.dataset.v; ui.fzBar = null; fzSave(); render(); break;
@@ -1821,7 +2037,7 @@ document.addEventListener("click", e=>{
     case "fz-notify": fzNotify(b.dataset.route); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
     case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
-    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
+    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
     case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
@@ -2131,7 +2347,7 @@ function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout((
 document.addEventListener("input", e=>{
   if(e.target.dataset?.spec){
     const el = e.target;
-    if(el.dataset.spec==="power") el.value = autoDecimal(el.value);   // 123456 → 1234.56
+    if(el.dataset.spec==="power" || el.dataset.f==="power") el.value = autoDecimal(el.value);   // 123456 → 1234.56
     ui.drafts[el.id] = el.value;
     if(focusSess && focusSess.id===el.id) focusSess.edited = true;
     clearTimeout(specTimers[el.id]);
@@ -2161,12 +2377,14 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target.id==="api-name" && S.apiKey && !ui.apiBusy){ apiSearch(); return; }
   if(e.target.id==="life-cur"){ if(e.key==="Enter"){ e.preventDefault(); lifeSave(); } else if(e.key==="Escape"){ e.target.blur(); } }
   if(e.key==="Enter" && e.target.dataset?.field){ e.target.blur(); }
+  if(e.key==="Escape" && ui.s2Grade){ ui.s2Grade = null; render(); return; }
   if(e.key==="Escape"){ if(ui.settings){ closeSettings(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="alarm-vol"){ chime(1); return; }
   if(e.target.id==="fz-basis"){ FZ.basis = e.target.value; fzRebuild(); fzSave(); render(); return; }
   if(e.target.id==="fz-field"){ FZ.field = e.target.value; fzApplyFieldPrices(); fzSave(); render(); return; }   // 손을 떼면 그 크기로 한 번 들려줌
+  if(e.target.classList?.contains("s2-fxk")){ s2SetFx(e.target); return; }
   if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
   const ck = e.target.dataset?.apiCheck;
   if(ck!=null){ if(e.target.checked) ui.apiChecked.add(ck); else ui.apiChecked.delete(ck); return; }
