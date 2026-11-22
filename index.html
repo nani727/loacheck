@@ -316,7 +316,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .gbtn{height:34px;border:0;border-radius:7px;background:var(--slot);color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums;padding:0}
 .gbtn[aria-pressed="true"]{background:var(--pick);color:var(--pick-fg);font-weight:700}
 .parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-@media (max-width:560px){.parts{grid-template-columns:repeat(2,minmax(0,1fr))}.plabel{width:46px;font-size:13px}}
 .part{display:flex;gap:5px;min-width:0}
 .plabel{flex:none;width:56px;display:grid;place-items:center;border-radius:9px;border:2px solid var(--sec);background:color-mix(in srgb,var(--sec) 14%,var(--surface));color:var(--sec);font-weight:700;font-size:14px}
 .pval{flex:1;min-width:0;min-height:44px;display:flex;align-items:stretch;border-radius:9px;border:2px solid var(--pick-line);background:var(--field-bg);color:var(--field-fg);padding:0;overflow:hidden;cursor:text}
@@ -326,6 +325,17 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .pval .big{font-size:19px;flex:1 1 0;width:0;text-align:right}
 .pval .small{font-size:11.5px;flex:1 1 0;width:0;text-align:left;padding-top:11px}
 .pval .full{font-size:19px;flex:1 1 0;width:0}
+/* 재련&상급 재련: 한 칸에 두 줄 (윗줄 재련, 아랫줄 상급재련) */
+.pval.two{flex-direction:column}
+.pline{flex:1;display:flex;align-items:stretch;min-height:36px}
+.pline+.pline{border-top:2px dashed color-mix(in srgb,var(--pick-line) 70%,transparent)}
+.pval.two .small{padding-top:9px}
+.pval.two .full{font-size:17px}
+.part .plabel{font-size:13.5px}
+.sec-title select.gear-pick{border:0;background:transparent;color:var(--muted);font-size:14px;padding:4px 2px;cursor:pointer}
+@media (max-width:560px){.parts{gap:8px}.plabel{width:46px}.part .plabel{font-size:12.5px}.pval.two .full,.pval .big{font-size:17px}}
+/* 좁은 휴대폰: 부위 이름을 칸 위로 올려서 숫자 칸을 넓게 */
+@media (max-width:440px){.parts{gap:8px 6px}.part{flex-direction:column;gap:4px}.plabel{width:auto;height:26px}.part .plabel{font-size:12.5px}.pval .small{font-size:10.5px}}
 .stat-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;color:var(--sec);font-size:20px;font-weight:600}
 .stat-row span{display:flex;align-items:baseline;gap:8px}
 .stat-row b{font-variant-numeric:tabular-nums}
@@ -1547,17 +1557,17 @@ function specDetailPage(){
   const cell = k => `<div class="gcell">${GRID_VALUES.map(v=>`<button class="gbtn" data-act="grid" data-id="${id}" data-k="${k}" data-v="${v}" aria-pressed="${sp.grid[k]===v}">${v}</button>`).join("")}</div>`;
   const gridRows = [["oSun","cSun","해"],["oMoon","cMoon","달"],["oStar","cStar","별"]].map(([a,b,l])=>
     `<div class="grid-row">${cell(a)}<div class="grid-lbl">${l}</div>${cell(b)}</div>`).join("");
-  const refine = PARTS.map(([k,name])=>{
-    const r = sp.refine[k], lvId=`sp-r-${id}-${k}`, exId=`sp-e-${id}-${k}`;
-    return `<div class="part"><span class="plabel">${name}</span><span class="pval">
-      <input class="big" id="${lvId}" data-spec="lv" data-id="${id}" data-k="${k}" inputmode="numeric" maxlength="2" value="${esc(draftVal(lvId, r.lv??""))}" aria-label="${name} 재련 단계" placeholder="-">
-      <input class="small" id="${exId}" data-spec="exp" data-id="${id}" data-k="${k}" inputmode="decimal" maxlength="6" value="${esc(draftVal(exId, r.exp>0?f2(r.exp):""))}" aria-label="${name} 장인의 기운" placeholder="0.00">
-    </span></div>`;
-  }).join("");
-  const adv = PARTS.map(([k,name])=>{
-    const aId=`sp-a-${id}-${k}`;
-    return `<div class="part"><span class="plabel">${name}</span><span class="pval">
-      <input class="full" id="${aId}" data-spec="adv" data-id="${id}" data-k="${k}" inputmode="numeric" maxlength="4" value="${esc(draftVal(aId, sp.adv[k]==null?"":pad4(sp.adv[k])))}" aria-label="${name} 상급재련" placeholder="0000">
+  // 재련 & 상급 재련: 부위마다 두 줄 (윗줄 재련 단계 + 장인의 기운, 아랫줄 상급재련)
+  const parts = PARTS.map(([k,name])=>{
+    const r = sp.refine[k], lvId=`sp-r-${id}-${k}`, exId=`sp-e-${id}-${k}`, aId=`sp-a-${id}-${k}`;
+    return `<div class="part"><span class="plabel">${name}</span><span class="pval two">
+      <span class="pline">
+        <input class="big" id="${lvId}" data-spec="lv" data-id="${id}" data-k="${k}" inputmode="numeric" maxlength="2" value="${esc(draftVal(lvId, r.lv??""))}" aria-label="${name} 재련 단계" placeholder="-">
+        <input class="small" id="${exId}" data-spec="exp" data-id="${id}" data-k="${k}" inputmode="decimal" maxlength="6" value="${esc(draftVal(exId, r.exp>0?f2(r.exp):""))}" aria-label="${name} 장인의 기운" placeholder="0.00">
+      </span>
+      <span class="pline">
+        <input class="full" id="${aId}" data-spec="adv" data-id="${id}" data-k="${k}" inputmode="numeric" maxlength="4" value="${esc(draftVal(aId, sp.adv[k]==null?"":pad4(sp.adv[k])))}" aria-label="${name} 상급재련" placeholder="0000">
+      </span>
     </span></div>`;
   }).join("");
   return `<main class="page">
@@ -1567,24 +1577,19 @@ function specDetailPage(){
       <div class="grid-wrap"><div class="grid-col">질서</div><div></div><div class="grid-col">혼돈</div>${gridRows}</div>
       <p class="hint">누르면 선택, 선택된 걸 다시 누르면 해제돼요.</p>
     </section>
-    <section class="sec" style="--sec:var(--sec-refine)">
-      <div class="sec-title"><h3>재련</h3>
-        <select id="sp-gear" data-id="${id}" aria-label="장비 종류">${Object.entries(GEAR).map(([g,v])=>`<option value="${g}" ${(sp.gear||"tremor")===g?"selected":""}>${v.name}</option>`).join("")}</select></div>
-      <div class="parts">${refine}</div>
-      <p class="hint">큰 숫자는 강화 단계, 작은 숫자는 장인의 기운(100이 되면 1강)이에요. 입력을 멈추면 2초 뒤 저장돼요.</p>
-    </section>
     <section class="sec" style="--sec:var(--sec-adv)">
-      <div class="sec-title"><h3>상급 재련</h3></div>
-      <div class="parts">${adv}</div>
-      <p class="hint">앞 두 자리는 단계(0~40), 뒤 두 자리는 경험치예요. 예) 3680 = 36단계 80경험치</p>
+      <div class="sec-title"><h3>재련&amp;상급 재련</h3>
+        <select id="sp-gear" class="gear-pick" data-id="${id}" aria-label="장비 종류">${Object.entries(GEAR).map(([g,v])=>`<option value="${g}" ${(sp.gear||"tremor")===g?"selected":""}>${v.name}</option>`).join("")}</select></div>
+      <div class="parts">${parts}</div>
+      <p class="hint">윗줄: 재련 단계 (작은 숫자는 장인의 기운, 100이 되면 1강) · 아랫줄: 상급 재련 (앞 두 자리 단계 0~40, 뒤 두 자리 경험치. 예) 3680 = 36단계 80경험치). 입력을 멈추면 2초 뒤 저장돼요.</p>
     </section>
     <section class="sec" style="--sec:var(--sec-spec)">
       <div class="sec-title"><h3>스펙</h3></div>
       <div class="stat-row">
         <span>아이템 레벨 : <b>${il==null?"-":f2(il)}</b></span>
-        <span>전투력 : <input id="sp-p-${id}" data-spec="power" data-id="${id}" inputmode="decimal" value="${esc(draftVal(`sp-p-${id}`, sp.power==null?"":f2(sp.power)))}" aria-label="전투력" placeholder="0.00"></span>
+        <span>전투력 : <input id="sp-p-${id}" data-spec="power" data-id="${id}" inputmode="numeric" value="${esc(draftVal(`sp-p-${id}`, sp.power==null?"":f2(sp.power)))}" aria-label="전투력" placeholder="0.00"></span>
       </div>
-      <p class="hint">아이템 레벨은 6부위 평균으로 자동 계산돼요. 전율: 1675 + 재련×5 / 업화: 1590 + 재련×5 + 상급재련 단계 (상급재련은 업화 장비에만 적용).</p>
+      <p class="hint">전투력은 숫자만 입력하면 뒤 두 자리가 소수점 아래로 들어가요 (123456 → 1234.56). 아이템 레벨은 6부위 평균으로 자동 계산돼요. 전율: 1675 + 재련×5 / 업화: 1590 + 재련×5 + 상급재련 단계 (상급재련은 업화 장비에만 적용).</p>
     </section>
   </main>`;
 }
@@ -1964,6 +1969,14 @@ document.addEventListener("pointermove", e=>{ if(slide && e.pointerId===slide.pi
 document.addEventListener("pointerup", e=>{ if(slide && e.pointerId===slide.pid){ slide.w.classList.remove("dragging"); slideApply(slideShow(e)); } });
 document.addEventListener("pointercancel", e=>{ if(slide && e.pointerId===slide.pid){ slide = null; render(); } });   // 세로로 스크롤하면 취소 → 원래 값
 
+// 전투력: 숫자만 받아서 뒤에서 두 자리를 소수점 아래로 (1 → 0.01, 123456 → 1234.56)
+function autoDecimal(v){
+  const d = String(v).replace(/\D/g,"").replace(/^0+/,"").slice(0,9);
+  if(!d) return "";
+  const p = d.padStart(3,"0");
+  return p.slice(0,-2) + "." + p.slice(-2);
+}
+
 /* ───────────── 스펙 입력칸: 누르면 비워서 바로 입력 ───────────── */
 // 원래 값은 흐리게 보이고, 아무것도 안 쓰고 나가면 원래 값으로 돌아감 (앱 DebouncedField clearOnFocus와 같음)
 let focusSess = null;
@@ -2089,7 +2102,9 @@ function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout((
 
 document.addEventListener("input", e=>{
   if(e.target.dataset?.spec){
-    const el = e.target; ui.drafts[el.id] = el.value;
+    const el = e.target;
+    if(el.dataset.spec==="power") el.value = autoDecimal(el.value);   // 123456 → 1234.56
+    ui.drafts[el.id] = el.value;
     if(focusSess && focusSess.id===el.id) focusSess.edited = true;
     clearTimeout(specTimers[el.id]);
     specTimers[el.id] = setTimeout(()=>{ const cur=document.getElementById(el.id); applySpecInput(cur||el); }, 2000);
