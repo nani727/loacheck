@@ -561,8 +561,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .s2-phase-top{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
 .s2-pbar{height:9px;border-radius:999px;background:#7F7F7F;overflow:hidden}
 .s2-pbar i{display:block;height:100%;background:var(--s2-bar);border-radius:inherit}
-.s2-scrim{position:fixed;inset:0;z-index:25;background:rgba(5,8,15,.45);display:grid;place-items:center;padding:16px}
-.s2-pop{display:grid;grid-template-columns:repeat(3,minmax(0,92px));gap:8px 10px;background:#373C47;border:3px solid #fff;border-radius:22px;padding:24px 26px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.s2-scrim{position:fixed;inset:0;z-index:25;background:rgba(5,8,15,.25)}
+.s2-pop{position:fixed;left:0;top:0;visibility:hidden;display:grid;grid-template-columns:repeat(3,minmax(0,92px));gap:8px 10px;background:#373C47;border:3px solid #fff;border-radius:22px;padding:24px 26px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
 .s2-badge.big{height:42px;max-width:none;font-size:18px;background:#5B5F68;border-width:3px;border-radius:9px}
 .s2-badge.big.cur{box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 @media (max-width:480px){.s2-grid{gap:12px 6px}.s2-badge{font-size:13px;height:30px}.s2-gem{width:18px;height:18px}.s2-gem img{width:16px;height:16px}.s2-h{font-size:22px}.s2-top{font-size:18px}}
@@ -1831,6 +1831,22 @@ function spec2Page(){
     ${s2GradePopup()}
   </main>`;
 }
+// 등급 팝업은 누른 버튼 오른쪽 아래에. 오른쪽에 자리가 없으면 왼쪽 아래 (아래도 모자라면 위로)
+function placeS2Pop(){
+  const g = ui.s2Grade, pop = document.querySelector(".s2-pop"); if(!g || !pop) return;
+  const btn = document.querySelector(`.s2-badge[data-act="s2-grade"][data-side="${g.side}"][data-k="${g.k}"]`);
+  if(!btn){ pop.style.visibility = "visible"; return; }
+  const r = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight, m = 8, gap = 6;
+  let x = r.right - 10;                                   // 오른쪽 아래
+  if(x + w > innerWidth - m) x = r.left + 10 - w;         // 자리 없으면 왼쪽 아래
+  x = Math.max(m, Math.min(x, innerWidth - w - m));
+  let y = r.bottom + gap;
+  if(y + h > innerHeight - m && r.top - gap - h >= m) y = r.top - gap - h;
+  pop.style.left = x + "px"; pop.style.top = y + "px"; pop.style.visibility = "visible";
+}
+addEventListener("resize", ()=>{ if(ui.s2Grade) placeS2Pop(); });
+addEventListener("scroll", ()=>{ if(ui.s2Grade) placeS2Pop(); }, {passive:true});
+
 // 숫자 칸 저장 (입력을 멈추고 2초 뒤 / Enter / 다른 칸으로 이동할 때 — 지금 스펙 현황과 같음)
 function applyS2Input(el){
   const f = el.dataset.f, side = el.dataset.side, k = el.dataset.k, raw = el.value.trim();
@@ -1978,6 +1994,7 @@ function render(){
     if(el && focusSess && focusSess.id===aid && !focusSess.edited){ focusSess.orig = el.value; focusSess.ph = el.placeholder; blankField(el); } }
   rendering = false;
   if(ui.page==="fusion") fzAnimateChart();
+  if(ui.s2Grade) placeS2Pop();
   if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
     app.querySelectorAll("[data-gkey]").forEach(el=>{
       const from = prevG.get(el.dataset.gkey); if(from==null) return;
