@@ -520,6 +520,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .row.xr.on .xr-name,.row.xr.on .isl-top b{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
 .row.xr.on .ico.glass .in{opacity:.55;filter:grayscale(.4)}
 .ico.glass .in.xr-txt{color:#fff;font-size:11px;font-weight:700}
+.ico.glass .in.xr-txt.estate{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
+.ico.glass .in.xr-txt.serka{background:linear-gradient(160deg,#C9A23A,#5C4410);font-size:9.5px;letter-spacing:-.03em}
+.xr-name.wide{width:auto;flex:1 1 auto;min-width:0;white-space:normal}
 .ico.glass .in.xr-txt.dispatch{background:linear-gradient(160deg,#D94A9A,#6B1446)}
 .row.xr.island{align-items:flex-start;padding:4px 0}
 .row.xr.island .chk{align-self:center}
@@ -1195,23 +1198,26 @@ function weeklyPanel(){
   const start = weekStart(loaDay());
   return `<section class="panel panel-weekly">
     <div class="panel-head"><h2>주간 숙제</h2><span class="num">${dayLabel(start).replace(/ \(.\)/,"")} 수요일부터</span></div>
-    ${(()=>{ // 주간 원정대 숙제: 원정대 골드 + 영지 상자 + 세르카 교환을 한 칸에
-      const goldOn = S.settings.raids!==false, items = EXP_WEEKLY.filter(x=>S.settings[x.k]!==false);
-      if(!goldOn && !items.length) return "";
-      const gold = goldOn ? `<div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
-      <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div>` : "";
-      // 체크하면 스르륵 숨김 → '완료한 원정대 숙제 N개 보기'로 펼칠 수 있음
-      const doneN = items.filter(x=>S.expedition[x.k]).length; if(!doneN) ui.showEstate = false;
-      let first = !goldOn;
-      const rows = items.filter(x=>!S.expedition[x.k] || ui.showEstate).map(x=>{
-        const html = `<div class="exp-item ${x.cls} solo ${first?"":"sep"} ${S.expedition[x.k]?"on":""}"><span class="ico glass"><span class="in">${x.ico}</span></span><b>${x.name}</b>${chk(!!S.expedition[x.k],"exp",`data-k="${x.k}"`,`${x.name} 완료`)}</div>`;
-        first = false; return html;
-      }).join("");
-      const toggle = doneN && !ui.showEstate ? `<button class="cleared-toggle estate-toggle" data-act="show-estate" aria-expanded="false">완료한 원정대 숙제 ${doneN}개 보기<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : "";
-      return `<div class="total">${gold}${rows}${toggle}</div>`;
-    })()}
+    ${S.settings.raids!==false ? `<div class="total"><div class="total-top"><span>원정대 획득 골드</span><span class="num">${fmt(total.max)} G 중</span></div>
+      <div class="goldrow"><div class="bar"><i data-bkey="gold-total" style="width:${total.max?total.earned/total.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-total" data-n="${total.earned}">${fmt(total.earned)} G</span></div></div>` : ""}
+    ${expWeeklyCard()}
     <div class="cards">${cards || emptyRoster()}</div>
   </section>`;
+}
+
+/* ── 원정대 주간 숙제 카드: 영지 활동 지원 상자 구입 · 세르카 교환 ──
+   일일 원정대 카드와 같음: 끝낸 줄은 숨기고 '완료한 숙제 N개 보기'로 한꺼번에 펼침 (ui.showWExpDone) */
+function expWeeklyCard(){
+  const items = EXP_WEEKLY.filter(x=>S.settings[x.k]!==false); if(!items.length) return "";
+  const doneN = items.filter(x=>S.expedition[x.k]).length, all = doneN===items.length, show = !!ui.showWExpDone;
+  if(!doneN) ui.showWExpDone = false;
+  const rows = items.filter(x=>show || !S.expedition[x.k]).map(x=>{ const on = !!S.expedition[x.k];
+    return `<div class="row xr ${on?"on":""}"><span class="ico glass"><span class="in xr-txt ${x.cls}">${x.ico}</span></span><span class="xr-name wide">${x.name}</span><span class="spacer"></span>${chk(on,"exp",`data-k="${x.k}"`,`${x.name} 완료`)}</div>`; }).join("");
+  return `<article class="card expd ${all?"done":""}" data-card="wexpd">
+    <div class="chead"><span class="cname">원정대 주간 숙제</span>${all?`<span class="ctag">완료</span>`:""}</div>
+    ${rows}
+    ${doneN ? `<button class="cleared-toggle" data-act="show-wexp-done" aria-expanded="${show}">${show ? "완료한 숙제 숨기기" : `완료한 숙제 ${doneN}개 보기`}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : ""}
+  </article>`;
 }
 
 // 끝낸 주간 숙제(다 깬 레이드, 낙원 0, 메달 교환, 이정표 3/3, 명예 0/3, 모래시계)는 숨기고,
@@ -2147,9 +2153,9 @@ document.addEventListener("click", e=>{
     case "gauge": { const h=P(id).daily[b.dataset.k]; h.gauge=Math.max(0,Math.min(MAX_GAUGE,h.gauge+Number(b.dataset.d))); commit(); break; }
     case "exp": { const k = b.dataset.k;
       if(k==="chaos" || k==="field"){ finishRow(b.closest(".row"), !S.expedition[k] && !ui.showExpDone, ()=>{ S.expedition[k] = !S.expedition[k]; }); break; }
-      if(EXP_WEEKLY.some(x=>x.k===k)){ const row = b.closest(".exp-item"); finishRow(row, !S.expedition[k] && !ui.showEstate, ()=>{ S.expedition[k] = !S.expedition[k]; }); break; }
+      if(EXP_WEEKLY.some(x=>x.k===k)){ const row = b.closest(".row"); finishRow(row, !S.expedition[k] && !ui.showWExpDone, ()=>{ S.expedition[k] = !S.expedition[k]; }); break; }
       S.expedition[k]=!S.expedition[k]; commit(); break; }
-    case "show-estate": ui.showEstate = true; render(); break;
+    case "show-wexp-done": ui.showWExpDone = !ui.showWExpDone; render(); break;
     case "dispatch": setDispatch(b, Math.max(0, Math.min(DISPATCH_MAX, (S.expedition.dispatch || 0) + Number(b.dataset.d)))); break;
     case "toast-close": closeToast(b.dataset.t); break;
     case "toast-done": { S.expedition[b.dataset.k]=true; commit();
