@@ -566,6 +566,28 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .s2-badge.big{height:42px;max-width:none;font-size:18px;background:#5B5F68;border-width:3px;border-radius:9px}
 .s2-badge.big.cur{box-shadow:0 0 0 3px rgba(255,255,255,.35)}
 @media (max-width:480px){.s2-grid{gap:12px 6px}.s2-badge{font-size:13px;height:30px}.s2-gem{width:18px;height:18px}.s2-gem img{width:16px;height:16px}.s2-h{font-size:22px}.s2-top{font-size:18px}}
+
+/* ── 로그 ── */
+.page.lg{max-width:900px}
+.page.lg .page-head h2{flex:1}
+.lg-now{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lg-now div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.lg-now span{font-size:12.5px;color:var(--muted)}
+.lg-now b{font-size:20px}
+.lg-now small{font-size:11.5px;color:var(--muted)}
+.lg-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.lg-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.lg-table th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line-strong);white-space:nowrap}
+.lg-table td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.lg-table .r{text-align:right}
+.lg-table td small{display:block;color:var(--muted);font-size:11.5px}
+.lg-rec small:first-of-type{display:inline}
+.lg-table tr.auto td{color:var(--muted)}
+.lg-table tr.auto td b{color:var(--fg)}
+.lg-up{color:var(--kurzan);font-weight:600}.lg-down{color:var(--danger);font-weight:600}
+.lg-odd{color:#E0A100}
+.lg-empty{text-align:center;color:var(--muted);padding:22px!important}
+@media (max-width:560px){.lg-now{grid-template-columns:minmax(0,1fr)}.lg-table{font-size:12.5px}.lg-table td,.lg-table th{padding:6px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -779,13 +801,20 @@ function toggleHw(h){
   if(!h.done){ const cost = h.gauge >= 1 ? 1 : 0; h.gauge -= cost; h.used = cost; h.done = true; }
   else { h.gauge = Math.min(MAX_GAUGE, h.gauge + (h.used||0)); h.used = 0; h.done = false; }
 }
+// 생활의 기운: 게임은 매 10분, 분 끝자리가 4일 때(…:04, :14, :24 …) 30씩 오름 (2026-11-23 사용자 확인)
+// → 마지막 기록 시각(ts) 뒤로 지나간 '끝자리 4분' 횟수만큼 30씩 더함
+const LIFE_OFFSET_MS = 4 * 60000;
+const lifeTickNo = t => Math.floor((t - LIFE_OFFSET_MS) / TICK_MS);   // 몇 번째 오름 구간인지 (분 단위는 한국·UTC 같음)
 function lifeStatus(now=Date.now()){
-  const el = Math.max(0, now - S.life.ts), ticks = Math.floor(el / TICK_MS);
-  const cur = Math.max(0, Math.min(MAX_LIFE, S.life.energy + ticks*LIFE_TICK));
-  const miss = MAX_LIFE - cur;
+  const ticks = Math.max(0, lifeTickNo(now) - lifeTickNo(S.life.ts));
+  const cur = Math.max(0, Math.min(MAX_LIFE, Math.floor(S.life.energy) + ticks*LIFE_TICK));
   let mins = 0;
-  if (miss > 0){ const need = Math.ceil(miss / LIFE_TICK); mins = Math.ceil((TICK_MS - el % TICK_MS + (need-1)*TICK_MS) / 60000); }
-  return {cur, mins, lastTick: S.life.ts + ticks*TICK_MS};
+  if (cur < MAX_LIFE){
+    const next = (lifeTickNo(now) + 1) * TICK_MS + LIFE_OFFSET_MS;          // 다음 오르는 시각
+    const need = Math.ceil((MAX_LIFE - cur) / LIFE_TICK);
+    mins = Math.ceil((next - now + (need - 1) * TICK_MS) / 60000);
+  }
+  return {cur, mins};
 }
 function raidsOf(c){
   const p = P(c.id);
@@ -868,7 +897,9 @@ function onSnap(snap){
   const data = snap.data(), key = keyOf(data);
   if(key===lastSavedKey){ if(definitive) setSync("synced"); return; }
   if(!first && (dirty || saving)) return;   // 방금 여기서 바꾼 게 더 최신 → 곧 덮어씀
+  lifeTrack("자동 회복");
   S = normalize(data); lastSavedKey=key; dirty=false; clearTimeout(saveTimer);
+  lifeTrack(first ? "서버에서 불러옴" : "다른 기기에서 바뀜");
   dOrd.order=wOrd.order=null; wMemo.key=null;
   const changed = applyResets(); saveLocal(); render();
   setSync(definitive ? "synced" : "connecting");
@@ -882,6 +913,7 @@ onAuthStateChanged(auth, user=>{
   if(user){
     localKey = "loacheck-state-" + user.uid;
     try{ S = normalize(JSON.parse(localStorage.getItem(localKey))); }catch(e){ S = freshState(); }
+    lifeLogLoad(user.uid); lifeTrack("자동 회복");
     if(applyResets()) saveLocal();
     dOrd.order=wOrd.order=null; wMemo.key=null;
     docRef = doc(fdb, "users", user.uid, "data", "state");
@@ -1028,6 +1060,7 @@ function navBar(){
     ${b("go-main", ICON.list, "숙제", ui.page==="main" && !ui.settings)}
     ${b("go-specs", ICON.spec, "스펙 현황(구)", (ui.page==="specs"||ui.page==="spec"||ui.page==="history") && !ui.settings)}
     ${b("go-spec2", ICON.spec, "스펙 현황(신)", ui.page==="spec2" && !ui.settings)}
+    ${b("go-log", ICON.hist, "로그", ui.page==="log" && !ui.settings)}
     ${b("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion" && !ui.settings)}
     ${b("settings", ICON.gear, "설정", ui.settings)}
   </nav>`;
@@ -1873,6 +1906,59 @@ function s2SetFx(sel){
   s2Save(); render();
 }
 
+/* ───────────── 로그: 생활의 기운이 바뀔 때마다 기록 (원인 찾기용) ───────────── */
+// 저장: 이 브라우저 localStorage "loacheck-lifelog-{계정}" (최근 500개). 다른 기기에서 바뀐 것도 '다른 기기에서 바뀜'으로 남음
+let LIFELOG = {entries:[], rec:null, cur:null}, lifeLogKey = "";
+function lifeLogLoad(uid){
+  lifeLogKey = "loacheck-lifelog-" + uid;
+  try{ const d = JSON.parse(localStorage.getItem(lifeLogKey)); LIFELOG = {entries:Array.isArray(d?.entries)?d.entries:[], rec:d?.rec||null, cur:fin(d?.cur)?d.cur:null}; }
+  catch(e){ LIFELOG = {entries:[], rec:null, cur:null}; }
+}
+const lifeLogSave = () => { if(!lifeLogKey) return; try{ localStorage.setItem(lifeLogKey, JSON.stringify(LIFELOG)); }catch(e){} };
+// 지금 값과 저장된 기록을 지난번과 비교해서, 달라졌으면 한 줄 남김
+// - 저장된 기록(값·시각)은 그대로인데 화면 값만 바뀜 → '자동 회복'
+// - 저장된 기록이 바뀜 → kind (직접 입력 / -4240 버튼 / 다른 기기에서 바뀜 …)
+function lifeTrack(kind, note){
+  if(!lifeLogKey || !S?.life) return;
+  const now = Date.now(), rec = {energy:S.life.energy, ts:S.life.ts}, cur = lifeStatus(now).cur;
+  const prev = LIFELOG.rec, recChanged = !prev || prev.energy!==rec.energy || prev.ts!==rec.ts;
+  if(!prev){ LIFELOG.rec = rec; LIFELOG.cur = cur; lifeLogSave(); return; }   // 처음: 기준만 잡음
+  if(!recChanged && cur===LIFELOG.cur) return;
+  const e = {t:now, kind: recChanged ? kind : "자동 회복", before:LIFELOG.cur, after:cur, rec};
+  if(recChanged && prev) e.prevRec = prev;
+  if(note) e.note = note;
+  LIFELOG.entries.unshift(e); LIFELOG.entries = LIFELOG.entries.slice(0, 500);
+  LIFELOG.rec = rec; LIFELOG.cur = cur;
+  lifeLogSave();
+  if(ui.page==="log" && !rendering) setTimeout(render, 0);
+}
+const logTime = t => { const d = new Date(t); const p = n => String(n).padStart(2,"0");
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+function logPage(){
+  const st = lifeStatus(), next = (lifeTickNo(Date.now()) + 1) * TICK_MS + LIFE_OFFSET_MS;
+  const rows = LIFELOG.entries.map(e=>{
+    const d = (e.after ?? 0) - (e.before ?? 0);
+    const diff = e.before==null ? "" : `<span class="${d>0?"lg-up":d<0?"lg-down":""}">${d>0?"+":""}${fmt(d)}</span>`;
+    const odd = e.kind==="자동 회복" && d % 30 !== 0 ? ` <b class="lg-odd" title="30의 배수가 아님">⚠</b>` : "";
+    return `<tr class="${e.kind==="자동 회복"?"auto":""}"><td class="num">${logTime(e.t)}</td><td>${esc(e.kind)}${e.note?`<small>${esc(e.note)}</small>`:""}</td>
+      <td class="num r">${e.before==null?"-":fmt(e.before)} → <b>${fmt(e.after)}</b> ${diff}${odd}</td>
+      <td class="num r lg-rec">${fmt(e.rec.energy)} <small>@ ${logTime(e.rec.ts)}</small>${e.prevRec?`<small>이전 ${fmt(e.prevRec.energy)} @ ${logTime(e.prevRec.ts)}</small>`:""}</td></tr>`;
+  }).join("");
+  return `<main class="page lg">
+    <div class="page-head"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>로그 <small>생활의 기운 변화 기록</small></h2>
+      <button class="tool" data-act="log-clear">${ui.logArm ? "정말 지울까요? 한 번 더 누르기" : "로그 지우기"}</button></div>
+    <section class="lg-now">
+      <div><span>지금 화면 값</span><b class="num">${fmt(st.cur)}</b></div>
+      <div><span>저장된 기록</span><b class="num">${fmt(S.life.energy)}</b><small>${logTime(S.life.ts)} 기준</small></div>
+      <div><span>다음 오르는 시각</span><b class="num">${logTime(next).split(" ")[1].slice(0,5)}</b><small>매 10분, 끝자리 4분</small></div>
+    </section>
+    <p class="hint">이 브라우저에서 본 변화만 남아요 (휴대폰 앱이나 다른 브라우저에서 바꾼 건 여기서 '다른 기기에서 바뀜'으로 보여요). 사이트를 닫아 둔 동안 오른 건 다음에 열 때 한 줄로 묶여요. 최근 500개까지.</p>
+    <div class="lg-wrap"><table class="lg-table">
+      <thead><tr><th>시각</th><th>무슨 일</th><th class="r">화면 값</th><th class="r">저장된 기록 (값 @ 시각)</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="4" class="lg-empty">아직 기록이 없어요. 생활의 기운이 바뀌면 여기에 남아요.</td></tr>`}</tbody></table></div>
+  </main>`;
+}
+
 const emptyRoster = () => `<div class="empty">등록된 캐릭터가 없어요. <button class="linkbtn" data-act="settings">설정</button>에서 캐릭터를 추가하세요.</div>`;
 
 function settingsSheet(){
@@ -1982,7 +2068,7 @@ function render(){
   app.querySelectorAll("[data-nkey]").forEach(el=>prevN.set(el.dataset.nkey, Number(el.dataset.shown ?? el.dataset.n)));
   app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
-  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page()
+  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page() : ui.page==="log" ? logPage()
     : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
   app.innerHTML = header() + body + settingsSheet();
@@ -2040,6 +2126,8 @@ document.addEventListener("click", e=>{
     case "go-home": if(ui.page!=="main" || ui.settings || ui.menu){ ui.menu=false; ui.settings=false; ui.page="main"; pushNav(); render(); } window.scrollTo({top:0, behavior:"smooth"}); break;
     case "go-specs": goPage("specs"); break;
     case "go-spec2": goPage("spec2"); break;
+    case "go-log": lifeTrack("자동 회복"); goPage("log"); break;
+    case "log-clear": if(ui.logArm){ LIFELOG.entries = []; lifeLogSave(); ui.logArm = false; } else ui.logArm = true; render(); break;
     case "s2-grade": ui.s2Grade = {side:b.dataset.side, k:b.dataset.k}; render(); break;
     case "s2-grade-pick": { const g = ui.s2Grade; if(g){ S2[g.side][g.k].grade = b.dataset.g; s2Save(); } ui.s2Grade = null; render(); break; }
     case "s2-grade-close": if(e.target===b){ ui.s2Grade = null; render(); } break;
@@ -2054,7 +2142,7 @@ document.addEventListener("click", e=>{
     case "fz-notify": fzNotify(b.dataset.route); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
     case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
-    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
+    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2"||ui.page==="log") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
     case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
@@ -2114,7 +2202,7 @@ document.addEventListener("click", e=>{
     case "sign": { const p=P(id); setWeekly(b, id, "sign", Math.max(0,Math.min(SIGN_MAX,p.sign+Number(b.dataset.d)))); break; }
     case "honor": { const p=P(id); setWeekly(b, id, "honor", Math.max(0,Math.min(HONOR_MAX,p.honor+Number(b.dataset.d)))); break; }
     case "setting": S.settings[b.dataset.k]=!S.settings[b.dataset.k]; commit(); break;
-    case "life-use": { const now=Date.now(), st=lifeStatus(now); S.life={energy:Math.max(0,st.cur-LIFE_USE), ts: st.cur>=MAX_LIFE?now:st.lastTick}; flash("use"); commit(); break; }
+    case "life-use": { lifeTrack("자동 회복"); const now=Date.now(), st=lifeStatus(now); S.life={energy:Math.max(0, st.cur-LIFE_USE), ts:now}; lifeTrack("-4240 버튼"); flash("use"); commit(); break; }
     case "life-save": lifeSave(); break;
     case "add": { const id2="c"+Date.now().toString(36); const next=Math.max(0,...S.roster.map(c=>c.chaNum))+1; S.roster.push({id:id2,name:"새 캐릭터",job:"",level:1710,chaNum:next}); commit(); setTimeout(()=>{ const el=document.getElementById("r-name-"+id2); el&&el.select(); },0); break; }
     case "del": if(ui.armDel!==id){ ui.armDel=id; render(); } else { S.roster=S.roster.filter(c=>c.id!==id); delete S.progress[id]; ui.armDel=null; commit(); } break;
@@ -2342,7 +2430,8 @@ let flashTimer=null;
 function lifeSave(){
   const v = parseInt(ui.lifeInput, 10);
   ui.lifeEditing = false; ui.lifeInput = "";
-  if(Number.isFinite(v)) S.life = {energy:Math.max(0,Math.min(MAX_LIFE,v)), ts:Date.now()};
+  lifeTrack("자동 회복");   // 고치기 전까지 오른 것 먼저 기록
+  if(Number.isFinite(v)){ S.life = {energy:Math.max(0,Math.min(MAX_LIFE,v)), ts:Date.now()}; lifeTrack("직접 입력", "입력한 숫자 " + v); }
   document.getElementById("life-cur")?.blur();
   commit();
 }
@@ -2413,7 +2502,7 @@ document.addEventListener("change", e=>{
 });
 
 // 1분마다: 06시 초기화 확인 + 생기 회복 반영. 앱으로 돌아올 때도 즉시 확인.
-function tick(){ if(!ui.user) return; if(applyResets()) commit(); else render(); }
+function tick(){ if(!ui.user) return; lifeTrack("자동 회복"); if(applyResets()) commit(); else render(); }
 setInterval(tick, 60000);
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ tick(); checkAlarm(); scheduleAlarm(); } });
 
