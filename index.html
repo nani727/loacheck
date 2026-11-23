@@ -523,6 +523,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .ico.glass .in.xr-txt.estate{background:linear-gradient(160deg,#3E9A5A,#174A2A)}
 .ico.glass .in.xr-txt.serka{background:linear-gradient(160deg,#C9A23A,#5C4410);font-size:9.5px;letter-spacing:-.03em}
 .xr-name.wide{width:auto;flex:1 1 auto;min-width:0;white-space:normal}
+.ico.glass .in.xr-txt.voyage{background:linear-gradient(160deg,#2B9DB0,#0D4250)}
 .ico.glass .in.xr-txt.dispatch{background:linear-gradient(160deg,#D94A9A,#6B1446)}
 .row.xr.island{align-items:flex-start;padding:4px 0}
 .row.xr.island .chk{align-self:center}
@@ -658,9 +659,9 @@ function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}�
 /* ───────────── 상태 ───────────── */
 function freshState(){
   return { v:1,
-    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, serka:true, dispatch:true, island:true, sortOnlyAll:false},
+    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, serka:true, dispatch:true, island:true, voyage:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
-    expedition:{chaos:false, field:false, estateBox:false, serka:false, dispatch:0, island:false},
+    expedition:{chaos:false, field:false, estateBox:false, serka:false, dispatch:0, island:false, voyage:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
     lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
     specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
@@ -671,7 +672,7 @@ function normalize(d){
     settings:{...s.settings, ...(d.settings||{})},
     roster: Array.isArray(d.roster) ? d.roster.map(c=>({id:String(c.id), name:String(c.name??""), job:String(c.job??""), level:Number(c.level)||0, chaNum:Number(c.chaNum)||0})) : s.roster,
     progress: (d.progress && typeof d.progress==="object") ? d.progress : {},
-    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, serka:!!d.expedition?.serka, island:!!d.expedition?.island, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number(d.expedition?.dispatch)||0))},
+    expedition:{chaos:!!d.expedition?.chaos, field:!!d.expedition?.field, estateBox:!!d.expedition?.estateBox, serka:!!d.expedition?.serka, island:!!d.expedition?.island, voyage:!!d.expedition?.voyage, dispatch:Math.max(0,Math.min(DISPATCH_MAX,Number(d.expedition?.dispatch)||0))},
     life:{energy:Number(d.life?.energy ?? MAX_LIFE), ts:Number(d.life?.ts || Date.now())},
     lastDaily: Number.isFinite(d.lastDaily) ? d.lastDaily : loaDay(),
     lastWeekly: Number.isFinite(d.lastWeekly) ? d.lastWeekly : loaDay(),
@@ -721,7 +722,7 @@ function applyResets(){
       }
       p.daily.guild.done = false;
     }
-    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:0, island:false};   // 영지 상자(주간)는 그대로
+    S.expedition = {...S.expedition, chaos:false, field:false, dispatch:0, island:false, voyage:false};   // 영지 상자(주간)는 그대로
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
@@ -1115,6 +1116,8 @@ function expRows(){
   if(CHAOS_DAYS.includes(d)) rows.push({k:"chaos", done:!!x.chaos});
   if(BOSS_DAYS.includes(d)) rows.push({k:"field", done:!!x.field});
   if(S.settings.island!==false) rows.push({k:"island", done:!!x.island});
+  // 항해 협동: 캘린더를 아직 못 받았으면 보여주고, 받았는데 오늘 없으면 숨김
+  if(S.settings.voyage!==false && (!S.apiKey || !CAL?.voyages || voyagesToday().length)) rows.push({k:"voyage", done:!!x.voyage});
   if(S.settings.dispatch!==false) rows.push({k:"dispatch", done:(x.dispatch||0) >= DISPATCH_MAX});
   return rows;
 }
@@ -1125,7 +1128,7 @@ function expCard(){
   const html = rows.filter(r=>show || !r.done).map(r=>
     r.k==="chaos" ? simpleExpRow("chaos", "카오스 게이트", ICON_CHAOS) :
     r.k==="field" ? simpleExpRow("field", "필드 보스", ICON_BOSS) :
-    r.k==="island" ? islandRow() : dispatchRow()).join("");
+    r.k==="island" ? islandRow() : r.k==="voyage" ? voyageRow() : dispatchRow()).join("");
   return `<article class="card expd ${all?"done":""}" data-card="expd">
     <div class="chead"><span class="cname">원정대 일일 숙제</span>${all?`<span class="ctag">완료</span>`:""}</div>
     ${html}
@@ -1162,6 +1165,22 @@ function islandRow(){
     ${chk(done,"island","",`모험 섬 완료`)}</div>`;
 }
 
+// 항해 협동 (오늘의 항해·시각은 로스트아크 API 캘린더에서)
+function voyageRow(){
+  const done = !!S.expedition.voyage, list = voyagesToday(), now = Date.now();
+  const times = [...new Set(list.flatMap(v=>v.times))].sort((a,b)=>a-b), next = times.find(t=>t > now);
+  const hm = t => { const d = new Date(t + 9*3600e3); return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`; };
+  let info = "";
+  if(!S.apiKey) info = `<small class="isl-msg">설정 → 로스트아크 API에 키를 넣으면 오늘의 항해가 보여요.</small>`;
+  else if(!list.length) info = CALS.loading ? `<small class="isl-msg">불러오는 중…</small>` : CALS.err ? `<small class="isl-msg">${esc(CALS.err)}</small>` : "";
+  else info = `<div class="isl-list">${list.map(v=>`<span class="isl-chip">${esc(v.name)}</span>`).join("")}</div>
+    <small class="isl-times">${times.map(t=>`<span class="${t===next?"next":t<now?"past":""}">${hm(t)}</span>`).join("")}</small>`;
+  const icon = list[0]?.icon;
+  return `<div class="row xr island voyage ${done?"on":""}">
+    <span class="ico glass">${icon ? `<img class="in" src="${esc(icon)}" alt="">` : `<span class="in xr-txt voyage">항해</span>`}</span>
+    <div class="isl-info"><div class="isl-top"><b>항해 협동</b><span class="isl-next">${next ? `다음 ${hm(next)}` : list.length ? "오늘 일정 끝" : ""}</span></div>${info}</div>
+    ${chk(done,"voyage","",`항해 협동 완료`)}</div>`;
+}
 
 function dailyCard(c){
   const d = P(c.id).daily, done = dailyDone(c);
@@ -1984,6 +2003,7 @@ function settingsSheet(){
       ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
       ${sw("dispatch","특수 파견","일일 · 원정대 공통, 하루 2회 (다 하면 숨김)")}
       ${sw("island","모험 섬","일일 · 원정대 공통 (오늘의 섬은 로스트아크 API로 불러옴)")}
+      ${sw("voyage","항해 협동","일일 · 원정대 공통 (오늘 열리는 날만, 로스트아크 API로 불러옴)")}
       ${sw("estateBox","영지 활동 지원 상자 구입","주간 · 원정대 공통")}
       ${sw("serka","세르카 교환","주간 · 원정대 공통, 1번")}
     </div></div>
@@ -2140,6 +2160,7 @@ document.addEventListener("click", e=>{
     case "logout": ui.settings=false; ui.page="main"; replaceNav(); signOut(auth); break;
     case "view": ui.view=b.dataset.v; saveUi(); render(); break;
     case "island": finishRow(b.closest(".row"), !S.expedition.island && !ui.showExpDone, ()=>{ S.expedition.island = !S.expedition.island; }); break;
+    case "voyage": finishRow(b.closest(".row"), !S.expedition.voyage && !ui.showExpDone, ()=>{ S.expedition.voyage = !S.expedition.voyage; }); break;
     case "show-exp-done": ui.showExpDone = !ui.showExpDone; render(); break;
     case "slot": ui.sortSlot=!ui.sortSlot; dOrd.order=wOrd.order=null; saveUi(); render(); break;
     case "pin": ui.pin = ui.pin===id ? null : id; dOrd.order=wOrd.order=null; saveUi(); render(); break;
@@ -2339,7 +2360,7 @@ try{ CAL = JSON.parse(localStorage.getItem(CAL_KEY)); }catch(e){}
 const kstMs = str => Date.parse(String(str).slice(0,19) + "+09:00");
 async function calLoad(force){
   if(CALS.loading || !S.apiKey) return;
-  if(!force && CAL && Date.now() - CAL.ts < 6*3600e3 && CAL.day === loaDay()) return;
+  if(!force && CAL && CAL.voyages && Date.now() - CAL.ts < 6*3600e3 && CAL.day === loaDay()) return;
   CALS.loading = true;
   try{
     const res = await fetch(`${LOA_API}/gamecontents/calendar`, {headers:{accept:"application/json", authorization:"bearer "+S.apiKey}});
@@ -2353,7 +2374,12 @@ async function calLoad(force){
       times: (c.StartTimes||[]).map(kstMs).filter(Number.isFinite),
       rewards: (c.RewardItems||[]).flatMap(g=>g?.Items||[]).map(it=>({name:String(it?.Name||""), times: Array.isArray(it?.StartTimes) ? it.StartTimes.map(kstMs).filter(Number.isFinite) : null})),
     }));
-    CAL = {ts:Date.now(), day:loaDay(), islands}; CALS.err = "";
+    // 항해 협동: 분류 이름에 '항해'가 들어가거나 이름이 '항해 협동'으로 시작 (예: "항해 협동 : 애니츠")
+    const voyages = (Array.isArray(data) ? data : []).filter(c=>c && (/항해/.test(c.CategoryName||"") || /항해\s*협동/.test(c.ContentsName||""))).map(c=>({
+      name: String(c.ContentsName||"").replace(/^항해\s*협동\s*:?\s*/,"") || String(c.ContentsName||""), icon: String(c.ContentsIcon||""),
+      times: (c.StartTimes||[]).map(kstMs).filter(Number.isFinite),
+    }));
+    CAL = {ts:Date.now(), day:loaDay(), islands, voyages}; CALS.err = "";
     try{ localStorage.setItem(CAL_KEY, JSON.stringify(CAL)); }catch(e){}
   }catch(e){ CALS.err = e.message || "모험 섬 정보를 불러오지 못했어요."; }
   CALS.loading = false;
@@ -2373,6 +2399,12 @@ function islandsToday(){
     const tags = ISL_TAGS.filter(([re])=>names.some(n=>re.test(n))).map(x=>x[1]);
     return {name:i.name, icon:i.icon, times, tags};
   }).filter(Boolean);
+}
+// 오늘(06시 기준) 열리는 항해 협동
+function voyagesToday(){
+  if(!CAL?.voyages) return [];
+  const today = loaDay();
+  return CAL.voyages.map(v=>({...v, times:v.times.filter(t=>loaDay(t)===today).sort((a,b)=>a-b)})).filter(v=>v.times.length);
 }
 // 2분 안에 시작하는 모험 섬 시각 (오늘 안 했을 때만)
 function islandSoon(now=Date.now()){
