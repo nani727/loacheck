@@ -549,6 +549,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .isl-times .past{opacity:.5;text-decoration:line-through}
 .isl-times .next{color:var(--accent-fg);font-weight:700}
 .isl-msg{font-size:12.5px;color:var(--muted)}
+.isl-list.voy .isl-chip b{font-weight:700;font-size:12px;margin-right:2px}
+.isl-list.voy .isl-chip.past{opacity:.45;text-decoration:line-through;text-decoration-thickness:1px}
+.isl-list.voy .isl-chip.next{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-fg)}
 .exp-item.island .chk{align-self:center}
 /* ── 스펙 현황(신) ── */
 :root{--fx-green:#5E9A00;--fx-orange:#D96300;--fx-purple:#9B4FB8;--fx-blue:#1E88B8;--fx-lock:#8A8F99;--s2-box:#373C47;--s2-head:#2E8A00;--s2-num:#3F51B5;--s2-bar:#AF29C5}
@@ -1173,8 +1176,11 @@ function voyageRow(){
   let info = "";
   if(!S.apiKey) info = `<small class="isl-msg">설정 → 로스트아크 API에 키를 넣으면 오늘의 항해가 보여요.</small>`;
   else if(!list.length) info = CALS.loading ? `<small class="isl-msg">불러오는 중…</small>` : CALS.err ? `<small class="isl-msg">${esc(CALS.err)}</small>` : "";
-  else info = `<div class="isl-list">${list.map(v=>`<span class="isl-chip">${esc(v.name)}</span>`).join("")}</div>
-    <small class="isl-times">${times.map(t=>`<span class="${t===next?"next":t<now?"past":""}">${hm(t)}</span>`).join("")}</small>`;
+  else {
+    // 지역마다 시각이 달라서 '시각 + 지역'을 한 칸씩, 시간 순으로 (지난 건 흐리게, 다음 건 강조)
+    const slots = list.flatMap(v=>v.times.map(t=>({t, name:v.name}))).sort((a,b)=>a.t-b.t || a.name.localeCompare(b.name,"ko"));
+    info = `<div class="isl-list voy">${slots.map(x=>`<span class="isl-chip ${x.t===next?"next":x.t<now?"past":""}"><b class="num">${hm(x.t)}</b>${esc(x.name)}</span>`).join("")}</div>`;
+  }
   const icon = list[0]?.icon;
   return `<div class="row xr island voyage ${done?"on":""}">
     <span class="ico glass">${icon ? `<img class="in" src="${esc(icon)}" alt="">` : `<span class="in xr-txt voyage">항해</span>`}</span>
