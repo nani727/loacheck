@@ -513,6 +513,30 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 @media (max-width:440px){.fz-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.fz-big .n{font-size:30px}.fz-prices{grid-template-columns:minmax(0,1fr)}}
 
 
+
+/* ── 팔찌 점수 ── */
+.page.bz{max-width:1000px}
+.bz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:720px){.bz-grid{grid-template-columns:minmax(0,1fr)}}
+.bz-total{font-size:20px;font-weight:800;color:var(--accent-fg)}
+.bz-list{list-style:none;margin:10px 0 6px;padding:0;display:flex;flex-direction:column;gap:6px}
+.bz-list li{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+.bz-list .bz-name{flex:1;min-width:0;font-weight:600;font-size:13.5px}
+.bz-list .bz-name small{display:block;font-weight:400;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bz-list b{font-size:15px}
+.bz-g{flex:none;display:inline-grid;place-items:center;min-width:34px;height:22px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:700;color:#111;background:var(--gc)}
+.bz-side{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:8px 12px;border-radius:10px;background:var(--surface-done)}
+.bz-side b{font-size:20px}
+.bz-side.win{background:var(--accent-soft);outline:2px solid var(--accent)}
+.bz-cfg{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px}
+.bz-cfg label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.bz-num{width:60px;height:32px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit;text-align:right;padding:0 8px}
+.bz-rules{margin-top:12px;font-size:13px}
+.bz-rules summary{cursor:pointer;color:var(--accent-fg);font-weight:600}
+.bz-rules ul{margin:8px 0 0;padding-left:18px;display:grid;gap:3px}
+.bz-rec{display:flex;gap:8px;margin-top:8px}
+.bz-rec select{flex:1;border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:8px;padding:6px 8px;font:inherit}
+.tool.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-fg)}
 /* ── 원정대 일일 숙제 카드 ── */
 .card.expd .row.xr{gap:10px}
 .xr .ico.glass{width:32px!important;height:32px!important;flex:none}
@@ -747,7 +771,7 @@ const fin = v => typeof v==="number" && Number.isFinite(v);
 function blankSpec(){
   return { gear:null, grid:Object.fromEntries(GRID.map(g=>[g[0],null])),
     refine:Object.fromEntries(PARTS.map(p=>[p[0],{lv:null,exp:0}])),
-    adv:Object.fromEntries(PARTS.map(p=>[p[0],null])), power:null };
+    adv:Object.fromEntries(PARTS.map(p=>[p[0],null])), power:null, brace:null };
 }
 function normSpec(x){
   const b = blankSpec(); if(!x || typeof x!=="object") return b;
@@ -759,6 +783,7 @@ function normSpec(x){
     b.adv[k] = fin(x.adv?.[k]) ? x.adv[k] : null;
   }
   b.power = fin(x.power) ? x.power : null;
+  b.brace = fin(x.brace) ? x.brace : null;   // 팔찌 점수
   return b;
 }
 const SPEC = id => (S.specs[id] = normSpec(S.specs[id]));
@@ -785,6 +810,7 @@ function specDiffLines(b, c){
   const li=specItemLevel(b), lc=specItemLevel(c);
   if(li!=null && lc!=null && f2(li)!==f2(lc)) out.push(`아이템 레벨 ${f2(li)} -> ${f2(lc)}`);
   if(b.power!=null && c.power!=null && f2(b.power)!==f2(c.power)) out.push(`전투력 ${f2(b.power)} -> ${f2(c.power)}`);
+  if(b.brace!=null && c.brace!=null && b.brace!==c.brace) out.push(`팔찌 점수 ${fmt(b.brace)} -> ${fmt(c.brace)}`);
   return out;
 }
 // 처음 입력한 값은 이번 주 시작값으로 삼음
@@ -797,6 +823,7 @@ function syncBase(id){
     if(b.adv[k]==null && cur.adv[k]!=null) b.adv[k] = cur.adv[k];
   }
   if(b.power==null && cur.power!=null) b.power = cur.power;
+  if(b.brace==null && cur.brace!=null) b.brace = cur.brace;
   h.base[id] = b;
 }
 // 수요일 06시가 지나면: 지난주 기록을 보관함(archive)으로 옮기고, 지금 스펙을 새 주의 시작값으로
@@ -1074,6 +1101,7 @@ function navBar(){
     ${b("go-main", ICON.list, "숙제", ui.page==="main" && !ui.settings)}
     ${b("go-specs", ICON.spec, "스펙 현황(구)", (ui.page==="specs"||ui.page==="spec"||ui.page==="history") && !ui.settings)}
     ${b("go-spec2", ICON.spec, "스펙 현황(신)", ui.page==="spec2" && !ui.settings)}
+    ${b("go-brace", ICON.calc, "팔찌 점수", ui.page==="brace" && !ui.settings)}
     ${b("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion" && !ui.settings)}
     ${b("settings", ICON.gear, "설정", ui.settings)}
   </nav>`;
@@ -1772,6 +1800,10 @@ function specDetailPage(){
         <span>아이템 레벨 : <b>${il==null?"-":f2(il)}</b></span>
         <span>전투력 : <input id="sp-p-${id}" data-spec="power" data-id="${id}" inputmode="numeric" value="${esc(draftVal(`sp-p-${id}`, sp.power==null?"":f2(sp.power)))}" aria-label="전투력" placeholder="0.00"></span>
       </div>
+      <div class="stat-row">
+        <span>팔찌 점수 : <input id="sp-b-${id}" data-spec="brace" data-id="${id}" inputmode="numeric" value="${esc(draftVal(`sp-b-${id}`, sp.brace==null?"":String(sp.brace)))}" aria-label="팔찌 점수" placeholder="0"></span>
+        <button class="tool" data-act="go-brace">팔찌 점수 계산기</button>
+      </div>
       <p class="hint">전투력은 숫자만 입력하면 뒤 두 자리가 소수점 아래로 들어가요 (123456 → 1234.56). 아이템 레벨은 6부위 평균으로 자동 계산돼요. 전율: 1675 + 재련×5 / 업화: 1590 + 재련×5 + 상급재련 단계 (상급재련은 업화 장비에만 적용).</p>
     </section>
   </main>`;
@@ -1800,6 +1832,7 @@ function applySpecInput(el){
   if(kind==="lv"){ const n=parseInt(raw,10); sp.refine[k].lv = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(REFINE_MAX,n)) : sp.refine[k].lv); }
   else if(kind==="exp"){ const n=parseFloat(raw); sp.refine[k].exp = raw==="" ? 0 : (Number.isFinite(n) ? Math.max(0,Math.min(99.99,Math.round(n*100)/100)) : sp.refine[k].exp); }
   else if(kind==="adv"){ const n=parseInt(raw,10); sp.adv[k] = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(ADV_MAX,n)) : sp.adv[k]); }
+  else if(kind==="brace"){ const n=parseFloat(raw.replace(/,/g,"")); sp.brace = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.round(n)) : sp.brace); }
   else if(kind==="power"){ const n=parseFloat(raw.replace(/,/g,"")); sp.power = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.round(n*100)/100) : sp.power); }
   syncBase(id); commit();
 }
@@ -1971,6 +2004,320 @@ function s2SetFx(sel){
   s2Save(); render();
 }
 
+/* ───────────── 팔찌 점수 (화면 글자 인식, 웹 전용) ─────────────
+   게임 화면을 공유받거나(몇 초마다 확인) 캡처를 붙여넣으면 글자를 읽어서(OCR, tesseract.js) 팔찌 효과 점수를 계산
+   - '팔찌 효과 부여' 화면 → 고정 효과를 기억
+   - '효과 선택' 화면 → 고정 + 왼쪽(기존), 고정 + 오른쪽(신규) 합계를 알림
+   - 장착 팔찌 설명 창 → 팔찌 효과 전체 합계 (스펙 현황에 기록 가능)
+   점수 = 티어 점수 × 등급 배율 (숫자 색: 노랑=상, 보라=중, 파랑=하, 초록=최하). 표에 없는 효과는 0점 */
+const BZ_TIERS = [ {k:"t1",name:"1티어"}, {k:"t2p",name:"2티어+"}, {k:"t2",name:"2티어"}, {k:"t3p",name:"3티어+"}, {k:"t3",name:"3티어"}, {k:"t4",name:"4티어"}, {k:"t5",name:"5티어"} ];
+const BZ_GRADES = [ {k:"top",name:"상",color:"#F2C230"}, {k:"mid",name:"중",color:"#B36BE0"}, {k:"low",name:"하",color:"#33B5E5"}, {k:"min",name:"최하",color:"#7FC241"} ];
+const bzDefaultCfg = () => ({ tier:{t1:100,t2p:80,t2:70,t3p:50,t3:40,t4:20,t5:10}, grade:{top:100,mid:80,low:60,min:40} });
+// 효과 판별 (공백을 뺀 글자로 비교). 위에서부터 먼저 맞는 것으로 (겹치는 말이 있어서 순서가 중요)
+const BZ_RULES = [
+  {tier:"t4", name:"대상 치명타 피해 저항 감소 & 아군 공격력 강화", test:t=>/치명타피해저항/.test(t)},
+  {tier:"t4", name:"대상 치명타 저항 감소 & 아군 공격력 강화", test:t=>/치명타저항/.test(t)},
+  {tier:"t4", name:"대상 방어력 감소 & 아군 공격력 강화", test:t=>/방어력/.test(t) && /감소/.test(t)},
+  {tier:"t4", name:"파티 보호 효과 대상 피해 증가 & 아군 공격력 강화", test:t=>/보호/.test(t) && /아군공격력/.test(t)},
+  {tier:"t1", name:"치명타 적중률 & 치명타 시 피해량", test:t=>/치명타적중률/.test(t) && /치명타(로|시)/.test(t)},
+  {tier:"t1", name:"치명타 피해 & 치명타 시 피해량", test:t=>/치명타피해/.test(t) && /치명타(로|시)/.test(t)},
+  {tier:"t1", name:"추가 피해 & 악마 및 대악마 피해", test:t=>/추가피해/.test(t) && /악마/.test(t)},
+  {tier:"t1", name:"재사용 대기 시간 증가 & 적에게 주는 피해", test:t=>/재사용대기/.test(t)},
+  {tier:"t1", name:"적에게 주는 피해 & 무력화 대상 피해", test:t=>/무력화/.test(t)},
+  {tier:"t3p", name:"무기 공격력 & 생명력 50% 이상 무기 공격력", test:t=>/무기공격력/.test(t) && /생명력/.test(t)},
+  {tier:"t3p", name:"무기 공격력 & 30초 마다 무기 공격력", test:t=>/무기공격력/.test(t) && /30초/.test(t)},
+  {tier:"t3", name:"매 초 무기 공격력 & 공격 및 이동 속도", test:t=>/매초/.test(t) && /무기공격력/.test(t)},
+  {tier:"t2", name:"방향성 공격이 아닌 스킬 피해", test:t=>/방향성/.test(t)},
+  {tier:"t2", name:"백어택 스킬 피해", test:t=>/백어택/.test(t)},
+  {tier:"t2", name:"헤드어택 스킬 피해", test:t=>/헤드어택/.test(t)},
+  {tier:"t2", name:"추가 피해", test:t=>/추가피해/.test(t)},
+  {tier:"t2", name:"치명타 피해", test:t=>/치명타피해/.test(t)},
+  {tier:"t2", name:"치명타 적중률", test:t=>/치명타적중률/.test(t)},
+  {tier:"t2", name:"적에게 주는 피해", test:t=>/적에게주는피해/.test(t)},
+  {tier:"t2p", name:"치명/특화/신속", test:t=>/^(치명|특화|신속)\+?\d/.test(t)},
+  {tier:"t3", name:"무기 공격력", test:t=>/무기공격력/.test(t)},
+  {tier:"t5", name:"힘/민첩/지능", test:t=>/^(힘|민첩|지능)\+?\d/.test(t)},
+];
+// 두 문장이 한 효과인 경우 (앞 문장, 뒷 문장)
+const BZ_PAIRS = [
+  [/치명타(적중률|피해)/, /치명타(로|시)/], [/추가피해/, /악마/], [/적에게주는피해/, /무력화/],
+  [/무기공격력/, /(생명력|30초|초마다)/], [/(방어력|치명타저항|치명타피해저항|보호)/, /아군공격력/], [/아군공격력/, /(방어력|치명타저항|치명타피해저항|보호)/],
+];
+const BZ_STAT = /^(치명|특화|신속|제압|인내|숙련|체력|힘|민첩|지능|무기공격력|최대생명력|최대마나)[+*~]?\d/;
+const BZ = { cfg:null, fixed:null, sel:null, tip:null, stream:null, video:null, timer:null, busy:false, worker:null, status:"", lastSig:null, prevSig:null, lastKey:"", err:"" };
+try{ BZ.cfg = JSON.parse(localStorage.getItem("loacheck-brace-cfg")); }catch(e){}
+if(!BZ.cfg?.tier || !BZ.cfg?.grade) BZ.cfg = bzDefaultCfg();
+try{ const st = JSON.parse(localStorage.getItem("loacheck-brace")); if(st){ BZ.fixed = st.fixed||null; BZ.sel = st.sel||null; BZ.tip = st.tip||null; } }catch(e){}
+const bzSaveCfg = () => { try{ localStorage.setItem("loacheck-brace-cfg", JSON.stringify(BZ.cfg)); }catch(e){} };
+const bzSaveState = () => { try{ localStorage.setItem("loacheck-brace", JSON.stringify({fixed:BZ.fixed, sel:BZ.sel, tip:BZ.tip})); }catch(e){} };
+const bzScore = (tier, grade) => tier && grade ? Math.round((BZ.cfg.tier[tier]||0) * (BZ.cfg.grade[grade]||0) / 100) : 0;
+const bzSum = list => (list||[]).reduce((a,e)=>a + bzScore(e.tier, e.grade), 0);
+
+// ── 글자 인식 엔진 (처음 쓸 때 한 번 내려받음) ──
+const BZ_CDN = { lib:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js", worker:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+  core:"https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1", lang:"https://cdn.jsdelivr.net/npm/@tesseract.js-data/kor/4.0.0_best_int" };
+function bzLoadScript(src){ return new Promise((ok, bad)=>{ if(window.Tesseract) return ok(); const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = ()=>bad(new Error("글자 인식 도구를 내려받지 못했어요. 인터넷 연결을 확인해 주세요.")); document.head.appendChild(el); }); }
+async function bzWorker(){
+  if(BZ.worker) return BZ.worker;
+  bzSetStatus("글자 인식 도구 준비 중… (처음 한 번만 몇 초 걸려요)");
+  await bzLoadScript(BZ_CDN.lib);
+  BZ.worker = await Tesseract.createWorker("kor", 1, { workerPath:BZ_CDN.worker, corePath:BZ_CDN.core, langPath:BZ_CDN.lang });
+  return BZ.worker;
+}
+// 밝은 글자만 남기기: 가장 밝은 색 채널이 기준보다 밝으면 검정 글자, 나머지는 흰 바탕 (+ 확대)
+function bzPrep(src, rect, scale, th=115){
+  const w = Math.max(1, Math.round(rect.w*scale)), h = Math.max(1, Math.round(rect.h*scale));
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"); g.imageSmoothingQuality = "high";
+  g.drawImage(src, rect.x, rect.y, rect.w, rect.h, 0, 0, w, h);
+  const im = g.getImageData(0, 0, w, h), d = im.data;
+  for(let i=0;i<d.length;i+=4){ const m = Math.max(d[i],d[i+1],d[i+2]); const v = m >= th ? 0 : 255; d[i]=d[i+1]=d[i+2]=v; d[i+3]=255; }
+  g.putImageData(im, 0, 0); return c;
+}
+// 인식 결과 → 줄 목록 [{text, words:[{text, x0,y0,x1,y1}]}] (좌표는 원래 화면 기준)
+async function bzOCR(src, rect, scale){
+  const w = await bzWorker();
+  const r = await w.recognize(bzPrep(src, rect, scale), {}, {blocks:true, text:true});
+  const lines = (r.data.blocks||[]).flatMap(b=>b.paragraphs.flatMap(p=>p.lines));
+  const map = bb => ({x0:rect.x + bb.x0/scale, y0:rect.y + bb.y0/scale, x1:rect.x + bb.x1/scale, y1:rect.y + bb.y1/scale});
+  return lines.map(l=>({ text:l.text.trim(), ...map(l.bbox), words:l.words.map(wd=>({text:wd.text, ...map(wd.bbox)})) })).filter(l=>l.text);
+}
+const bzNorm = t => String(t).replace(/\s+/g,"").replace(/중가/g,"증가").replace(/[*~ㄱ-ㅣ十]+(?=\d)/g,"+").replace(/[|]/g,"");   // '+'가 ㅜ·*·~ 등으로 읽힌 것 바로잡기
+// 줄에서 붙어 있는 낱말들로 문구 찾기 → 그 낱말들을 감싸는 상자
+function bzFind(lines, phrase){
+  const out = [];
+  for(const l of lines){
+    let acc = "", marks = [];
+    l.words.forEach((w,i)=>{ const t = bzNorm(w.text); marks.push([acc.length, acc.length + t.length, i]); acc += t; });
+    let at = acc.indexOf(phrase);
+    while(at >= 0){
+      const ws = marks.filter(m=>m[1] > at && m[0] < at + phrase.length).map(m=>l.words[m[2]]);
+      if(ws.length) out.push({x0:Math.min(...ws.map(w=>w.x0)), y0:Math.min(...ws.map(w=>w.y0)), x1:Math.max(...ws.map(w=>w.x1)), y1:Math.max(...ws.map(w=>w.y1))});
+      at = acc.indexOf(phrase, at + 1);
+    }
+  }
+  return out;
+}
+// 숫자 색 → 등급 (화면 원본 픽셀에서 진한 색만 골라 색상(hue) 중앙값)
+function bzGradeAt(ctx, box){
+  const x = Math.max(0, Math.floor(box.x0)), y = Math.max(0, Math.floor(box.y0)), w = Math.max(1, Math.ceil(box.x1 - box.x0)), h = Math.max(1, Math.ceil(box.y1 - box.y0));
+  let d; try{ d = ctx.getImageData(x, y, w, h).data; }catch(e){ return null; }
+  const hs = [];
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i]/255, g=d[i+1]/255, b=d[i+2]/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), s = mx ? (mx-mn)/mx : 0;
+    if(s < .35 || mx < .45) continue;
+    let hh = mx===r ? ((g-b)/(mx-mn)) % 6 : mx===g ? (b-r)/(mx-mn) + 2 : (r-g)/(mx-mn) + 4; hh *= 60; if(hh < 0) hh += 360;
+    hs.push(hh);
+  }
+  if(hs.length < 6) return null;
+  hs.sort((a,b)=>a-b); const m = hs[hs.length>>1];
+  return m >= 160 && m < 245 ? "low" : m >= 245 && m < 335 ? "mid" : m >= 60 && m < 160 ? "min" : "top";
+}
+// 줄들 → 효과 목록 [{text, tier, rule, grade}]
+function bzParse(lines, ctx){
+  // 줄 앞에 붙은 아이콘 찌꺼기(한 글자)는 버림
+  // 줄 맨 앞 아이콘이 글자로 잘못 읽힌 것(1~2글자)은, 바로 뒤에 효과 첫 낱말이 오면 잘라냄
+  const START = /^(.{0,2}?)(치명|특화|신속|제압|인내|숙련|체력|힘|민첩|지능|무기|공격|추가|적에게|재사용|백어택|헤드어택|방향성|아군|대상|파티|최대|스킬|자신|악마|무력화|생명력)/;
+  const rows = lines.map(l=>{ let t = bzNorm(l.text); const m = t.match(START); if(m && m[1]) t = t.slice(m[1].length);
+    return {t, words:l.words}; }).filter(r=>r.t.length >= 2);
+  // 문장 단위로 묶기: 능력치 줄(체력 +4500 등)은 한 줄이 한 효과, 문장은 '다.'로 끝날 때까지 이어 붙임
+  const sents = []; let cur = null;
+  for(const r of rows){
+    if(BZ_STAT.test(r.t)){ if(cur){ sents.push(cur); cur = null; } sents.push({t:r.t, words:r.words, stat:true}); continue; }
+    if(!cur) cur = {t:"", words:[]};
+    cur.t += r.t; cur.words.push(...r.words);
+    if(/다\.?(\(.*\))?$|\)$|%$/.test(r.t)){ sents.push(cur); cur = null; }
+  }
+  if(cur) sents.push(cur);
+  // 두 문장이 한 효과인 경우 합치기
+  const effs = [];
+  for(const s of sents){
+    const prev = effs[effs.length-1];
+    if(prev && !prev.stat && !s.stat && !prev.merged && BZ_PAIRS.some(([a,b])=>a.test(prev.t) && b.test(s.t))){ prev.t += s.t; prev.words.push(...s.words); prev.merged = true; continue; }
+    effs.push({...s});
+  }
+  return effs.map(e=>{
+    const rule = BZ_RULES.find(r=>r.test(e.t));
+    const nums = e.words.filter(w=>/\d/.test(w.text));
+    const grades = nums.map(w=>bzGradeAt(ctx, w)).filter(Boolean);
+    const cnt = {}; grades.forEach(g=>cnt[g]=(cnt[g]||0)+1);
+    const grade = Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0] || null;
+    return {text:e.t.replace(/\+/g," +").slice(0,80), tier:rule?.tier||null, rule:rule?.name||"", grade};
+  });
+}
+// 한 화면 처리: 어떤 화면인지 알아낸 뒤, 그 부분만 크게 다시 읽어서 효과 계산
+async function bzProcess(canvas){
+  const ctx = canvas.getContext("2d", {willReadFrequently:true}), W = canvas.width, H = canvas.height;
+  const full = await bzOCR(canvas, {x:0, y:0, w:W, h:H}, Math.min(1.5, 2800 / W));
+  BZ.debug = {full};
+  const clip = r => { const x = Math.max(0, r.x), y = Math.max(0, r.y); return {x, y, w:Math.max(1, Math.min(W, r.x + r.w) - x), h:Math.max(1, Math.min(H, r.y + r.h) - y)}; };
+  const sel = bzFind(full, "효과선택")[0];
+  // '고정 효과' 제목: 바로 아래(제목 높이의 4~14배 안)에 '부여 효과' 제목이 있는 것 (설명 문장 속 '고정 효과는…'은 제외)
+  const grants = bzFind(full, "부여효과");
+  let fixedH = null, grantH = null;
+  for(const fH of bzFind(full, "고정효과").sort((a,b)=>a.y0-b.y0)){
+    const h = fH.y1 - fH.y0, g = grants.find(b=>b.y0 > fH.y1 + 3*h && b.y0 < fH.y1 + 16*h && Math.abs(b.x0 - fH.x0) < 4*h);
+    if(g){ fixedH = fH; grantH = g; break; }
+  }
+  // '고정 효과' 글자를 잘 못 읽었을 때: '부여 효과' 제목 위쪽 같은 줄 위치에 '고정'이 있으면 그걸로
+  if(!fixedH) for(const g of grants){
+    const h = g.y1 - g.y0, fH = bzFind(full, "고정").find(b=>b.y1 < g.y0 - 3*h && b.y1 > g.y0 - 16*h && Math.abs(b.x0 - g.x0) < 2*h);
+    if(fH){ fixedH = {...fH, y1:fH.y0 + h}; grantH = g; break; }
+  }
+  if(sel){
+    const w = sel.x1 - sel.x0, cx = (sel.x0 + sel.x1)/2, lock = bzFind(full, "잠긴효과").find(b=>b.y0 > sel.y1);
+    const y0 = sel.y1 + 0.85*w, y1 = lock ? lock.y0 - 2 : sel.y1 + 3.6*w;
+    const left = bzParse(await bzOCR(canvas, clip({x:cx - 4.9*w, y:y0, w:4.35*w, h:y1 - y0}), 3), ctx);
+    const right = bzParse(await bzOCR(canvas, clip({x:cx + 0.25*w, y:y0, w:4.3*w, h:y1 - y0}), 3), ctx);
+    return {kind:"sel", left, right};
+  }
+  if(fixedH){
+    const h = fixedH.y1 - fixedH.y0, y0 = fixedH.y1 + 0.3*h, y1 = grantH ? grantH.y0 - 0.3*h : fixedH.y1 + 8*h;
+    const list = bzParse(await bzOCR(canvas, clip({x:fixedH.x0 - 0.6*h, y:y0, w:27*h, h:y1 - y0}), 3), ctx);
+    return {kind:"grant", list};
+  }
+  // 팔찌 설명 창: '아크 패시브 포인트 효과' (또는 '효과 부여 불가') 줄을 기준으로 그 위쪽을 크게 읽어서 '팔찌 효과' 부분을 찾음
+  const ends = [...bzFind(full, "아크패시브"), ...bzFind(full, "효과부여불가"), ...bzFind(full, "효과부여가능")].sort((a,b)=>a.y0-b.y0);
+  for(const end of ends){
+    const h = end.y1 - end.y0;
+    const lines = await bzOCR(canvas, clip({x:end.x0 - 1.5*h, y:end.y0 - 30*h, w:23*h, h:30*h}), 3);
+    const at = lines.findIndex(l=>/팔찌효과/.test(bzNorm(l.text)));
+    if(at < 0) continue;
+    const body = [];
+    for(const l of lines.slice(at + 1)){ if(/효과부여|아크패시브|포인트효과/.test(bzNorm(l.text))) break; body.push(l); }
+    return {kind:"tip", list:bzParse(body, ctx)};
+  }
+  return {kind:"none"};
+}
+function bzSetStatus(t){ BZ.status = t; const el = document.getElementById("bz-status"); if(el) el.textContent = t; }
+// 결과 반영 + 알림 (같은 결과는 다시 알리지 않음)
+function bzApply(res, quiet){
+  const at = Date.now(), key = JSON.stringify(res);
+  const same = key === BZ.lastKey; BZ.lastKey = key;
+  let title = "", lines = [];
+  if(res.kind==="grant"){ BZ.fixed = {list:res.list, at}; title = `고정 효과 기억함 · ${fmt(bzSum(res.list))}점`; lines = res.list.map(bzLine); }
+  else if(res.kind==="sel"){
+    const f = bzSum(BZ.fixed?.list), l = f + bzSum(res.left), r = f + bzSum(res.right);
+    BZ.sel = {left:res.left, right:res.right, at};
+    title = `왼쪽(기존) ${fmt(l)}점 · 오른쪽(신규) ${fmt(r)}점`;
+    lines = [l===r ? "두 쪽 점수가 같아요" : l > r ? `왼쪽이 ${fmt(l-r)}점 높아요 → 기존 효과 유지` : `오른쪽이 ${fmt(r-l)}점 높아요 → 신규 효과 선택`, BZ.fixed ? `고정 효과 ${fmt(f)}점 포함` : "고정 효과를 아직 못 읽었어요 (효과 부여 화면을 먼저 띄워 주세요)"];
+  }
+  else if(res.kind==="tip"){ const t = bzSum(res.list); BZ.tip = {list:res.list, total:t, at}; title = `장착 팔찌 점수 ${fmt(t)}점`; lines = res.list.map(bzLine); }
+  else { if(!quiet) bzSetStatus("팔찌 화면을 찾지 못했어요. 효과 부여 / 효과 선택 / 팔찌 설명 창이 보이는 화면인지 확인해 주세요."); return; }
+  bzSaveState();
+  bzSetStatus(`${{grant:"효과 부여 화면",sel:"효과 선택 화면",tip:"팔찌 설명 창"}[res.kind]}을 읽었어요 · ${new Date(at).toLocaleTimeString("ko-KR")}`);
+  if(!same) bzNotify(title, lines);
+  if(ui.page==="brace") render();
+}
+const bzLine = e => `${e.rule || "점수 없음"}${e.grade ? ` (${BZ_GRADES.find(g=>g.k===e.grade).name})` : ""} ${fmt(bzScore(e.tier, e.grade))}점`;
+function bzNotify(title, lines){
+  if(ui.alarm!==false) chime(1);
+  if(notifPerm()==="granted"){ try{ const n = new Notification(title, {body:lines.slice(0,4).join("\n"), tag:"loacheck-brace", renotify:true, silent:true}); n.onclick = ()=>{ window.focus(); n.close(); }; setTimeout(()=>n.close(), 8000); }catch(e){} }
+  const box = document.getElementById("toasts"), id = "t" + (++toastSeq), el = document.createElement("div");
+  el.className = "toast"; el.id = id;
+  el.innerHTML = `<div class="toast-head"><b>${esc(title)}</b><button class="toast-x" data-act="toast-close" data-t="${id}" aria-label="알림 닫기">×</button></div><p>${lines.map(esc).join("<br>")}</p>`;
+  box.appendChild(el); setTimeout(()=>closeToast(id), 8000);
+}
+async function bzRun(canvas, quiet){
+  if(BZ.busy) return; BZ.busy = true; BZ.err = "";
+  try{ bzSetStatus("읽는 중…"); bzApply(await bzProcess(canvas), quiet); }
+  catch(e){ BZ.err = e.message || String(e); bzSetStatus(BZ.err); }
+  BZ.busy = false;
+}
+// 붙여넣기 / 파일로 읽기
+async function bzFromBlob(blob){
+  const img = await createImageBitmap(blob), c = document.createElement("canvas");
+  c.width = img.width; c.height = img.height; c.getContext("2d").drawImage(img, 0, 0);
+  await bzRun(c, false);
+}
+// 화면 공유: 1.5초마다 화면이 바뀌었는지 보고, 바뀐 뒤 멈추면 읽음
+async function bzStart(){
+  try{
+    await askNotif();
+    BZ.stream = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:2}, audio:false});
+  }catch(e){ bzSetStatus("화면 공유를 시작하지 못했어요. (취소했거나 브라우저가 지원하지 않아요)"); return; }
+  const v = document.createElement("video"); v.muted = true; v.srcObject = BZ.stream; await v.play().catch(()=>{});
+  BZ.video = v; BZ.prevSig = BZ.lastSig = null;
+  BZ.stream.getVideoTracks()[0].addEventListener("ended", bzStop);
+  bzSetStatus("화면을 보고 있어요. 팔찌 효과 부여 / 효과 선택 / 팔찌 설명 창을 띄우면 자동으로 읽어요.");
+  BZ.timer = setInterval(bzTick, 1500); render();
+  bzWorker().catch(e=>bzSetStatus(e.message));
+}
+function bzStop(){
+  clearInterval(BZ.timer); BZ.timer = null;
+  BZ.stream?.getTracks().forEach(t=>t.stop()); BZ.stream = null; BZ.video = null;
+  bzSetStatus("화면 공유를 멈췄어요."); render();
+}
+function bzSig(v){
+  const c = bzSig.c ||= document.createElement("canvas"); c.width = 48; c.height = 27;
+  const g = c.getContext("2d", {willReadFrequently:true}); g.drawImage(v, 0, 0, 48, 27);
+  const d = g.getImageData(0, 0, 48, 27).data, out = new Uint8Array(48*27);
+  for(let i=0;i<out.length;i++) out[i] = (d[i*4] + d[i*4+1] + d[i*4+2]) / 3;
+  return out;
+}
+const bzDiff = (a, b) => { if(!a || !b) return 999; let s = 0; for(let i=0;i<a.length;i++) s += Math.abs(a[i]-b[i]); return s / a.length; };
+async function bzTick(){
+  const v = BZ.video; if(!v || BZ.busy || !v.videoWidth) return;
+  const sig = bzSig(v), stable = bzDiff(sig, BZ.prevSig) < 2; BZ.prevSig = sig;
+  if(!stable || bzDiff(sig, BZ.lastSig) < 3) return;   // 움직이는 중이거나, 지난번 읽은 화면과 같음
+  BZ.lastSig = sig;
+  const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
+  await bzRun(c, true);
+}
+document.addEventListener("paste", e=>{
+  if(ui.page!=="brace") return;
+  const it = [...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/"));
+  if(it){ e.preventDefault(); bzFromBlob(it.getAsFile()); }
+});
+
+// ── 화면 ──
+function bzList(list, extra=0){
+  if(!list?.length) return `<p class="hint">아직 없어요.</p>`;
+  return `<ul class="bz-list">${list.map(e=>{ const g = BZ_GRADES.find(x=>x.k===e.grade);
+    return `<li><span class="bz-g" style="--gc:${g?.color||"var(--faint)"}">${g?.name||"?"}</span><span class="bz-name">${esc(e.rule || "점수 없음")}<small>${esc(e.text)}</small></span><b class="num">${fmt(bzScore(e.tier, e.grade))}</b></li>`; }).join("")}</ul>`;
+}
+function bracePage(){
+  const f = bzSum(BZ.fixed?.list), when = t => t ? new Date(t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+  const selL = BZ.sel ? f + bzSum(BZ.sel.left) : null, selR = BZ.sel ? f + bzSum(BZ.sel.right) : null;
+  const num = (grp, k, v) => `<input class="bz-num" data-bz="${grp}.${k}" inputmode="numeric" value="${v}">`;
+  return `<main class="page bz">
+    <div class="page-head"><button class="tool" data-act="back" aria-label="뒤로">${ICON.back}</button><h2>팔찌 점수 <small>게임 화면 글자를 읽어서 계산</small></h2></div>
+    <section class="fz-panel">
+      <div class="fz-head"><h3>화면 읽기</h3>
+        <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="tool ${BZ.stream?"on":""}" data-act="bz-watch">${BZ.stream ? "화면 공유 멈추기" : "게임 화면 공유 시작"}</button><button class="tool" data-act="bz-file">캡처 파일 열기</button></span></div>
+      <p class="hint" id="bz-status" style="margin:10px 0 4px">${esc(BZ.status || "게임 화면을 공유하면 자동으로 읽어요. 또는 캡처(Win+Shift+S) 후 이 화면에서 Ctrl+V를 눌러도 돼요.")}</p>
+      <p class="hint">게임은 창 모드 / 전체 창 모드여야 공유돼요. 처음 한 번은 글자 인식 자료(약 10MB)를 내려받아요.</p>
+      <input type="file" id="bz-file" accept="image/*" hidden>
+    </section>
+    <div class="bz-grid">
+      <section class="fz-panel"><div class="fz-head"><h3>고정 효과 <small class="fz-note">${when(BZ.fixed?.at)}</small></h3><span class="bz-total num">${fmt(f)}점</span></div>
+        ${bzList(BZ.fixed?.list)}${BZ.fixed ? `<button class="linkbtn" data-act="bz-clear-fixed">지우기</button>` : `<p class="hint">'팔찌 효과 부여' 화면을 읽으면 여기에 기억해 둬요.</p>`}</section>
+      <section class="fz-panel"><div class="fz-head"><h3>장착 팔찌 <small class="fz-note">${when(BZ.tip?.at)}</small></h3><span class="bz-total num">${BZ.tip ? fmt(BZ.tip.total)+"점" : "-"}</span></div>
+        ${bzList(BZ.tip?.list)}
+        ${BZ.tip && S.roster.length ? `<div class="bz-rec"><select id="bz-char">${[...S.roster].sort(bySlot).map(c=>`<option value="${c.id}" ${c.id===ui.pin?"selected":""}>${esc(c.name)}</option>`).join("")}</select><button class="tool" data-act="bz-to-spec">스펙 현황에 기록</button></div>` : ""}
+        ${ui.bzMsg ? `<p class="hint" style="color:var(--kurzan)">${esc(ui.bzMsg)}</p>` : ""}</section>
+    </div>
+    <section class="fz-panel"><div class="fz-head"><h3>효과 선택 <small class="fz-note">${when(BZ.sel?.at)} · 고정 효과 ${fmt(f)}점 포함</small></h3></div>
+      <div class="bz-grid">
+        <div><div class="bz-side ${selL!=null && selL>selR?"win":""}"><span>왼쪽 (기존 효과)</span><b class="num">${selL==null?"-":fmt(selL)+"점"}</b></div>${bzList(BZ.sel?.left)}</div>
+        <div><div class="bz-side ${selR!=null && selR>selL?"win":""}"><span>오른쪽 (신규 효과)</span><b class="num">${selR==null?"-":fmt(selR)+"점"}</b></div>${bzList(BZ.sel?.right)}</div>
+      </div></section>
+    <section class="fz-panel"><div class="fz-head"><h3>점수표</h3><button class="fz-btn" data-act="bz-reset-table">처음 값으로</button></div>
+      <p class="hint">점수 = 티어 점수 × 등급 배율(%). 표에 없는 효과(체력, 인내 등)는 0점이에요. 숫자를 고치면 바로 다시 계산돼요.</p>
+      <div class="bz-cfg">${BZ_TIERS.map(t=>`<label>${t.name}${num("tier", t.k, BZ.cfg.tier[t.k])}</label>`).join("")}</div>
+      <div class="bz-cfg">${BZ_GRADES.map(g=>`<label><span class="bz-g" style="--gc:${g.color}">${g.name}</span>${num("grade", g.k, BZ.cfg.grade[g.k])}%</label>`).join("")}</div>
+      <details class="bz-rules"><summary>효과별 티어 보기</summary><ul>${BZ_RULES.map(r=>`<li><b>${BZ_TIERS.find(t=>t.k===r.tier).name}</b> ${esc(r.name)}</li>`).join("")}</ul></details>
+    </section>
+  </main>`;
+}
+document.addEventListener("change", e=>{
+  if(e.target.id==="bz-file" && e.target.files?.[0]){ bzFromBlob(e.target.files[0]); e.target.value = ""; return; }
+  const k = e.target.dataset?.bz; if(!k) return;
+  const [grp, key] = k.split("."), v = parseInt(e.target.value, 10);
+  if(Number.isFinite(v) && v >= 0){ BZ.cfg[grp][key] = v; bzSaveCfg(); }
+  render();
+});
+
 const emptyRoster = () => `<div class="empty">등록된 캐릭터가 없어요. <button class="linkbtn" data-act="settings">설정</button>에서 캐릭터를 추가하세요.</div>`;
 
 function settingsSheet(){
@@ -2082,7 +2429,7 @@ function render(){
   app.querySelectorAll("[data-nkey]").forEach(el=>prevN.set(el.dataset.nkey, Number(el.dataset.shown ?? el.dataset.n)));
   app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
-  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page()
+  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page() : ui.page==="brace" ? bracePage()
     : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
   app.innerHTML = header() + body + settingsSheet();
@@ -2140,6 +2487,12 @@ document.addEventListener("click", e=>{
     case "go-home": if(ui.page!=="main" || ui.settings || ui.menu){ ui.menu=false; ui.settings=false; ui.page="main"; pushNav(); render(); } window.scrollTo({top:0, behavior:"smooth"}); break;
     case "go-specs": goPage("specs"); break;
     case "go-spec2": goPage("spec2"); break;
+    case "go-brace": goPage("brace"); break;
+    case "bz-watch": if(BZ.stream) bzStop(); else bzStart(); break;
+    case "bz-file": document.getElementById("bz-file")?.click(); break;
+    case "bz-clear-fixed": BZ.fixed = null; bzSaveState(); render(); break;
+    case "bz-reset-table": BZ.cfg = bzDefaultCfg(); bzSaveCfg(); render(); break;
+    case "bz-to-spec": { const id = document.getElementById("bz-char")?.value, r = BZ.tip; if(id && r){ SPEC(id).brace = r.total; syncBase(id); ui.bzMsg = `${byIdS(id)?.name||""} 스펙 현황에 팔찌 점수 ${fmt(r.total)}점을 기록했어요.`; commit(); } break; }
     case "s2-grade": ui.s2Grade = {side:b.dataset.side, k:b.dataset.k}; render(); break;
     case "s2-grade-pick": { const g = ui.s2Grade; if(g){ S2[g.side][g.k].grade = b.dataset.g; s2Save(); } ui.s2Grade = null; render(); break; }
     case "s2-grade-close": if(e.target===b){ ui.s2Grade = null; render(); } break;
@@ -2154,7 +2507,7 @@ document.addEventListener("click", e=>{
     case "fz-notify": fzNotify(b.dataset.route); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
     case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
-    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
+    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2"||ui.page==="brace") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
     case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
