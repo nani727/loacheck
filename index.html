@@ -535,6 +535,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bz-rules{margin-top:12px;font-size:13px}
 .bz-rules summary{cursor:pointer;color:var(--accent-fg);font-weight:600}
 .bz-rules ul{margin:8px 0 0;padding-left:18px;display:grid;gap:3px}
+.bz-mode{display:flex;flex-wrap:wrap;gap:6px 18px;margin:6px 0 4px;font-size:13.5px}
+.bz-mode label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.bz-mode input{accent-color:var(--accent);width:16px;height:16px}
 .bz-rec{display:flex;gap:8px;margin-top:8px}
 .bz-rec select{flex:1;border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:8px;padding:6px 8px;font:inherit}
 .tool.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-fg)}
@@ -2023,7 +2026,7 @@ const BZ_RULES = [
   {tier:"t1", name:"치명타 적중률 & 치명타 시 피해량", test:t=>/치명타적중률/.test(t) && /치명타(로|시)/.test(t)},
   {tier:"t1", name:"치명타 피해 & 치명타 시 피해량", test:t=>/치명타피해/.test(t) && /치명타(로|시)/.test(t)},
   {tier:"t1", name:"추가 피해 & 악마 및 대악마 피해", test:t=>/추가피해/.test(t) && /악마/.test(t)},
-  {tier:"t1", name:"재사용 대기 시간 증가 & 적에게 주는 피해", test:t=>/재사용대기/.test(t)},
+  {tier:"t1", name:"재사용 대기 시간 증가 & 적에게 주는 피해", test:t=>/재사용대기/.test(t) && /적에게주는피해/.test(t)},   // '이동기 및 기상기 재사용 대기 시간 감소'는 제외
   {tier:"t1", name:"적에게 주는 피해 & 무력화 대상 피해", test:t=>/무력화/.test(t)},
   {tier:"t3p", name:"무기 공격력 & 생명력 50% 이상 무기 공격력", test:t=>/무기공격력/.test(t) && /생명력/.test(t)},
   {tier:"t3p", name:"무기 공격력 & 30초 마다 무기 공격력", test:t=>/무기공격력/.test(t) && /30초/.test(t)},
@@ -2040,13 +2043,13 @@ const BZ_RULES = [
   {tier:"t5", name:"힘/민첩/지능", test:t=>/^(힘|민첩|지능)\+?\d/.test(t)},
 ];
 // 두 문장이 한 효과인 경우 (앞 문장, 뒷 문장)
-const BZ_PAIRS = [
-  [/치명타(적중률|피해)/, /치명타(로|시)/], [/추가피해/, /악마/], [/적에게주는피해/, /무력화/],
-  [/무기공격력/, /(생명력|30초|초마다)/], [/(방어력|치명타저항|치명타피해저항|보호)/, /아군공격력/], [/아군공격력/, /(방어력|치명타저항|치명타피해저항|보호)/],
-];
-const BZ_STAT = /^(치명|특화|신속|제압|인내|숙련|체력|힘|민첩|지능|무기공격력|최대생명력|최대마나)[+*~]?\d/;
+// 앞 효과에 이어지는 문장 (이 말로 시작하면 새 효과가 아니라 바로 앞 효과의 뒷부분)
+const BZ_CONT = /^(공격적중시30초|자신의생명력|공격이치명타로|악마및대악마|해당효과|아군공격력강화효과가|각성기는|효과에는|다\.|한다\.|\(최대)/;
+// 한 줄짜리 효과: '이름 +숫자' (체력 +4500, 추가 피해 +3.00%, 치명타 적중률 +2.60%, 아군 공격력 강화 효과 +3.00% …)
+const BZ_STAT = /^([가-힣/]+\+|(치명|특화|신속|제압|인내|숙련|체력|힘|민첩|지능|무기공격력|최대생명력|최대마나)\+?)[\d.,]+%?$/;   // '+'를 못 읽어도 능력치 이름이면 한 줄 효과
 const BZ = { cfg:null, fixed:null, sel:null, tip:null, stream:null, video:null, timer:null, busy:false, worker:null, status:"", lastSig:null, prevSig:null, lastKey:"", err:"" };
 try{ BZ.cfg = JSON.parse(localStorage.getItem("loacheck-brace-cfg")); }catch(e){}
+try{ BZ.mode = localStorage.getItem("loacheck-brace-mode") === "auto" ? "auto" : "key"; }catch(e){ BZ.mode = "key"; }   // key = '/' 키를 눌렀을 때만, auto = 화면이 바뀌면 자동
 if(!BZ.cfg?.tier || !BZ.cfg?.grade) BZ.cfg = bzDefaultCfg();
 try{ const st = JSON.parse(localStorage.getItem("loacheck-brace")); if(st){ BZ.fixed = st.fixed||null; BZ.sel = st.sel||null; BZ.tip = st.tip||null; } }catch(e){}
 const bzSaveCfg = () => { try{ localStorage.setItem("loacheck-brace-cfg", JSON.stringify(BZ.cfg)); }catch(e){} };
@@ -2083,7 +2086,7 @@ async function bzOCR(src, rect, scale){
   const map = bb => ({x0:rect.x + bb.x0/scale, y0:rect.y + bb.y0/scale, x1:rect.x + bb.x1/scale, y1:rect.y + bb.y1/scale});
   return lines.map(l=>({ text:l.text.trim(), ...map(l.bbox), words:l.words.map(wd=>({text:wd.text, ...map(wd.bbox)})) })).filter(l=>l.text);
 }
-const bzNorm = t => String(t).replace(/\s+/g,"").replace(/중가/g,"증가").replace(/[*~ㄱ-ㅣ十]+(?=\d)/g,"+").replace(/[|]/g,"");   // '+'가 ㅜ·*·~ 등으로 읽힌 것 바로잡기
+const bzNorm = t => String(t).replace(/\s+/g,"").replace(/\[?부여로만획득\]?/g,"").replace(/피혜/g,"피해").replace(/혜드/g,"헤드").replace(/[*~]+(?=\+)/g,"").replace(/적중룰/g,"적중률").replace(/공격럭/g,"공격력").replace(/중가/g,"증가").replace(/[*~ㄱ-ㅣ十]+(?=\d)/g,"+").replace(/[|]/g,"");   // '+'가 ㅜ·*·~ 등으로 읽힌 것 바로잡기
 // 줄에서 붙어 있는 낱말들로 문구 찾기 → 그 낱말들을 감싸는 상자
 function bzFind(lines, phrase){
   const out = [];
@@ -2127,14 +2130,14 @@ function bzParse(lines, ctx){
     if(BZ_STAT.test(r.t)){ if(cur){ sents.push(cur); cur = null; } sents.push({t:r.t, words:r.words, stat:true}); continue; }
     if(!cur) cur = {t:"", words:[]};
     cur.t += r.t; cur.words.push(...r.words);
-    if(/다\.?(\(.*\))?$|\)$|%$/.test(r.t)){ sents.push(cur); cur = null; }
+    if(/다\.?(\(.*\))?$|\)$/.test(r.t)){ sents.push(cur); cur = null; }
   }
   if(cur) sents.push(cur);
-  // 두 문장이 한 효과인 경우 합치기
+  // 이어지는 문장(해당 효과는… / 아군 공격력 강화 효과가… / 공격이 치명타로… 등)은 앞 효과에 합치기
   const effs = [];
   for(const s of sents){
     const prev = effs[effs.length-1];
-    if(prev && !prev.stat && !s.stat && !prev.merged && BZ_PAIRS.some(([a,b])=>a.test(prev.t) && b.test(s.t))){ prev.t += s.t; prev.words.push(...s.words); prev.merged = true; continue; }
+    if(prev && !prev.stat && !s.stat && BZ_CONT.test(s.t)){ prev.t += s.t; prev.words.push(...s.words); continue; }
     effs.push({...s});
   }
   return effs.map(e=>{
@@ -2243,7 +2246,7 @@ async function bzStart(){
   const v = document.createElement("video"); v.muted = true; v.srcObject = BZ.stream; await v.play().catch(()=>{});
   BZ.video = v; BZ.prevSig = BZ.lastSig = null;
   BZ.stream.getVideoTracks()[0].addEventListener("ended", bzStop);
-  bzSetStatus("화면을 보고 있어요. 팔찌 효과 부여 / 효과 선택 / 팔찌 설명 창을 띄우면 자동으로 읽어요.");
+  bzSetStatus(BZ.mode==="key" ? "화면 공유 중이에요. 팔찌 화면을 띄우고 '/' 키를 누르면 읽어요." : "화면을 보고 있어요. 팔찌 효과 부여 / 효과 선택 / 팔찌 설명 창을 띄우면 자동으로 읽어요.");
   BZ.timer = setInterval(bzTick, 1500); render();
   bzWorker().catch(e=>bzSetStatus(e.message));
 }
@@ -2261,13 +2264,27 @@ function bzSig(v){
 }
 const bzDiff = (a, b) => { if(!a || !b) return 999; let s = 0; for(let i=0;i<a.length;i++) s += Math.abs(a[i]-b[i]); return s / a.length; };
 async function bzTick(){
-  const v = BZ.video; if(!v || BZ.busy || !v.videoWidth) return;
+  const v = BZ.video; if(BZ.mode!=="auto" || !v || BZ.busy || !v.videoWidth) return;
   const sig = bzSig(v), stable = bzDiff(sig, BZ.prevSig) < 2; BZ.prevSig = sig;
   if(!stable || bzDiff(sig, BZ.lastSig) < 3) return;   // 움직이는 중이거나, 지난번 읽은 화면과 같음
   BZ.lastSig = sig;
   const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
   await bzRun(c, true);
 }
+// '/' 키: 공유 중인 화면을 지금 읽기 (입력칸에 글자를 쓰는 중이면 무시)
+async function bzScanNow(){
+  const v = BZ.video;
+  if(!v || !v.videoWidth){ bzSetStatus("먼저 '게임 화면 공유 시작'을 눌러 주세요."); if(ui.page!=="brace") bzNotify("팔찌 점수: 화면 공유가 꺼져 있어요", ["팔찌 점수 화면에서 '게임 화면 공유 시작'을 눌러 주세요."]); return; }
+  const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
+  BZ.lastKey = "";   // 키로 읽을 때는 같은 결과라도 다시 알림
+  await bzRun(c, false);
+}
+document.addEventListener("keydown", e=>{
+  if(e.key!=="/" || e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
+  const t = e.target; if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+  if(!BZ.stream && ui.page!=="brace") return;   // 팔찌 점수를 안 쓰는 중이면 그냥 둠
+  e.preventDefault(); bzScanNow();
+});
 document.addEventListener("paste", e=>{
   if(ui.page!=="brace") return;
   const it = [...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/"));
@@ -2290,6 +2307,11 @@ function bracePage(){
       <div class="fz-head"><h3>화면 읽기</h3>
         <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="tool ${BZ.stream?"on":""}" data-act="bz-watch">${BZ.stream ? "화면 공유 멈추기" : "게임 화면 공유 시작"}</button><button class="tool" data-act="bz-file">캡처 파일 열기</button></span></div>
       <p class="hint" id="bz-status" style="margin:10px 0 4px">${esc(BZ.status || "게임 화면을 공유하면 자동으로 읽어요. 또는 캡처(Win+Shift+S) 후 이 화면에서 Ctrl+V를 눌러도 돼요.")}</p>
+      <div class="bz-mode" role="radiogroup" aria-label="읽는 때">
+        <label><input type="radio" name="bz-mode" value="key" ${BZ.mode==="key"?"checked":""}> <b>'/' 키를 눌렀을 때</b></label>
+        <label><input type="radio" name="bz-mode" value="auto" ${BZ.mode==="auto"?"checked":""}> 화면이 바뀌면 자동으로</label>
+      </div>
+      <p class="hint">'/' 키는 이 사이트 창이 선택돼 있을 때만 사이트에 전달돼요 (브라우저 보안 규칙). 게임 중에 바로 쓰려면 함께 드린 단축키 프로그램(AutoHotkey)을 켜 두세요.</p>
       <p class="hint">게임은 창 모드 / 전체 창 모드여야 공유돼요. 처음 한 번은 글자 인식 자료(약 10MB)를 내려받아요.</p>
       <input type="file" id="bz-file" accept="image/*" hidden>
     </section>
@@ -2315,6 +2337,7 @@ function bracePage(){
   </main>`;
 }
 document.addEventListener("change", e=>{
+  if(e.target.name==="bz-mode"){ BZ.mode = e.target.value==="auto" ? "auto" : "key"; try{ localStorage.setItem("loacheck-brace-mode", BZ.mode); }catch(err){} BZ.lastSig = null; render(); return; }
   if(e.target.id==="bz-file" && e.target.files?.[0]){ bzFromBlob(e.target.files[0]); e.target.value = ""; return; }
   const k = e.target.dataset?.bz; if(!k) return;
   const [grp, key] = k.split("."), v = parseInt(e.target.value, 10);
