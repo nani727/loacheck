@@ -2413,6 +2413,11 @@ function bracePage(){
       <div class="bz-drop-txt"><b>캡처 붙여넣기</b><span>여기를 누르고 <kbd>Ctrl</kbd> + <kbd>V</kbd> · 또는 그림 파일을 끌어다 놓기</span>
         <small>Win + Shift + S로 팔찌 화면을 캡처한 뒤 붙여넣으면 바로 점수를 계산해요.</small></div>
     </section>
+    <section class="fz-panel"><div class="fz-head"><h3>효과 선택 <small class="fz-note">${when(BZ.sel?.at)} · 고정 효과 ${fmt(f)}점 포함</small></h3></div>
+      <div class="bz-grid">
+        <div><div class="bz-side ${selL!=null && selL>selR?"win":""}"><span>왼쪽 (기존 효과)</span><b class="num">${selL==null?"-":fmt(selL)+"점"}</b></div>${bzList(BZ.sel?.left)}</div>
+        <div><div class="bz-side ${selR!=null && selR>selL?"win":""}"><span>오른쪽 (신규 효과)</span><b class="num">${selR==null?"-":fmt(selR)+"점"}</b></div>${bzList(BZ.sel?.right)}</div>
+      </div></section>
     <div class="bz-grid">
       <section class="fz-panel"><div class="fz-head"><h3>고정 효과 <small class="fz-note">${when(BZ.fixed?.at)}</small></h3><span class="bz-total num">${fmt(f)}점</span></div>
         ${bzList(BZ.fixed?.list)}${BZ.fixed ? `<button class="linkbtn" data-act="bz-clear-fixed">지우기</button>` : `<p class="hint">'팔찌 효과 부여' 화면을 읽으면 여기에 기억해 둬요.</p>`}</section>
@@ -2421,11 +2426,6 @@ function bracePage(){
         ${BZ.tip && S.roster.length ? `<div class="bz-rec"><select id="bz-char">${[...S.roster].sort(bySlot).map(c=>`<option value="${c.id}" ${c.id===ui.pin?"selected":""}>${esc(c.name)}</option>`).join("")}</select><button class="tool" data-act="bz-to-spec">스펙 현황에 기록</button></div>` : ""}
         ${ui.bzMsg ? `<p class="hint" style="color:var(--kurzan)">${esc(ui.bzMsg)}</p>` : ""}</section>
     </div>
-    <section class="fz-panel"><div class="fz-head"><h3>효과 선택 <small class="fz-note">${when(BZ.sel?.at)} · 고정 효과 ${fmt(f)}점 포함</small></h3></div>
-      <div class="bz-grid">
-        <div><div class="bz-side ${selL!=null && selL>selR?"win":""}"><span>왼쪽 (기존 효과)</span><b class="num">${selL==null?"-":fmt(selL)+"점"}</b></div>${bzList(BZ.sel?.left)}</div>
-        <div><div class="bz-side ${selR!=null && selR>selL?"win":""}"><span>오른쪽 (신규 효과)</span><b class="num">${selR==null?"-":fmt(selR)+"점"}</b></div>${bzList(BZ.sel?.right)}</div>
-      </div></section>
     <section class="fz-panel"><div class="fz-head"><h3>점수표</h3><button class="fz-btn" data-act="bz-reset-table">처음 값으로</button></div>
       <p class="hint">점수 = 티어 점수 × 등급 배율(%). 표에 없는 효과(체력, 인내 등)는 0점이에요. 숫자를 고치면 바로 다시 계산돼요.</p>
       <div class="bz-cfg">${BZ_TIERS.map(t=>`<label>${t.name}${num("tier", t.k, BZ.cfg.tier[t.k])}</label>`).join("")}</div>
