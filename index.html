@@ -526,6 +526,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bz-list b{font-size:15px}
 .bz-g{flex:none;display:inline-grid;place-items:center;min-width:34px;height:22px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:700;color:#111;background:var(--gc)}
 .bz-t{flex:none;min-width:48px;text-align:center;font-size:12px;font-weight:700;border:1px solid var(--line-strong);border-radius:6px;padding:2px 5px;color:var(--fg)}
+.bz-tsel{flex:none;min-width:64px;font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line-strong);border-radius:6px;padding:2px 4px;background:var(--bg);color:var(--fg);cursor:pointer}
+.bz-tsel.changed{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-fg)}
+.bz-rules li{display:flex;align-items:center;gap:8px}
+.bz-rules ul{list-style:none;padding-left:0}
 .bz-side{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:8px 12px;border-radius:10px;background:var(--surface-done)}
 .bz-side b{font-size:20px}
 .bz-side.win{background:var(--accent-soft);outline:2px solid var(--accent)}
@@ -2027,7 +2031,7 @@ function s2SetFx(sel){
    점수 = 티어 점수 × 등급 배율 (숫자 색: 노랑=상, 보라=중, 파랑=하, 초록=최하). 표에 없는 효과는 0점 */
 const BZ_TIERS = [ {k:"t1",name:"1티어"}, {k:"t2p",name:"2티어+"}, {k:"t2",name:"2티어"}, {k:"t3p",name:"3티어+"}, {k:"t3",name:"3티어"}, {k:"t4",name:"4티어"}, {k:"t5",name:"5티어"} ];
 const BZ_GRADES = [ {k:"top",name:"상",color:"#F2C230"}, {k:"mid",name:"중",color:"#B36BE0"}, {k:"low",name:"하",color:"#33B5E5"}, {k:"min",name:"최하",color:"#7FC241"} ];
-const bzDefaultCfg = () => ({ tier:{t1:100,t2p:80,t2:70,t3p:50,t3:40,t4:20,t5:10}, grade:{top:100,mid:80,low:60,min:40} });
+const bzDefaultCfg = () => ({ tier:{t1:100,t2p:80,t2:70,t3p:50,t3:40,t4:20,t5:10}, grade:{top:100,mid:80,low:60,min:40}, over:{} });
 // 효과 판별 (공백을 뺀 글자로 비교). 위에서부터 먼저 맞는 것으로 (겹치는 말이 있어서 순서가 중요)
 const BZ_RULES = [
   {tier:"t4", name:"대상 치명타 피해 저항 감소 & 아군 공격력 강화", test:t=>/치명타피해저항/.test(t)},
@@ -2062,11 +2066,16 @@ const BZ = { cfg:null, fixed:null, sel:null, tip:null, stream:null, video:null, 
 try{ BZ.cfg = JSON.parse(localStorage.getItem("loacheck-brace-cfg")); }catch(e){}
 try{ BZ.mode = localStorage.getItem("loacheck-brace-mode") === "auto" ? "auto" : "key"; }catch(e){ BZ.mode = "key"; }   // key = '/' 키를 눌렀을 때만, auto = 화면이 바뀌면 자동
 if(!BZ.cfg?.tier || !BZ.cfg?.grade) BZ.cfg = bzDefaultCfg();
+BZ.cfg.over ||= {};
 try{ const st = JSON.parse(localStorage.getItem("loacheck-brace")); if(st){ BZ.fixed = st.fixed||null; BZ.sel = st.sel||null; BZ.tip = st.tip||null; } }catch(e){}
 const bzSaveCfg = () => { try{ localStorage.setItem("loacheck-brace-cfg", JSON.stringify(BZ.cfg)); }catch(e){} };
 const bzSaveState = () => { try{ localStorage.setItem("loacheck-brace", JSON.stringify({fixed:BZ.fixed, sel:BZ.sel, tip:BZ.tip})); }catch(e){} };
 const bzScore = (tier, grade) => tier && grade ? Math.round((BZ.cfg.tier[tier]||0) * (BZ.cfg.grade[grade]||0) / 100) : 0;
-const bzSum = list => (list||[]).reduce((a,e)=>a + bzScore(e.tier, e.grade), 0);
+// 효과 구분 이름: 표에서 찾은 효과면 그 이름, 못 찾은 효과면 숫자를 뺀 글자
+const bzKey = e => e.key || e.rule || String(e.text||"").replace(/[\s\d.,+%]/g,"").slice(0,40);
+// 실제로 쓸 티어: 사용자가 바꾼 티어가 있으면 그것 ("none" = 점수 없음)
+const bzT = e => { const o = BZ.cfg.over?.[bzKey(e)]; return o==="none" ? null : (o || e.tier || null); };
+const bzSum = list => (list||[]).reduce((a,e)=>a + bzScore(bzT(e), e.grade), 0);
 
 // ── 글자 인식 엔진 (처음 쓸 때 한 번 내려받음) ──
 const BZ_CDN = { lib:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js", worker:"https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
@@ -2097,7 +2106,7 @@ async function bzOCR(src, rect, scale){
   const map = bb => ({x0:rect.x + bb.x0/scale, y0:rect.y + bb.y0/scale, x1:rect.x + bb.x1/scale, y1:rect.y + bb.y1/scale});
   return lines.map(l=>({ text:l.text.trim(), ...map(l.bbox), words:l.words.map(wd=>({text:wd.text, ...map(wd.bbox)})) })).filter(l=>l.text);
 }
-const bzNorm = t => String(t).replace(/\s+/g,"").replace(/\[?부여로만획득\]?/g,"").replace(/피혜/g,"피해").replace(/혜드/g,"헤드").replace(/[*~]+(?=\+)/g,"").replace(/적중룰/g,"적중률").replace(/공격럭/g,"공격력").replace(/중가/g,"증가").replace(/[*~ㄱ-ㅣ十]+(?=\d)/g,"+").replace(/[|]/g,"");   // '+'가 ㅜ·*·~ 등으로 읽힌 것 바로잡기
+const bzNorm = t => String(t).replace(/\s+/g,"").replace(/\[?부여로만획득\]?/g,"").replace(/피혜/g,"피해").replace(/치[멍멩맹]타/g,"치명타").replace(/적[중충증][률를룰율물듈]/g,"적중률").replace(/치명타로적[충증]/g,"치명타로적중").replace(/혜드/g,"헤드").replace(/[*~]+(?=\+)/g,"").replace(/적중[룰를름롤]/g,"적중률").replace(/치[멍멍명]타/g,"치명타").replace(/치명다/g,"치명타").replace(/공격럭/g,"공격력").replace(/중가/g,"증가").replace(/[*~ㄱ-ㅣ十]+(?=\d)/g,"+").replace(/[|]/g,"");   // '+'가 ㅜ·*·~ 등으로 읽힌 것 바로잡기
 // 줄에서 붙어 있는 낱말들로 문구 찾기 → 그 낱말들을 감싸는 상자
 function bzFind(lines, phrase){
   const out = [];
@@ -2157,7 +2166,7 @@ function bzParse(lines, ctx){
     const grades = nums.map(w=>bzGradeAt(ctx, w)).filter(Boolean);
     const cnt = {}; grades.forEach(g=>cnt[g]=(cnt[g]||0)+1);
     const grade = Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0] || null;
-    return {text:e.t.replace(/\+/g," +").slice(0,80), tier:rule?.tier||null, rule:rule?.name||"", grade};
+    return {text:e.t.replace(/\+/g," +").slice(0,80), tier:rule?.tier||null, rule:rule?.name||"", grade, key: rule?.name || e.t.replace(/[\d.,+%]/g,"").slice(0,40)};
   });
 }
 // 한 화면 처리: 어떤 화면인지 알아낸 뒤, 그 부분만 크게 다시 읽어서 효과 계산
@@ -2224,7 +2233,7 @@ function bzApply(res, quiet){
     title = `왼쪽(기존) ${fmt(l)}점 · 오른쪽(신규) ${fmt(r)}점`;
     lines = [l===r ? "두 쪽 점수가 같아요" : l > r ? `왼쪽이 ${fmt(l-r)}점 높아요 → 기존 효과 유지` : `오른쪽이 ${fmt(r-l)}점 높아요 → 신규 효과 선택`, BZ.fixed ? `고정 효과 ${fmt(f)}점 포함` : "고정 효과를 아직 못 읽었어요 (효과 부여 화면을 먼저 띄워 주세요)"];
   }
-  else if(res.kind==="tip"){ const t = bzSum(res.list); BZ.tip = {list:res.list, total:t, at}; title = `장착 팔찌 점수 ${fmt(t)}점`; lines = res.list.map(bzLine); }
+  else if(res.kind==="tip"){ const t = bzSum(res.list); BZ.tip = {list:res.list, at}; title = `장착 팔찌 점수 ${fmt(t)}점`; lines = res.list.map(bzLine); }
   else { bzWatch(null); if(!quiet) bzSetStatus("팔찌 화면을 찾지 못했어요. 효과 부여 / 효과 선택 / 팔찌 설명 창이 보이는 화면인지 확인해 주세요."); return; }
   bzSaveState();
   bzSetStatus(`${{grant:"효과 부여 화면",sel:"효과 선택 화면",tip:"팔찌 설명 창"}[res.kind]}을 읽었어요 · ${new Date(at).toLocaleTimeString("ko-KR")}`);
@@ -2233,8 +2242,13 @@ function bzApply(res, quiet){
 }
 const bzTierName = k => BZ_TIERS.find(t=>t.k===k)?.name || "";
 // 알림 한 줄: 효과 (등급, 티어) 점수 — 예: 치명/특화/신속 (최하, 2티어+) 32점
-const bzLine = e => { const tag = [BZ_GRADES.find(g=>g.k===e.grade)?.name, bzTierName(e.tier) || (e.rule ? "" : "표에 없음")].filter(Boolean).join(", ");
-  return `${e.rule || e.text}${tag ? ` (${tag})` : ""} ${fmt(bzScore(e.tier, e.grade))}점`; };
+const bzLine = e => { const tag = [BZ_GRADES.find(g=>g.k===e.grade)?.name, bzTierName(bzT(e)) || "점수 없음"].filter(Boolean).join(", ");
+  return `${e.rule || e.text}${tag ? ` (${tag})` : ""} ${fmt(bzScore(bzT(e), e.grade))}점`; };
+// 티어 고르기 상자 (기본 티어엔 '기본' 표시, 바꾼 건 강조)
+function bzTierSelect(key, base, cur, cls=""){
+  const opt = (v, t) => `<option value="${v}" ${v===(cur||"none")?"selected":""}>${t}${v===(base||"none")?" (기본)":""}</option>`;
+  return `<select class="bz-tsel ${cls} ${(cur||"none")!==(base||"none")?"changed":""}" data-bzkey="${esc(key)}" data-base="${base||"none"}" aria-label="티어 고르기">${BZ_TIERS.map(t=>opt(t.k, t.name)).join("")}${opt("none","점수 없음")}</select>`;
+}
 function bzNotify(title, lines){
   if(ui.alarm!==false) chime(1);
   if(notifPerm()==="granted"){ try{ const n = new Notification(title, {body:lines.slice(0,4).join("\n"), tag:"loacheck-brace", renotify:true, silent:true}); n.onclick = ()=>{ window.focus(); n.close(); }; setTimeout(()=>n.close(), 8000); }catch(e){} }
@@ -2374,7 +2388,7 @@ document.addEventListener("paste", e=>{
 function bzList(list, extra=0){
   if(!list?.length) return `<p class="hint">아직 없어요.</p>`;
   return `<ul class="bz-list">${list.map(e=>{ const g = BZ_GRADES.find(x=>x.k===e.grade);
-    return `<li><span class="bz-g" style="--gc:${g?.color||"var(--faint)"}">${g?.name||"?"}</span><span class="bz-t">${bzTierName(e.tier) || "-"}</span><span class="bz-name">${esc(e.rule || "점수 없음")}<small>${esc(e.text)}</small></span><b class="num">${fmt(bzScore(e.tier, e.grade))}</b></li>`; }).join("")}</ul>`;
+    return `<li><span class="bz-g" style="--gc:${g?.color||"var(--faint)"}">${g?.name||"?"}</span>${bzTierSelect(bzKey(e), e.tier, bzT(e), "bz-t")}<span class="bz-name">${esc(e.rule || "표에 없는 효과")}<small>${esc(e.text)}</small></span><b class="num">${fmt(bzScore(bzT(e), e.grade))}</b></li>`; }).join("")}</ul>`;
 }
 function bracePage(){
   const f = bzSum(BZ.fixed?.list), when = t => t ? new Date(t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
@@ -2402,7 +2416,7 @@ function bracePage(){
     <div class="bz-grid">
       <section class="fz-panel"><div class="fz-head"><h3>고정 효과 <small class="fz-note">${when(BZ.fixed?.at)}</small></h3><span class="bz-total num">${fmt(f)}점</span></div>
         ${bzList(BZ.fixed?.list)}${BZ.fixed ? `<button class="linkbtn" data-act="bz-clear-fixed">지우기</button>` : `<p class="hint">'팔찌 효과 부여' 화면을 읽으면 여기에 기억해 둬요.</p>`}</section>
-      <section class="fz-panel"><div class="fz-head"><h3>장착 팔찌 <small class="fz-note">${when(BZ.tip?.at)}</small></h3><span class="bz-total num">${BZ.tip ? fmt(BZ.tip.total)+"점" : "-"}</span></div>
+      <section class="fz-panel"><div class="fz-head"><h3>장착 팔찌 <small class="fz-note">${when(BZ.tip?.at)}</small></h3><span class="bz-total num">${BZ.tip ? fmt(bzSum(BZ.tip.list))+"점" : "-"}</span></div>
         ${bzList(BZ.tip?.list)}
         ${BZ.tip && S.roster.length ? `<div class="bz-rec"><select id="bz-char">${[...S.roster].sort(bySlot).map(c=>`<option value="${c.id}" ${c.id===ui.pin?"selected":""}>${esc(c.name)}</option>`).join("")}</select><button class="tool" data-act="bz-to-spec">스펙 현황에 기록</button></div>` : ""}
         ${ui.bzMsg ? `<p class="hint" style="color:var(--kurzan)">${esc(ui.bzMsg)}</p>` : ""}</section>
@@ -2416,13 +2430,21 @@ function bracePage(){
       <p class="hint">점수 = 티어 점수 × 등급 배율(%). 표에 없는 효과(체력, 인내 등)는 0점이에요. 숫자를 고치면 바로 다시 계산돼요.</p>
       <div class="bz-cfg">${BZ_TIERS.map(t=>`<label>${t.name}${num("tier", t.k, BZ.cfg.tier[t.k])}</label>`).join("")}</div>
       <div class="bz-cfg">${BZ_GRADES.map(g=>`<label><span class="bz-g" style="--gc:${g.color}">${g.name}</span>${num("grade", g.k, BZ.cfg.grade[g.k])}%</label>`).join("")}</div>
-      <details class="bz-rules"><summary>효과별 티어 보기</summary><ul>${BZ_RULES.map(r=>`<li><b>${BZ_TIERS.find(t=>t.k===r.tier).name}</b> ${esc(r.name)}</li>`).join("")}</ul></details>
+      <details class="bz-rules" ${ui.bzRulesOpen?"open":""}><summary>효과별 티어 바꾸기</summary>
+        <p class="hint">위 결과 목록의 티어 칸에서 바로 바꿔도 돼요. 표에 없는 효과도 결과 목록에서 티어를 정해 주면 다음부터 그 티어로 계산해요.</p>
+        <ul>${[...new Map(BZ_RULES.map(r=>[r.name,r])).values()].map(r=>`<li>${bzTierSelect(r.name, r.tier, bzT({rule:r.name, tier:r.tier}))} ${esc(r.name)}</li>`).join("")}
+        ${Object.keys(BZ.cfg.over).filter(k=>!BZ_RULES.some(r=>r.name===k)).map(k=>`<li>${bzTierSelect(k, null, bzT({key:k}))} ${esc(k)} <small class="fz-note">(직접 정한 효과)</small></li>`).join("")}</ul></details>
     </section>
   </main>`;
 }
 document.addEventListener("change", e=>{
   if(e.target.name==="bz-mode"){ BZ.mode = e.target.value==="auto" ? "auto" : "key"; try{ localStorage.setItem("loacheck-brace-mode", BZ.mode); }catch(err){} BZ.lastSig = null; render(); return; }
   if(e.target.id==="bz-file" && e.target.files?.[0]){ bzFromBlob(e.target.files[0]); e.target.value = ""; return; }
+  if(e.target.classList?.contains("bz-tsel")){
+    const key = e.target.dataset.bzkey, v = e.target.value, base = e.target.dataset.base;
+    if(v===base) delete BZ.cfg.over[key]; else BZ.cfg.over[key] = v;
+    ui.bzRulesOpen = !!e.target.closest(".bz-rules"); bzSaveCfg(); render(); return;
+  }
   const k = e.target.dataset?.bz; if(!k) return;
   const [grp, key] = k.split("."), v = parseInt(e.target.value, 10);
   if(Number.isFinite(v) && v >= 0){ BZ.cfg[grp][key] = v; bzSaveCfg(); }
@@ -2604,7 +2626,7 @@ document.addEventListener("click", e=>{
     case "bz-file": document.getElementById("bz-file")?.click(); break;
     case "bz-clear-fixed": BZ.fixed = null; bzSaveState(); render(); break;
     case "bz-reset-table": BZ.cfg = bzDefaultCfg(); bzSaveCfg(); render(); break;
-    case "bz-to-spec": { const id = document.getElementById("bz-char")?.value, r = BZ.tip; if(id && r){ SPEC(id).brace = r.total; syncBase(id); ui.bzMsg = `${byIdS(id)?.name||""} 스펙 현황에 팔찌 점수 ${fmt(r.total)}점을 기록했어요.`; commit(); } break; }
+    case "bz-to-spec": { const id = document.getElementById("bz-char")?.value, r = BZ.tip; if(id && r){ const t = bzSum(r.list); SPEC(id).brace = t; syncBase(id); ui.bzMsg = `${byIdS(id)?.name||""} 스펙 현황에 팔찌 점수 ${fmt(t)}점을 기록했어요.`; commit(); } break; }
     case "s2-grade": ui.s2Grade = {side:b.dataset.side, k:b.dataset.k}; render(); break;
     case "s2-grade-pick": { const g = ui.s2Grade; if(g){ S2[g.side][g.k].grade = b.dataset.g; s2Save(); } ui.s2Grade = null; render(); break; }
     case "s2-grade-close": if(e.target===b){ ui.s2Grade = null; render(); } break;
