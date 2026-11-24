@@ -525,6 +525,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bz-list .bz-name small{display:block;font-weight:400;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bz-list b{font-size:15px}
 .bz-g{flex:none;display:inline-grid;place-items:center;min-width:34px;height:22px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:700;color:#111;background:var(--gc)}
+.bz-t{flex:none;min-width:48px;text-align:center;font-size:12px;font-weight:700;border:1px solid var(--line-strong);border-radius:6px;padding:2px 5px;color:var(--fg)}
 .bz-side{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding:8px 12px;border-radius:10px;background:var(--surface-done)}
 .bz-side b{font-size:20px}
 .bz-side.win{background:var(--accent-soft);outline:2px solid var(--accent)}
@@ -2209,7 +2210,10 @@ function bzApply(res, quiet){
   if(!same) bzNotify(title, lines);
   if(ui.page==="brace") render();
 }
-const bzLine = e => `${e.rule || "점수 없음"}${e.grade ? ` (${BZ_GRADES.find(g=>g.k===e.grade).name})` : ""} ${fmt(bzScore(e.tier, e.grade))}점`;
+const bzTierName = k => BZ_TIERS.find(t=>t.k===k)?.name || "";
+// 알림 한 줄: 효과 (등급, 티어) 점수 — 예: 치명/특화/신속 (최하, 2티어+) 32점
+const bzLine = e => { const tag = [BZ_GRADES.find(g=>g.k===e.grade)?.name, bzTierName(e.tier) || (e.rule ? "" : "표에 없음")].filter(Boolean).join(", ");
+  return `${e.rule || e.text}${tag ? ` (${tag})` : ""} ${fmt(bzScore(e.tier, e.grade))}점`; };
 function bzNotify(title, lines){
   if(ui.alarm!==false) chime(1);
   if(notifPerm()==="granted"){ try{ const n = new Notification(title, {body:lines.slice(0,4).join("\n"), tag:"loacheck-brace", renotify:true, silent:true}); n.onclick = ()=>{ window.focus(); n.close(); }; setTimeout(()=>n.close(), 8000); }catch(e){} }
@@ -2274,7 +2278,7 @@ document.addEventListener("paste", e=>{
 function bzList(list, extra=0){
   if(!list?.length) return `<p class="hint">아직 없어요.</p>`;
   return `<ul class="bz-list">${list.map(e=>{ const g = BZ_GRADES.find(x=>x.k===e.grade);
-    return `<li><span class="bz-g" style="--gc:${g?.color||"var(--faint)"}">${g?.name||"?"}</span><span class="bz-name">${esc(e.rule || "점수 없음")}<small>${esc(e.text)}</small></span><b class="num">${fmt(bzScore(e.tier, e.grade))}</b></li>`; }).join("")}</ul>`;
+    return `<li><span class="bz-g" style="--gc:${g?.color||"var(--faint)"}">${g?.name||"?"}</span><span class="bz-t">${bzTierName(e.tier) || "-"}</span><span class="bz-name">${esc(e.rule || "점수 없음")}<small>${esc(e.text)}</small></span><b class="num">${fmt(bzScore(e.tier, e.grade))}</b></li>`; }).join("")}</ul>`;
 }
 function bracePage(){
   const f = bzSum(BZ.fixed?.list), when = t => t ? new Date(t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
