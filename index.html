@@ -2190,7 +2190,10 @@ async function bzProcess(canvas){
   if(fixedH){
     const h = fixedH.y1 - fixedH.y0, y0 = fixedH.y1 + 0.3*h, y1 = grantH ? grantH.y0 - 0.3*h : fixedH.y1 + 8*h;
     const list = bzParse(await bzOCR(canvas, clip({x:fixedH.x0 - 0.6*h, y:y0, w:27*h, h:y1 - y0}), 3), ctx);
-    return {kind:"grant", list};
+    // 지켜볼 자리: 고정 효과 칸(다른 팔찌를 고르면 바뀜) / 고정~부여 효과 칸 전체(가운데에 '효과 변환 중…' 빛)
+    const fRect = clip({x:fixedH.x0 + 1.5*h, y:y0, w:22*h, h:y1 - y0});
+    const gRect = clip({x:fixedH.x0 - 0.6*h, y:fixedH.y0, w:26*h, h:(grantH ? grantH.y1 + 6.5*h : fixedH.y1 + 15*h) - fixedH.y0});
+    return {kind:"grant", list, fRect, gRect};
   }
   // 팔찌 설명 창: '아크 패시브 포인트 효과' (또는 '효과 부여 불가') 줄을 기준으로 그 위쪽을 크게 읽어서 '팔찌 효과' 부분을 찾음
   const ends = [...bzFind(full, "아크패시브"), ...bzFind(full, "효과부여불가"), ...bzFind(full, "효과부여가능")].sort((a,b)=>a.y0-b.y0);
@@ -2211,16 +2214,18 @@ function bzApply(res, quiet){
   const at = Date.now(), key = JSON.stringify(res);
   const same = key === BZ.lastKey; BZ.lastKey = key;
   let title = "", lines = [];
-  if(res.kind==="grant"){ BZ.fixed = {list:res.list, at}; title = `고정 효과 기억함 · ${fmt(bzSum(res.list))}점`; lines = res.list.map(bzLine); }
+  if(res.kind==="grant"){ BZ.fixed = {list:res.list, at};
+    if(BZ.video && res.gRect) bzWatch({glow:res.gRect, change:res.fRect});   /* '효과 변환 중…' 빛, 다른 팔찌 고르기(고정 효과 바뀜)를 지켜봄 */
+    title = `고정 효과 기억함 · ${fmt(bzSum(res.list))}점`; lines = res.list.map(bzLine); }
   else if(res.kind==="sel"){
     const f = bzSum(BZ.fixed?.list), l = f + bzSum(res.left), r = f + bzSum(res.right);
     BZ.sel = {left:res.left, right:res.right, at};
-    if(BZ.video && res.rRect) bzWatchSel(res.rRect);   // 공유 화면이면 '재변환'을 지켜봤다가 다시 읽음
+    if(BZ.video && res.rRect) bzWatch({glow:res.rRect});   // 공유 화면이면 '재변환'을 지켜봤다가 다시 읽음
     title = `왼쪽(기존) ${fmt(l)}점 · 오른쪽(신규) ${fmt(r)}점`;
     lines = [l===r ? "두 쪽 점수가 같아요" : l > r ? `왼쪽이 ${fmt(l-r)}점 높아요 → 기존 효과 유지` : `오른쪽이 ${fmt(r-l)}점 높아요 → 신규 효과 선택`, BZ.fixed ? `고정 효과 ${fmt(f)}점 포함` : "고정 효과를 아직 못 읽었어요 (효과 부여 화면을 먼저 띄워 주세요)"];
   }
   else if(res.kind==="tip"){ const t = bzSum(res.list); BZ.tip = {list:res.list, total:t, at}; title = `장착 팔찌 점수 ${fmt(t)}점`; lines = res.list.map(bzLine); }
-  else { bzWatchSel(null); if(!quiet) bzSetStatus("팔찌 화면을 찾지 못했어요. 효과 부여 / 효과 선택 / 팔찌 설명 창이 보이는 화면인지 확인해 주세요."); return; }
+  else { bzWatch(null); if(!quiet) bzSetStatus("팔찌 화면을 찾지 못했어요. 효과 부여 / 효과 선택 / 팔찌 설명 창이 보이는 화면인지 확인해 주세요."); return; }
   bzSaveState();
   bzSetStatus(`${{grant:"효과 부여 화면",sel:"효과 선택 화면",tip:"팔찌 설명 창"}[res.kind]}을 읽었어요 · ${new Date(at).toLocaleTimeString("ko-KR")}`);
   if(!same) bzNotify(title, lines);
@@ -2266,7 +2271,7 @@ async function bzStart(){
   bzWorker().catch(e=>bzSetStatus(e.message));
 }
 function bzStop(){
-  clearInterval(BZ.timer); BZ.timer = null; bzWatchSel(null);
+  clearInterval(BZ.timer); BZ.timer = null; bzWatch(null);
   BZ.stream?.getTracks().forEach(t=>t.stop()); BZ.stream = null; BZ.video = null;
   bzSetStatus("화면 공유를 멈췄어요."); render();
 }
@@ -2286,12 +2291,15 @@ async function bzTick(){
   const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
   await bzRun(c, true);
 }
-/* 재변환 감지: 효과 선택 화면을 읽은 뒤, 오른쪽(신규 효과) 칸 가운데에 금빛 '효과 부여 중…' 빛이 나타났다가
-   사라지면(약 1초) 새 효과로 바뀐 것 → 잠깐 기다렸다가 다시 읽음. 화면 공유 중일 때만 */
-function bzWatchSel(rect){
+/* 화면 지켜보기 (화면 공유 중일 때만)
+   - glow: 금빛 빛('효과 부여 중…' / '효과 변환 중…')이 나타났다가 사라지면 0.5초 뒤 다시 읽음
+       · 효과 선택 화면: 오른쪽(신규 효과) 칸 → 재변환
+       · 효과 부여 화면: 고정·부여 효과 칸 → 효과 변환 (끝나면 효과 선택 화면이 나옴)
+   - change: 효과 부여 화면의 고정 효과 칸 글자가 바뀌고 멈추면(다른 팔찌를 고름) 다시 읽음 */
+function bzWatch(o){
   clearInterval(BZ.selTimer); BZ.selTimer = null; BZ.selWatch = null;
-  if(!rect || !BZ.video) return;
-  BZ.selWatch = {rect, phase:"idle", at:0};
+  if(!o || !BZ.video) return;
+  BZ.selWatch = {glow:o.glow, change:o.change||null, phase:"idle", at:0, base:o.change ? bzRegion(BZ.video, o.change) : null, last:null, moving:false, still:0};
   BZ.selTimer = setInterval(bzSelTick, 250);
 }
 // 칸 가운데(빛이 나타나는 자리)에서 금빛 점의 비율
@@ -2303,19 +2311,35 @@ function bzGold(v, rect){
   for(let i=0;i<d.length;i+=4) if(d[i]>190 && d[i+1]>130 && d[i+2]<140 && d[i]-d[i+2]>80) n++;
   return n / (W*H);
 }
+// 칸을 작게 줄인 밝기 모양 (글자가 바뀌었는지 비교용)
+function bzRegion(v, rect){
+  const c = bzRegion.c ||= document.createElement("canvas"), W = 96, H = 24; c.width = W; c.height = H;
+  const g = c.getContext("2d", {willReadFrequently:true});
+  g.drawImage(v, rect.x, rect.y, rect.w, rect.h, 0, 0, W, H);
+  const d = g.getImageData(0, 0, W, H).data, out = new Uint8Array(W*H);
+  for(let i=0;i<out.length;i++) out[i] = Math.max(d[i*4], d[i*4+1], d[i*4+2]);
+  return out;
+}
+async function bzRescan(){
+  const v = BZ.video; if(!v) return;
+  const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
+  BZ.lastKey = ""; await bzRun(c, false);
+}
 async function bzSelTick(){
   const w = BZ.selWatch, v = BZ.video; if(!w || !v || !v.videoWidth || BZ.busy) return;
-  const gold = bzGold(v, w.rect), now = Date.now();
-  if(w.phase==="idle"){ if(gold > 0.015){ w.phase = "glow"; w.at = now; bzSetStatus("재변환 중… 끝나면 다시 읽을게요"); } return; }
+  const gold = bzGold(v, w.glow), now = Date.now();
+  if(w.phase==="idle" && gold > 0.015){ w.phase = "glow"; w.at = now; bzSetStatus("효과 바뀌는 중… 끝나면 다시 읽을게요"); return; }
   if(w.phase==="glow"){
     if(gold < 0.004){ w.phase = "settle"; w.at = now; }
     else if(now - w.at > 6000) w.phase = "idle";   // 너무 오래 빛나면 다른 화면으로 보고 처음부터
     return;
   }
-  if(w.phase==="settle" && now - w.at >= 500){
-    w.phase = "idle";
-    const c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
-    BZ.lastKey = ""; await bzRun(c, false);
+  if(w.phase==="settle"){ if(now - w.at >= 500){ w.phase = "idle"; await bzRescan(); } return; }
+  // 고정 효과 칸: 글자가 바뀌었다가(다른 팔찌) 0.5초 동안 그대로면 다시 읽음
+  if(w.change){
+    const sig = bzRegion(v, w.change), dBase = bzDiff(sig, w.base), dLast = bzDiff(sig, w.last); w.last = sig;
+    if(dBase > 2.5){ if(dLast < 1){ if(++w.still >= 2){ w.base = sig; w.still = 0; await bzRescan(); } } else w.still = 0; }
+    else w.still = 0;
   }
 }
 
