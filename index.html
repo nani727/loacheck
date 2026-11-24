@@ -535,6 +535,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .bz-rules{margin-top:12px;font-size:13px}
 .bz-rules summary{cursor:pointer;color:var(--accent-fg);font-weight:600}
 .bz-rules ul{margin:8px 0 0;padding-left:18px;display:grid;gap:3px}
+.bz-drop{display:flex;align-items:center;gap:16px;min-height:120px;padding:16px 18px;border:2px dashed var(--line-strong);border-radius:var(--r);background:var(--surface);cursor:pointer;outline:none;transition:border-color .15s,background .15s}
+.bz-drop:hover,.bz-drop:focus,.bz-drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.bz-drop:focus .bz-drop-txt b::after{content:" · 붙여넣을 준비 됐어요";font-weight:500;font-size:13px;color:var(--accent-fg)}
+.bz-drop img{flex:none;max-width:220px;max-height:124px;border-radius:8px;border:1px solid var(--line);object-fit:contain;background:#000}
+.bz-drop-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bz-drop-txt b{font-size:16px}
+.bz-drop-txt span{font-size:14px}
+.bz-drop-txt small{font-size:12.5px;color:var(--muted)}
+.bz-drop kbd{font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--bg)}
+@media (max-width:560px){.bz-drop{flex-direction:column;align-items:flex-start}.bz-drop img{max-width:100%}}
 .bz-mode{display:flex;flex-wrap:wrap;gap:6px 18px;margin:6px 0 4px;font-size:13.5px}
 .bz-mode label{display:flex;align-items:center;gap:6px;cursor:pointer}
 .bz-mode input{accent-color:var(--accent);width:16px;height:16px}
@@ -2233,6 +2243,8 @@ async function bzRun(canvas, quiet){
 }
 // 붙여넣기 / 파일로 읽기
 async function bzFromBlob(blob){
+  // 붙여넣은 그림을 붙여넣기 칸에 작게 보여줌
+  try{ if(BZ.preview) URL.revokeObjectURL(BZ.preview); BZ.preview = URL.createObjectURL(blob); const im = document.getElementById("bz-prev"); if(im){ im.src = BZ.preview; im.hidden = false; } }catch(e){}
   const img = await createImageBitmap(blob), c = document.createElement("canvas");
   c.width = img.width; c.height = img.height; c.getContext("2d").drawImage(img, 0, 0);
   await bzRun(c, false);
@@ -2285,6 +2297,13 @@ document.addEventListener("keydown", e=>{
   if(!BZ.stream && ui.page!=="brace") return;   // 팔찌 점수를 안 쓰는 중이면 그냥 둠
   e.preventDefault(); bzScanNow();
 });
+// 붙여넣기 칸: 끌어다 놓기
+document.addEventListener("dragover", e=>{ const d = e.target.closest?.("#bz-drop"); if(!d) return; e.preventDefault(); d.classList.add("over"); });
+document.addEventListener("dragleave", e=>{ e.target.closest?.("#bz-drop")?.classList.remove("over"); });
+document.addEventListener("drop", e=>{
+  const d = e.target.closest?.("#bz-drop"); if(!d) return; e.preventDefault(); d.classList.remove("over");
+  const f = [...(e.dataTransfer?.files||[])].find(x=>x.type.startsWith("image/")); if(f) bzFromBlob(f); else bzSetStatus("그림 파일만 놓을 수 있어요.");
+});
 document.addEventListener("paste", e=>{
   if(ui.page!=="brace") return;
   const it = [...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/"));
@@ -2314,6 +2333,11 @@ function bracePage(){
       <p class="hint">'/' 키는 이 사이트 창이 선택돼 있을 때만 사이트에 전달돼요 (브라우저 보안 규칙). 게임 중에 바로 쓰려면 함께 드린 단축키 프로그램(AutoHotkey)을 켜 두세요.</p>
       <p class="hint">게임은 창 모드 / 전체 창 모드여야 공유돼요. 처음 한 번은 글자 인식 자료(약 10MB)를 내려받아요.</p>
       <input type="file" id="bz-file" accept="image/*" hidden>
+    </section>
+    <section class="bz-drop" id="bz-drop" tabindex="0" aria-label="캡처 붙여넣기 칸. 누른 뒤 Ctrl+V">
+      <img id="bz-prev" alt="붙여넣은 캡처" ${BZ.preview ? `src="${BZ.preview}"` : "hidden"}>
+      <div class="bz-drop-txt"><b>캡처 붙여넣기</b><span>여기를 누르고 <kbd>Ctrl</kbd> + <kbd>V</kbd> · 또는 그림 파일을 끌어다 놓기</span>
+        <small>Win + Shift + S로 팔찌 화면을 캡처한 뒤 붙여넣으면 바로 점수를 계산해요.</small></div>
     </section>
     <div class="bz-grid">
       <section class="fz-panel"><div class="fz-head"><h3>고정 효과 <small class="fz-note">${when(BZ.fixed?.at)}</small></h3><span class="bz-total num">${fmt(f)}점</span></div>
