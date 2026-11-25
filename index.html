@@ -516,6 +516,32 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 /* ── 팔찌 점수 ── */
 .page.bz{max-width:1000px}
+.page.inv{max-width:1000px}
+.inv-sum{display:flex;flex-wrap:wrap;gap:8px}
+.inv-sum .chip{display:inline-flex;align-items:baseline;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.inv-sum .chip b{color:var(--fg);font-size:15px}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.inv-head{display:flex;align-items:baseline;gap:8px}
+.inv-head b{font-size:16px}
+.inv-head small{color:var(--muted);font-size:12.5px}
+.inv-row{display:flex;align-items:center;gap:6px}
+.inv-name{flex:1;min-width:0;height:34px;border:1px solid transparent;background:transparent;border-radius:8px;padding:0 8px;font:inherit;font-size:14px;color:var(--fg)}
+.inv-name:hover{border-color:var(--line)}
+.inv-name:focus{border-color:var(--accent);background:var(--surface);outline:none}
+.inv-name::placeholder{color:var(--faint)}
+.inv-cnt{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.inv-step{width:28px;height:32px;border:0;background:transparent;color:var(--muted);font-size:16px;font-weight:700}
+.inv-step:hover:not(:disabled){background:var(--accent-soft);color:var(--accent-fg)}
+.inv-step:disabled{opacity:.35;cursor:default}
+.inv-num{width:52px;height:32px;border:0;border-inline:1px solid var(--line);background:transparent;text-align:center;font:inherit;font-size:15px;font-weight:700;color:var(--fg)}
+.inv-num:focus{outline:none;background:var(--accent-soft)}
+.inv-unit{color:var(--muted);font-size:13px}
+.inv-del{min-width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--faint);font-size:15px;padding:0 6px}
+.inv-del:hover{color:var(--muted);background:var(--line)}
+.inv-del.arm{background:#d9534f;color:#fff;font-size:12px;font-weight:700}
+.inv-add{align-self:flex-start;border:1px dashed var(--line);background:transparent;border-radius:8px;height:30px;padding:0 10px;color:var(--muted);font-size:13px;font-weight:600}
+.inv-add:hover{border-color:var(--accent);color:var(--accent-fg)}
+.inv-empty{margin:0;color:var(--muted);font-size:13px}
 .bz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 @media (max-width:720px){.bz-grid{grid-template-columns:minmax(0,1fr)}}
 .bz-total{font-size:20px;font-weight:800;color:var(--accent-fg)}
@@ -704,6 +730,7 @@ const weekStart = d => d - ((dow(d) - 3 + 7) % 7);    // 가장 최근 수요일
 function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}월 ${x.getUTCDate()}일 (${DAYS[dow(d)]})`; }
 
 /* ───────────── 상태 ───────────── */
+const INV_DEFAULT = [{id:"r1", name:"지옥 열쇠"}, {id:"r2", name:"큐브 입장권"}];
 function freshState(){
   return { v:1,
     settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, serka:true, dispatch:true, island:true, voyage:true, sortOnlyAll:false},
@@ -711,7 +738,8 @@ function freshState(){
     expedition:{chaos:false, field:false, estateBox:false, serka:false, dispatch:0, island:false, voyage:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
     lastDaily: loaDay(), lastWeekly: loaDay(), updatedAt: Date.now(), apiKey: "",
-    specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []} };
+    specs: {}, specHistory: {weekStart: weekStart(loaDay()), base: {}, archive: []},
+    inv: {rows: INV_DEFAULT.map(r=>({...r})), counts: {}} };
 }
 function normalize(d){
   const s=freshState(); if(!d || typeof d!=="object") return s;
@@ -729,7 +757,19 @@ function normalize(d){
     specHistory: {
       weekStart: Number.isFinite(d.specHistory?.weekStart) ? d.specHistory.weekStart : weekStart(loaDay()),
       base: (d.specHistory?.base && typeof d.specHistory.base==="object") ? d.specHistory.base : {},
-      archive: Array.isArray(d.specHistory?.archive) ? d.specHistory.archive : [] } };
+      archive: Array.isArray(d.specHistory?.archive) ? d.specHistory.archive : [] },
+    inv: normInv(d.inv) };
+}
+// 큐브&지옥: 행 이름은 원정대 공통(rows), 개수는 캐릭터별(counts[캐릭터 id][행 id])
+function normInv(v){
+  if(!v || typeof v!=="object" || !Array.isArray(v.rows)) return {rows: INV_DEFAULT.map(r=>({...r})), counts: {}};
+  const rows = v.rows.filter(r=>r && r.id!=null).map(r=>({id:String(r.id), name:String(r.name??"")}));
+  const counts = {};
+  if(v.counts && typeof v.counts==="object") for(const [cid, m] of Object.entries(v.counts)){
+    if(!m || typeof m!=="object") continue; counts[cid] = {};
+    for(const [rid, n] of Object.entries(m)){ const x = Math.max(0, Math.floor(Number(n)||0)); if(x) counts[cid][rid] = x; }
+  }
+  return {rows, counts};
 }
 function P(id){
   const p = S.progress[id] ||= {};
@@ -1091,6 +1131,7 @@ const ICON = {
   back:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`,
   chev:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`,
   calc:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h0M16 11h0M8 15h2M12 15h0M16 15v3M8 18h2M12 18h0"/></svg>`,
+  box:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>`,
   gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>`
 };
 const chk = (on, act, attrs, label) => `<button class="chk" aria-pressed="${on}" aria-label="${esc(label)}" data-act="${act}" ${attrs}>${CHECK}</button>`;
@@ -1121,6 +1162,7 @@ function navBar(){
     ${b("go-main", ICON.list, "숙제", ui.page==="main" && !ui.settings)}
     ${b("go-specs", ICON.spec, "스펙 현황(구)", (ui.page==="specs"||ui.page==="spec"||ui.page==="history") && !ui.settings)}
     ${b("go-spec2", ICON.spec, "스펙 현황(신)", ui.page==="spec2" && !ui.settings)}
+    ${b("go-inv", ICON.box, "큐브&지옥", ui.page==="inv" && !ui.settings)}
     ${b("go-brace", ICON.calc, "팔찌 점수", ui.page==="brace" && !ui.settings)}
     ${b("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion" && !ui.settings)}
     ${b("settings", ICON.gear, "설정", ui.settings)}
@@ -1340,6 +1382,7 @@ function menuPanel(){
     ${row("go-main", ICON.list, "일일·주간 숙제", ui.page==="main")}
     ${row("go-specs", ICON.spec, "스펙 현황(구)", ui.page==="specs"||ui.page==="spec"||ui.page==="history")}
     ${row("go-spec2", ICON.spec, "스펙 현황(신)", ui.page==="spec2")}
+    ${row("go-inv", ICON.box, "큐브&지옥", ui.page==="inv")}
     ${row("go-fusion", ICON.calc, "융화재료 계산기", ui.page==="fusion")}
     ${row("settings", ICON.gear, "설정", false)}
   </nav>`;
@@ -2396,6 +2439,35 @@ function bzList(list, extra=0){
   return `<ul class="bz-list">${list.map(e=>{ const g = BZ_GRADES.find(x=>x.k===e.grade);
     return `<li><span class="bz-g" style="--gc:${g?.color||"var(--faint)"}">${g?.name||"?"}</span>${bzTierSelect(bzKey(e), e.tier, bzT(e), "bz-t")}<span class="bz-name">${esc(e.rule || "표에 없는 효과")}<small>${esc(e.text)}</small></span><b class="num">${fmt(bzScore(bzT(e), e.grade))}</b></li>`; }).join("")}</ul>`;
 }
+/* ───────────── 큐브&지옥 (웹) ───────────── */
+function invPage(){
+  const rows = S.inv.rows, chars = [...S.roster].sort(bySlot);
+  const total = rid => chars.reduce((a,c)=>a + (S.inv.counts[c.id]?.[rid]||0), 0);
+  const sum = rows.length ? `<div class="inv-sum">${rows.map(r=>`<span class="chip"><span>${esc(r.name||"(이름 없음)")}</span><b class="num" data-inv-total="${r.id}">${fmt(total(r.id))}</b></span>`).join("")}</div>` : "";
+  const card = c => {
+    const m = S.inv.counts[c.id] || {};
+    const list = rows.map(r=>`<div class="inv-row">
+        <input class="inv-name" id="inv-n-${c.id}-${r.id}" data-inv-name="${r.id}" value="${esc(r.name)}" placeholder="이름 (예: 지옥(희귀))" maxlength="24" autocomplete="off" aria-label="행 이름 (모든 캐릭터 공통)">
+        <span class="inv-cnt">
+          <button class="inv-step" data-act="inv-step" data-id="${c.id}" data-rid="${r.id}" data-d="-1" aria-label="1개 빼기" ${(m[r.id]||0)?"":"disabled"}>−</button>
+          <input class="inv-num num" id="inv-c-${c.id}-${r.id}" data-inv-cnt="${r.id}" data-id="${c.id}" value="${m[r.id]||0}" inputmode="numeric" autocomplete="off" aria-label="${esc(c.name)} ${esc(r.name)} 개수">
+          <button class="inv-step" data-act="inv-step" data-id="${c.id}" data-rid="${r.id}" data-d="1" aria-label="1개 더하기">+</button>
+        </span><span class="inv-unit">개</span>
+        <button class="inv-del ${ui.invDel===r.id?"arm":""}" data-act="inv-del" data-rid="${r.id}" aria-label="이 행 삭제 (모든 캐릭터)">${ui.invDel===r.id?"삭제":"×"}</button>
+      </div>`).join("");
+    return `<article class="card inv-card">
+      <div class="inv-head"><b>${esc(c.name)}</b><small>${esc(c.job)} · ${fmtLv(c.level)}</small></div>
+      ${list || `<p class="inv-empty">아직 행이 없어요.</p>`}
+      <button class="inv-add" data-act="inv-add">+ 행 추가</button>
+    </article>`;
+  };
+  return `<main class="page inv">
+    <div class="page-head"><h2>큐브&지옥 <small>이름은 원정대 공통 · 개수는 캐릭터마다</small></h2><button class="tool on" data-act="inv-add"><span>+ 행 추가</span></button></div>
+    ${sum}
+    <div class="inv-grid">${chars.map(card).join("") || emptyRoster()}</div>
+  </main>`;
+}
+
 function bracePage(){
   const f = bzSum(BZ.fixed?.list), when = t => t ? new Date(t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
   const selL = BZ.sel ? f + bzSum(BZ.sel.left) : null, selR = BZ.sel ? f + bzSum(BZ.sel.right) : null;
@@ -2572,7 +2644,7 @@ function render(){
   app.querySelectorAll("[data-nkey]").forEach(el=>prevN.set(el.dataset.nkey, Number(el.dataset.shown ?? el.dataset.n)));
   app.querySelectorAll("[data-pkey]").forEach(el=>prevP.set(el.dataset.pkey, el.classList.contains("on")));
 
-  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page() : ui.page==="brace" ? bracePage()
+  const body = ui.page==="specs" ? specListPage() : ui.page==="spec" ? specDetailPage() : ui.page==="history" ? historyPage() : ui.page==="fusion" ? fusionPage() : ui.page==="spec2" ? spec2Page() : ui.page==="brace" ? bracePage() : ui.page==="inv" ? invPage()
     : `<main class="board" data-view="${ui.view}">${pickerBar()}${dailyPanel()}${weeklyPanel()}</main>`;
   rendering = true;
   app.innerHTML = header() + body + settingsSheet();
@@ -2585,6 +2657,7 @@ function render(){
   rendering = false;
   if(ui.page==="fusion") fzAnimateChart();
   if(ui.s2Grade) placeS2Pop();
+  if(ui.invFocus){ const el = app.querySelector(`[data-inv-name="${ui.invFocus}"]`); ui.invFocus = null; if(el) el.focus(); }
   if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
     app.querySelectorAll("[data-gkey]").forEach(el=>{
       const from = prevG.get(el.dataset.gkey); if(from==null) return;
@@ -2631,6 +2704,14 @@ document.addEventListener("click", e=>{
     case "go-specs": goPage("specs"); break;
     case "go-spec2": goPage("spec2"); break;
     case "go-brace": goPage("brace"); break;
+    case "go-inv": ui.invDel = null; goPage("inv"); break;
+    case "inv-add": { const n = S.inv.rows.reduce((m,r)=>Math.max(m, parseInt(String(r.id).replace(/\D/g,""))||0), 0) + 1;
+      const rid = "r" + n; S.inv.rows.push({id:rid, name:""}); ui.invDel = null; ui.invFocus = rid; commit(); break; }
+    case "inv-del": { const rid = b.dataset.rid;
+      if(ui.invDel!==rid){ ui.invDel = rid; render(); clearTimeout(ui.invDelT); ui.invDelT = setTimeout(()=>{ if(ui.invDel===rid){ ui.invDel=null; render(); } }, 3000); break; }
+      S.inv.rows = S.inv.rows.filter(r=>r.id!==rid); for(const m of Object.values(S.inv.counts)) delete m[rid]; ui.invDel = null; commit(); break; }
+    case "inv-step": { const cid = b.dataset.id, rid = b.dataset.rid, d = Number(b.dataset.d);
+      const m = (S.inv.counts[cid] ||= {}); const v = Math.max(0, (m[rid]||0) + d); if(v) m[rid] = v; else delete m[rid]; commit(); break; }
     case "bz-watch": if(BZ.stream) bzStop(); else bzStart(); break;
     case "bz-scan": bzScanNow(); break;
     case "bz-file": document.getElementById("bz-file")?.click(); break;
@@ -2651,7 +2732,7 @@ document.addEventListener("click", e=>{
     case "fz-notify": fzNotify(b.dataset.route); break;
     case "go-history": ui.page="history"; pushNav(); render(); window.scrollTo(0,0); break;
     case "open-spec": ui.page="spec"; ui.specId=id; ui.drafts={}; pushNav(); render(); window.scrollTo(0,0); break;
-    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2"||ui.page==="brace") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
+    case "back": if((history.state?.depth||0) > 0) history.back(); else { ui.page = (ui.page==="main"||ui.page==="fusion"||ui.page==="spec2"||ui.page==="brace"||ui.page==="inv") ? "main" : "specs"; replaceNav(); render(); window.scrollTo(0,0); } break;
     case "grid": { const sp=SPEC(id), k=b.dataset.k, v=Number(b.dataset.v); sp.grid[k] = sp.grid[k]===v ? null : v; syncBase(id); commit(); break; }
     case "api-save": S.apiKey=ui.apiKeyInput.trim(); ui.apiKeyInput=""; ui.apiMsg="API 키를 저장했어요. 휴대폰 앱에서도 같이 쓰여요."; ui.apiErr=false; commit(); break;
     case "api-search": apiSearch(); break;
@@ -3040,6 +3121,26 @@ document.addEventListener("focusout", e=>{
 });
 // 저장 버튼을 눌러도 입력칸 포커스가 먼저 빠지지 않게
 document.addEventListener("pointerdown", e=>{ if(e.target.closest?.("#life-save")) e.preventDefault(); });
+// 큐브&지옥 입력: 글자를 칠 때마다 다시 그리지 않고 저장만 (다른 캐릭터의 같은 행 이름은 바로 바꿔 보여줌)
+function quietSave(){ S.updatedAt=Date.now(); saveLocal(); dirty=true; clearTimeout(saveTimer); saveTimer=setTimeout(flush, 800); }
+function invNameInput(el){
+  const rid = el.dataset.invName, r = S.inv.rows.find(x=>x.id===rid); if(!r) return;
+  r.name = el.value;
+  document.querySelectorAll(`[data-inv-name="${rid}"]`).forEach(o=>{ if(o!==el) o.value = el.value; });
+  const chip = document.querySelector(`[data-inv-total="${rid}"]`)?.previousElementSibling; if(chip) chip.textContent = el.value || "(이름 없음)";
+  quietSave();
+}
+function invCntInput(el){
+  const v = el.value.replace(/\D/g,"").slice(0,6); if(v!==el.value) el.value = v;
+  const cid = el.dataset.id, rid = el.dataset.invCnt, m = (S.inv.counts[cid] ||= {}), n = parseInt(v,10) || 0;
+  if(n) m[rid] = n; else delete m[rid];
+  const t = document.querySelector(`[data-inv-total="${rid}"]`);
+  if(t) t.textContent = fmt(S.roster.reduce((a,c)=>a + (S.inv.counts[c.id]?.[rid]||0), 0));
+  quietSave();
+}
+document.addEventListener("focusin", e=>{ if(e.target.dataset?.invCnt != null && !rendering){ const el=e.target, v0=el.value; setTimeout(()=>{ if(el.value===v0) try{ el.select(); }catch(err){} }, 0); } });
+document.addEventListener("focusout", e=>{ if(rendering) return; if(e.target.dataset?.invCnt != null || e.target.dataset?.invName != null) setTimeout(()=>{ if(!document.activeElement?.closest?.(".inv-row")) render(); }, 0); });
+
 function flash(k){ ui.flash=k; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{ ui.flash=null; render(); },800); }
 
 document.addEventListener("input", e=>{
@@ -3053,6 +3154,8 @@ document.addEventListener("input", e=>{
     return;
   }
   if(e.target.dataset?.fz){ fzInput(e.target); return; }
+  if(e.target.dataset?.invName != null){ invNameInput(e.target); return; }
+  if(e.target.dataset?.invCnt != null){ invCntInput(e.target); return; }
   if(e.target.id==="alarm-vol"){ ui.volume = Number(e.target.value); saveUi(); const t=document.getElementById("vol-text"); if(t) t.textContent = ui.volume>0 ? `음량 ${ui.volume}%` : "소리 끔"; return; }
   if(e.target.id==="api-key"){ ui.apiKeyInput=e.target.value.trim(); const b=document.querySelector('[data-act="api-save"]'); if(b) b.disabled=!ui.apiKeyInput; return; }
   if(e.target.id==="api-name"){ ui.apiName=e.target.value; return; }
@@ -3075,6 +3178,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target.id==="api-name" && S.apiKey && !ui.apiBusy){ apiSearch(); return; }
   if(e.target.id==="life-cur"){ if(e.key==="Enter"){ e.preventDefault(); lifeSave(); } else if(e.key==="Escape"){ e.target.blur(); } }
   if(e.key==="Enter" && e.target.dataset?.field){ e.target.blur(); }
+  if(e.key==="Enter" && (e.target.dataset?.invCnt != null || e.target.dataset?.invName != null)){ e.target.blur(); }
   if(e.key==="Escape" && ui.s2Grade){ ui.s2Grade = null; render(); return; }
   if(e.key==="Escape"){ if(ui.settings){ closeSettings(); } else if(ui.edit){ ui.edit=false; render(); } }
 });
