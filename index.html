@@ -864,6 +864,11 @@ function specItemLevel(sp){
   const avg = PARTS.reduce((a,[k])=>a + base + sp.refine[k].lv*5 + (gear==="fury" ? advStage(sp.adv[k]) : 0), 0) / 6;
   return Math.floor(avg*100 + 1e-6) / 100;   // 게임처럼 버림 (1734.1666 → 1734.16)
 }
+// 스펙 현황에서 아이템 레벨이 바뀌면 원정대 캐릭터 레벨(바로가기·숙제 카드·레이드 목록)도 같은 값으로
+function specLevelToRoster(id, before){
+  const after = specItemLevel(SPEC(id)), c = S.roster.find(x=>x.id===id);
+  if(c && after!=null && after!==before && c.level!==after) c.level = after;
+}
 const f2 = v => (Math.round(v*100)/100).toFixed(2);
 const pad4 = v => String(v).padStart(4,"0");
 const refText = r => r.lv + (r.exp>0 ? `(${f2(r.exp)})` : "");
@@ -1903,13 +1908,13 @@ function applySpecInput(el){
   if(el.dataset.spec==="s2") return applyS2Input(el);   // 스펙 현황(신)
   const id = el.dataset.id, k = el.dataset.k, kind = el.dataset.spec, raw = el.value.trim();
   delete ui.drafts[el.id]; clearTimeout(specTimers[el.id]);
-  const sp = SPEC(id);
+  const sp = SPEC(id), il0 = specItemLevel(sp);
   if(kind==="lv"){ const n=parseInt(raw,10); sp.refine[k].lv = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(REFINE_MAX,n)) : sp.refine[k].lv); }
   else if(kind==="exp"){ const n=parseFloat(raw); sp.refine[k].exp = raw==="" ? 0 : (Number.isFinite(n) ? Math.max(0,Math.min(99.99,Math.round(n*100)/100)) : sp.refine[k].exp); }
   else if(kind==="adv"){ const n=parseInt(raw,10); sp.adv[k] = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.min(ADV_MAX,n)) : sp.adv[k]); }
   else if(kind==="brace"){ const n=parseFloat(raw.replace(/,/g,"")); sp.brace = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.round(n)) : sp.brace); }
   else if(kind==="power"){ const n=parseFloat(raw.replace(/,/g,"")); sp.power = raw==="" ? null : (Number.isFinite(n) ? Math.max(0,Math.round(n*100)/100) : sp.power); }
-  syncBase(id); commit();
+  specLevelToRoster(id, il0); syncBase(id); commit();
 }
 
 
@@ -3199,7 +3204,7 @@ document.addEventListener("change", e=>{
   if(e.target.id==="fz-basis"){ FZ.basis = e.target.value; fzRebuild(); fzSave(); render(); return; }
   if(e.target.id==="fz-field"){ FZ.field = e.target.value; fzApplyFieldPrices(); fzSave(); render(); return; }   // 손을 떼면 그 크기로 한 번 들려줌
   if(e.target.classList?.contains("s2-fxk")){ s2SetFx(e.target); return; }
-  if(e.target.id==="sp-gear"){ const id=e.target.dataset.id; SPEC(id).gear=e.target.value; syncBase(id); commit(); return; }
+  if(e.target.id==="sp-gear"){ const id=e.target.dataset.id, il0=specItemLevel(SPEC(id)); SPEC(id).gear=e.target.value; specLevelToRoster(id, il0); syncBase(id); commit(); return; }
   const ck = e.target.dataset?.apiCheck;
   if(ck!=null){ if(e.target.checked) ui.apiChecked.add(ck); else ui.apiChecked.delete(ck); return; }
   const f=e.target.dataset?.field; if(!f) return;
