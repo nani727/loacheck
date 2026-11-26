@@ -131,6 +131,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .pick[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
 .pick[aria-pressed="true"] b{color:var(--accent-fg)}
 @media (max-width:480px){.pick .pj{display:none}}
+.pick .pp{color:var(--sec-spec);font-weight:600}
+@media (max-width:480px){.pick .pp{display:block}.pick .pp-sep{display:none}}
 @media (max-width:480px){.pick{flex-direction:column;align-items:stretch;gap:6px}.pick-spec{align-self:stretch;padding:4px 6px;font-size:11.5px}}
 @media (max-width:420px){.pick{padding:8px 9px}.pick-txt b{font-size:13px}}
 
@@ -1186,13 +1188,15 @@ function navBar(){
   </nav>`;
 }
 
+// 바로가기 버튼: 아이템 레벨 오른쪽에 전투력 (스펙 현황에 입력한 값, 없으면 안 보임)
+const pickPower = id => { const v = S.specs[id]?.power; return fin(v) ? `<span class="pp"><span class="pp-sep"> · </span>전투력 ${v.toLocaleString("ko-KR",{minimumFractionDigits:2, maximumFractionDigits:2})}</span>` : ""; };
 // 캐릭터 선택: 선택창 순서로 3칸씩. 누르면 그 캐릭터가 맨 위, 다시 누르면 원래 순서
 function pickerBar(){
   if(!S.roster.length) return "";
   if(ui.pin && !S.roster.some(c=>c.id===ui.pin)) ui.pin = null;
   return `<nav class="picker" aria-label="캐릭터 선택">${[...S.roster].sort(bySlot).map(c=>
     // 바로가기 버튼 안에 '스펙 현황' 버튼 (버튼 안의 버튼이라 바깥은 div + role=button)
-    `<div class="pick" role="button" tabindex="0" data-act="pin" data-id="${c.id}" aria-pressed="${ui.pin===c.id}"><span class="pick-txt"><b>${esc(c.name)}</b><small><span class="pj">${esc(c.job)} · </span>${fmtLv(c.level)}</small></span><button class="pick-spec" data-act="open-spec" data-id="${c.id}" aria-label="${esc(c.name)} 스펙 현황">스펙 현황</button></div>`).join("")}</nav>`;
+    `<div class="pick" role="button" tabindex="0" data-act="pin" data-id="${c.id}" aria-pressed="${ui.pin===c.id}"><span class="pick-txt"><b>${esc(c.name)}</b><small><span class="pj">${esc(c.job)} · </span>${fmtLv(c.level)}${pickPower(c.id)}</small></span><button class="pick-spec" data-act="open-spec" data-id="${c.id}" aria-label="${esc(c.name)} 스펙 현황">스펙 현황</button></div>`).join("")}</nav>`;
 }
 
 function dailyPanel(){
