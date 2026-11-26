@@ -744,7 +744,7 @@ function dayLabel(d){ const x=new Date(d*86400e3); return `${x.getUTCMonth()+1}�
 const INV_DEFAULT = [{id:"r1", name:"지옥 열쇠"}, {id:"r2", name:"큐브 입장권"}];
 function freshState(){
   return { v:1,
-    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, estateBox:true, serka:true, dispatch:true, island:true, voyage:true, sortOnlyAll:false},
+    settings:{guardian:true, kurzan:true, guild:true, raids:true, paradise:false, medal:false, sign:false, honor:true, hourglass:true, blood:true, estateBox:true, serka:true, dispatch:true, island:true, voyage:true, sortOnlyAll:false},
     roster: DEFAULT_ROSTER.map(c=>({...c})), progress:{},
     expedition:{chaos:false, field:false, estateBox:false, serka:false, dispatch:0, island:false, voyage:false},
     life:{energy:MAX_LIFE, ts:Date.now()},
@@ -793,7 +793,8 @@ function P(id){
   p.medal = !!p.medal;
   if(!Number.isFinite(p.sign)) p.sign = 0;
   if(!Number.isFinite(p.honor)) p.honor = HONOR_MAX;   // 명예 부여: 3/3에서 시작, 0이면 완료
-  p.hourglass = !!p.hourglass;                          // 할의 모래시계 (1730 이상)
+  p.hourglass = !!p.hourglass;
+  p.blood = !!p.blood;                                  // 혈석 교환 (주간, 한 번)                          // 할의 모래시계 (1730 이상)
   return p;
 }
 
@@ -824,7 +825,7 @@ function applyResets(){
     S.lastDaily = today; changed = true;
   } else if (passed < 0){ S.lastDaily = today; changed = true; }
   if (S.lastWeekly < weekStart(today)){
-    for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; p.honor=HONOR_MAX; p.hourglass=false; }
+    for (const c of S.roster){ const p=P(c.id); p.raids={}; p.paradise=PARADISE_MAX; p.medal=false; p.sign=0; p.honor=HONOR_MAX; p.hourglass=false; p.blood=false; }
     S.expedition.estateBox = false; S.expedition.serka = false;   // 주간 원정대 숙제
     S.lastWeekly = today; changed = true;
   }
@@ -950,7 +951,7 @@ const shownDaily = () => [...shownGauge(), ...(S.settings.guild ? ["guild"] : []
 const dailyDone = c => { const d=P(c.id).daily; return shownDaily().every(k=>d[k].done); };
 const hasHourglass = c => (Number(c.level)||0) >= HOURGLASS_LV;
 const weeklyDone = c => { const p=P(c.id); return (S.settings.raids===false || raidsOf(c).every(r=>r.full)) && (!S.settings.paradise||p.paradise===0) && (!S.settings.medal||p.medal) && (!S.settings.sign||p.sign>=SIGN_MAX)
-  && (S.settings.honor===false||p.honor===0) && (S.settings.hourglass===false||!hasHourglass(c)||p.hourglass); };
+  && (S.settings.honor===false||p.honor===0) && (S.settings.hourglass===false||!hasHourglass(c)||p.hourglass) && (S.settings.blood===false||p.blood); };
 const gaugeSum = c => { const d=P(c.id).daily; return shownGauge().reduce((a,k)=>a + d[k].gauge + (S.settings.sortOnlyAll ? d[k].used : 0), 0); };
 // 아이템 레벨 표시: 1712.50 (앱 formatItemLevel과 같음)
 const fmtLv = v => (Number(v)||0).toFixed(2);
@@ -1364,9 +1365,10 @@ function weeklyCard(c){
   const raidsOn = S.settings.raids!==false;
   const shownRaids = showCleared ? raids : raids.filter(r=>!r.full);
   const paraDone = p.paradise===0, signDone = p.sign>=SIGN_MAX, honorDone = p.honor===0;
+  const bloodOn = S.settings.blood!==false;
   const honorOn = S.settings.honor!==false, glassOn = S.settings.hourglass!==false && hasHourglass(c);
   const clearedCount = (raidsOn ? raids.filter(r=>r.full).length : 0) + (S.settings.paradise && paraDone ? 1 : 0) + (S.settings.medal && p.medal ? 1 : 0) + (S.settings.sign && signDone ? 1 : 0)
-    + (honorOn && honorDone ? 1 : 0) + (glassOn && p.hourglass ? 1 : 0);
+    + (honorOn && honorDone ? 1 : 0) + (glassOn && p.hourglass ? 1 : 0) + (bloodOn && p.blood ? 1 : 0);
 
   const tiles = shownRaids.map(r=>`<button class="raid" data-act="raid" data-id="${c.id}" data-r="${esc(r.title)}"
       aria-label="${esc(c.name)} ${esc(r.title)} ${r.cleared}/${r.gates.length}관문. ${r.full?"누르면 0관문으로 되돌림":"누르면 다음 관문 클리어"}">
@@ -1382,6 +1384,7 @@ function weeklyCard(c){
       <div class="step"><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="-1" aria-label="이정표 줄이기">−</button><button class="sbtn" data-act="sign" data-id="${c.id}" data-d="1" aria-label="이정표 늘리기">+</button></div></div>`);
   if(honorOn && (showCleared || !honorDone)) extras.push(`<div class="row"><span class="lbl">명예 부여</span>${slideGauge("honor",c.id,"",p.honor,HONOR_MAX,1,"--honor",`${c.name} 명예 부여`)}<span class="spacer"></span>
       <div class="step"><button class="sbtn" data-act="honor" data-id="${c.id}" data-d="-1" aria-label="명예 부여 줄이기">−</button><button class="sbtn" data-act="honor" data-id="${c.id}" data-d="1" aria-label="명예 부여 늘리기">+</button></div></div>`);
+  if(bloodOn && (showCleared || !p.blood)) extras.push(`<div class="row"><span class="lbl">혈석 교환</span><span class="spacer"></span>${chk(p.blood,"blood",`data-id="${c.id}"`,`${c.name} 혈석 교환 완료`)}</div>`);
   if(glassOn && (showCleared || !p.hourglass)) extras.push(`<div class="row"><span class="lbl" style="white-space:nowrap">할의 모래시계</span><span class="spacer"></span>${chk(p.hourglass,"hourglass",`data-id="${c.id}"`,`${c.name} 할의 모래시계 완료`)}</div>`);
   const allRaidsDone = raids.every(r=>r.full);
   return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
@@ -2590,6 +2593,7 @@ function settingsSheet(){
       ${sw("sign","이정표 미션","주간")}
       ${sw("honor","명예 부여","주간 · 캐릭터당 3번")}
       ${sw("hourglass","할의 모래시계","주간 · 1730 이상 캐릭터만")}
+      ${sw("blood","혈석 교환","주간")}
       ${sw("dispatch","특수 파견","일일 · 원정대 공통, 하루 2회 (다 하면 숨김)")}
       ${sw("island","모험 섬","일일 · 원정대 공통 (오늘의 섬은 로스트아크 API로 불러옴)")}
       ${sw("voyage","항해 협동","일일 · 원정대 공통 (오늘 열리는 날만, 로스트아크 API로 불러옴)")}
@@ -2811,6 +2815,7 @@ document.addEventListener("click", e=>{
       break; }
     case "para": { const p=P(id), v = b.dataset.v!=null ? 0 : Math.max(0,Math.min(PARADISE_MAX,p.paradise+Number(b.dataset.d))); setWeekly(b, id, "para", v); break; }
     case "medal": { const p=P(id); finishRow(b.closest(".row"), !p.medal && !ui.showCleared.has(id), ()=>{ p.medal=!p.medal; }); break; }
+    case "blood": { const p=P(id); finishRow(b.closest(".row"), !p.blood && !ui.showCleared.has(id), ()=>{ p.blood=!p.blood; }); break; }
     case "hourglass": { const p=P(id); finishRow(b.closest(".row"), !p.hourglass && !ui.showCleared.has(id), ()=>{ p.hourglass=!p.hourglass; }); break; }
     case "sign": { const p=P(id); setWeekly(b, id, "sign", Math.max(0,Math.min(SIGN_MAX,p.sign+Number(b.dataset.d)))); break; }
     case "honor": { const p=P(id); setWeekly(b, id, "honor", Math.max(0,Math.min(HONOR_MAX,p.honor+Number(b.dataset.d)))); break; }
