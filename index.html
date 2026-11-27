@@ -145,8 +145,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 :root{--pin-line:#F2D65C}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--pin-line:#FFEA8A}}
 :root[data-theme="dark"]{--pin-line:#FFEA8A}
-.card.pinned{border-color:var(--pin-line);box-shadow:0 0 0 2px var(--pin-line),var(--shadow)}
-.card.pinned.done{box-shadow:0 0 0 2px var(--pin-line)}
+.card.pinned{border-color:var(--pin-line);box-shadow:0 0 0 .5px var(--pin-line),var(--shadow)}
+.card.pinned.done{box-shadow:0 0 0 .5px var(--pin-line)}
 .chead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:2px}
 .cname{font-size:16px;font-weight:700}
 .cmeta{color:var(--muted);font-size:12.5px}
