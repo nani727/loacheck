@@ -141,6 +141,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .card.done{background:var(--surface-done);box-shadow:none}
 .card.done .cname{color:var(--muted)}
 .card.warn{background:var(--surface-warn);border-color:var(--line-warn)}
+/* 바로가기로 고른 캐릭터의 일일·주간 카드: 밝은 연노랑 윤곽선 */
+:root{--pin-line:#F2D65C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--pin-line:#FFEA8A}}
+:root[data-theme="dark"]{--pin-line:#FFEA8A}
+.card.pinned{border-color:var(--pin-line);box-shadow:0 0 0 2px var(--pin-line),var(--shadow)}
+.card.pinned.done{box-shadow:0 0 0 2px var(--pin-line)}
 .chead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:2px}
 .cname{font-size:16px;font-weight:700}
 .cmeta{color:var(--muted);font-size:12.5px}
@@ -465,7 +471,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .fz-chip b{font:600 13px "IBM Plex Mono",ui-monospace,Menlo,monospace}
 .fz-chip.key{background:var(--hl);border-color:transparent;color:var(--hl-ink)}
 .fz-need{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
-.fz-need-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.fz-need-col{display:flex;flex-direction:column;gap:10px;min-width:0;border:2px solid transparent;border-radius:12px;padding:10px 12px}
+/* 융화재료: 필요 골드가 더 적은(추천) 경로 칸 강조 */
+.fz-need-col.rec{border-color:var(--pin-line);background:color-mix(in srgb,var(--pin-line) 10%,transparent)}
+.fz-rec{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;background:var(--pin-line);color:#3b3000;font-size:11.5px;font-weight:700;vertical-align:1px}
 .fz-need-col h4{margin:0;font-size:13.5px}
 .fz-tabs{display:flex;background:var(--surface-done);border:1px solid var(--line);border-radius:999px;padding:3px}
 .fz-tabs button{border:0;background:none;padding:6px 14px;border-radius:999px;font-weight:700;color:var(--muted);font-size:14px}
@@ -1313,7 +1322,7 @@ function dailyCard(c){
   const showCleared = ui.edit || ui.showClearedDaily.has(c.id);
   const show = k => showCleared || !d[k].done;
   const clearedCount = shownDaily().filter(k=>d[k].done).length;
-  return `<article class="card ${done?"done":""} ${warn?"warn":""}" data-card="d-${c.id}">
+  return `<article class="card ${done?"done":""} ${warn?"warn":""} ${ui.pin===c.id?"pinned":""}" data-card="d-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${warn?`<span class="ctag">휴게 가득</span>`:done?`<span class="ctag">완료</span>`:""}</div>
     ${S.settings.guardian!==false && show("guardian") ? row("guardian","가디언 토벌","--guardian") : ""}
     ${S.settings.kurzan!==false && show("kurzan") ? row("kurzan",chaosName(c.level),"--kurzan") : ""}
@@ -1387,7 +1396,7 @@ function weeklyCard(c){
   if(bloodOn && (showCleared || !p.blood)) extras.push(`<div class="row"><span class="lbl">혈석 교환</span><span class="spacer"></span>${chk(p.blood,"blood",`data-id="${c.id}"`,`${c.name} 혈석 교환 완료`)}</div>`);
   if(glassOn && (showCleared || !p.hourglass)) extras.push(`<div class="row"><span class="lbl" style="white-space:nowrap">할의 모래시계</span><span class="spacer"></span>${chk(p.hourglass,"hourglass",`data-id="${c.id}"`,`${c.name} 할의 모래시계 완료`)}</div>`);
   const allRaidsDone = raids.every(r=>r.full);
-  return `<article class="card ${done?"done":""}" data-card="w-${c.id}">
+  return `<article class="card ${done?"done":""} ${ui.pin===c.id?"pinned":""}" data-card="w-${c.id}">
     <div class="chead"><span class="cname">${esc(c.name)}</span><span class="cmeta">${esc(c.job)} · Lv.${fmtLv(c.level)}</span>${done?`<span class="ctag">완료</span>`:""}</div>
     ${raidsOn && tiles ? `<div class="raids">${tiles}</div>` : ""}
     ${raidsOn && (showCleared || !allRaidsDone) ? `<div class="goldrow"><div class="bar"><i data-bkey="gold-${c.id}" style="width:${g.max?g.earned/g.max*100:0}%;--c:var(--gold)"></i></div><span class="g num" data-nkey="gold-${c.id}" data-n="${g.max-g.earned}" data-pre="남은 ">남은 ${fmt(g.max-g.earned)} G</span></div>` : ""}
@@ -1602,7 +1611,7 @@ function fzRouteCard(route, own, buy){
   const goal = route==="N" ? "상자를 최대로 만들 때 남는 고급재료가 최소가 되는 구매 횟수" : "상자를 최대로 만들 때 남는 일반재료가 최소가 되는 구매 횟수";
   return `<section class="fz-panel fz-route"><div class="fz-route-head"><h3>${title}</h3><p>${rule}</p><p>${goal}</p></div>${fzOwnedBlock(own, route)}${fzBuyBlock(buy, route)}</section>`;
 }
-function fzNeedCol(route, p, s){
+function fzNeedCol(route, p, s, rec){
   const src = route==="N" ? "일반재료" : "고급재료", title = route==="N" ? "1. 일반재료로 가루 구매" : "2. 고급재료로 가루 구매";
   let rows = fzRow(`상자 제작 골드 (${fmt(p.x)} × ${FZ_REC.g})`, fmt(p.x*FZ_REC.g)) + fzRow("재료 구매 골드", fmt(p.buyGold)) + fzRow(src+" 구매 (100개씩)", fmt(route==="N" ? p.m : p.q)+"회");
   if(route==="N" && p.q > 0) rows += fzRow("고급재료 구매 (100개씩)", fmt(p.q)+"회");
@@ -1610,7 +1619,7 @@ function fzNeedCol(route, p, s){
   rows += fzRow(src+"로 가루 구매", fmt(p.k)+"회") + fzRow("가루 → 희귀재료 교환", fmt(p.e)+"회");
   const diff = p.cost - s.D;
   const st = diff > 0 ? `<span class="fz-lack">골드 ${fmt(diff)} 부족</span>` : `<span class="fz-ok">골드 충분 (${fmt(-diff)} 남음)</span>`;
-  return `<div class="fz-need-col"><h4 class="fz-need-h">${title}<button class="fz-btn" data-act="fz-notify" data-route="${route}" aria-label="${title} 내용을 윈도우 알림으로 띄우기">띄우기</button></h4><div class="fz-need-total"><span class="n">${fmt(p.cost)}</span><span class="u">골드 필요</span></div>
+  return `<div class="fz-need-col ${rec?"rec":""}"><h4 class="fz-need-h"><span>${title}${rec?` <span class="fz-rec">추천</span>`:""}</span><button class="fz-btn" data-act="fz-notify" data-route="${route}" aria-label="${title} 내용을 윈도우 알림으로 띄우기">띄우기</button></h4><div class="fz-need-total"><span class="n">${fmt(p.cost)}</span><span class="u">골드 필요</span></div>
     <div class="fz-need-zero">(모든 재료가 없을 시 ${fmt(fzPlanBuy(route, {A:0,B:0,C:0,D:0,W:0,pN:s.pN,pP:s.pP}, p.x).cost)}골드 필요)</div>
     <div class="fz-short">현재 골드 <b class="mono">${fmt(s.D)}</b> · ${st}</div><dl>${rows}</dl>${fzFusionBlock(route)}</div>`;
 }
@@ -1625,7 +1634,7 @@ function fzResults(){
   return {
     summary: `골드로 재료까지 사면 일반재료 경로 <b class="mono">${fmt(buyN.x)}</b>개, 고급재료 경로 <b class="mono">${fmt(buyP.x)}</b>개를 만들 수 있어요. ${better}${extra}`,
     need: `<div class="fz-head"><h3>상자 ${fmt(T)}개를 만들려면 필요한 골드</h3><span class="fz-note">가진 재료를 먼저 쓰고, 모자란 만큼만 골드로 사요.</span></div>
-      <div class="fz-need">${fzNeedCol("N", needN, s)}${fzNeedCol("P", needP, s)}</div><p class="fz-note" style="margin:12px 0 0">${cheaper}</p>`,
+      <div class="fz-need">${fzNeedCol("N", needN, s, needN.cost < needP.cost)}${fzNeedCol("P", needP, s, needP.cost < needN.cost)}</div><p class="fz-note" style="margin:12px 0 0">${cheaper}</p>`,
     routes: fzRouteCard("N", ownN, buyN) + fzRouteCard("P", ownP, buyP),
   };
 }
